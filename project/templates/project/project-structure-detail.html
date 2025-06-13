@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+جزئیات ابینه
+{% endblock title %}
+
+
+
+{% block main %}
+<div class="container mt-4 bg-white p-3 rounded rounded-2">
+    <h3 class="mb-4">جزئیات ابینه</h3>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <p class="card-text">
+                <strong>نام پروژه:</strong> {{ project_structure.project.name }}
+            </p>
+            <p class="card-text">
+                <strong>نوع ابینه:</strong> {{ project_structure.structure_type.name }}
+            </p>
+            <p class="card-text">
+                <strong>موقعیت کیلومتری:</strong> {{ project_structure.kilometer_location }}
+            </p>
+            <p class="card-text">
+                <strong>کیلومتر شروع:</strong> {{ project_structure.start_kilometer }}
+            </p>
+            <p class="card-text">
+                <strong>کیلومتر پایان:</strong> {{ project_structure.end_kilometer }}
+            </p>
+            <p class="card-text">
+                <strong>وضعیت:</strong> {{ project_structure.get_status_display }}
+            </p>
+            <a href="{% url 'project-structure-list' pk=project_structure.project.id %}" class="btn btn-primary mt-3">ابینه های پروژه</a>
+            <a href="{% url 'project-detail' pk=project_structure.project.id %}" class="btn btn-secondary mt-3">بازگشت به
+                پروژه</a>
+
+        </div>
+    </div>
+</div>
+{% endblock main %}

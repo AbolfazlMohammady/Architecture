@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}حذف پروژه{% endblock %}
+{% block main %}
+<div class="container mt-4 text-center bg-white p-3 rounded rounded-2">
+    <h3>آیا از حذف لایه"{{ object.layer_type.name }}"پروژه "{{object.project.name}}"" مطمئن هستید؟</h3>
+    <form method="post" class="d-inline-block mt-3 p-4 ">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">بله، حذف شود</button>
+        <a href="{% url 'project-detail' object.pk %}" class="btn btn-secondary">بازگشت</a>
+    </form>
+</div>
+{% endblock %}

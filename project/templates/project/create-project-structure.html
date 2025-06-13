@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+ابنیه{% if project %} - {{ project.name }}{% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="container bg-white rounded rounded-2 p-2">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-9">
+      <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-body p-4">
+          <h4 class="card-title mb-4 text-center">ایجاد ابنیه پروژه</h4>
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="container-fluid">
+              {% for field in form %}
+              {% if forloop.counter0|divisibleby:2 %}
+              <div class="row">
+                {% endif %}
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}
+                  <div class="text-danger small">
+                    {{ field.errors|striptags }}
+                  </div>
+                  {% endif %}
+                </div>
+
+                {% if forloop.last and not forloop.counter|divisibleby:2 %}
+                <div class="col-md-6 mb-3"></div> {# فیلد خالی برای تکمیل سطر #}
+                {% endif %}
+
+                {% if forloop.counter|divisibleby:2 or forloop.last %}
+              </div>
+              {% endif %}
+              {% endfor %}
+
+            </div>
+
+            <div class="row mt-4">
+              <div class="col-6">
+                <button type="submit" class="btn btn-primary w-100">ایجاد</button>
+              </div>
+              <div class="col-6">
+                <a class="btn btn-outline-primary w-100" href="{% url 'project-detail' pk=project.pk %}">مرحله بعد</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-12 mt-4" style="overflow-x: auto;">
+        {% if structure %}
+        <div class="mt-5">
+          <h5 class="text-center">لایه‌های ثبت‌شده برای پروژه "{{ project.name }}"</h5>
+          <table class="table table-bordered table-striped table-hover text-center mt-3">
+            <thead class="table-light">
+              <tr>
+                <th>نام ابنیه</th>
+                <th>موقعیت کیلومتری</th>
+                <th>کیلومتر شروع</th>
+                <th>کیلومتر پایان</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for obj in structure %}
+              <tr>
+                <td>{{ obj.structure_type }}</td>
+                <td>{{ obj.kilometer_location }}</td>
+                <td>{{ obj.start_kilometer }}</td>
+                <td>{{ obj.end_kilometer }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mt-4">هنوز ابنیه‌ای برای این پروژه ثبت نشده است.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+    if (form) {
+      const inputs = form.querySelectorAll("input, select, textarea");
+      inputs.forEach(input => input.classList.add("form-control"));
+    }
+  });
+</script>
+{% endblock main %}

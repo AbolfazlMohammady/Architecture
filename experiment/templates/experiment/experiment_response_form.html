@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block head %}
+{{ form.media }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}پاسخ به درخواست آزمایش{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">فرم پاسخ به درخواست آزمایش</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.experiment_request.id_for_label }}">درخواست آزمایش</label>
+                                    {% render_field form.experiment_request class="form-control" readonly="readonly" %}
+                                    {% if form.experiment_request.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.experiment_request.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.response_date.id_for_label }}">تاریخ پاسخ</label>
+                                    {% render_field form.response_date class="form-control" %}
+                                    {% if form.response_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.response_date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.description.id_for_label }}">توضیحات</label>
+                                    {% render_field form.description class="form-control" rows="3" %}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.description.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.response_file.id_for_label }}">فایل پاسخ</label>
+                                    {% render_field form.response_file class="form-control" %}
+                                    {% if form.response_file.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.response_file.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">ثبت پاسخ</button>
+                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2 on all select elements
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+});
+</script>
+{% endblock %} 

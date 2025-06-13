@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}
+لیست ابینه های پروژه
+{% endblock title %}
+
+{% block main %}
+<div class="container bg-white p-0 rounded rounded-2">
+  <div class="card shadow rounded-2">
+    <div class="card-header d-flex justify-content-between">
+      <h3>لیست ابینه های پروژه {{project.name}}</h3>
+      <a class="btn btn-primary" href="{% url 'create-project-structure' pk=project.pk %}">ایجاد ابینه</a>
+    </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>نام پروژه</th>
+              <th>نام ابینه</th>
+              <th>وضعیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for structure in project_structure %}
+            <tr>
+              <td>
+                <a  href="{% url 'project-detail' structure.project.id %}">{{ structure.project.name }}</a>
+              </td>
+              <td>{{ structure.structure_type.name }}</td>
+              <td>{{ structure.get_status_display }}</td>
+
+              <td>
+                <a class="btn btn-outline-secondary " href="{% url 'project-structure-detail' pk=structure.pk %}">جزیات</a>
+                <a class="btn btn-outline-warning " href="{% url 'project-structure-update' pk=structure.pk %}">بروزرسانی</a>
+                <a class="btn btn-outline-danger " href="{% url 'project-structure-delete' pk=structure.pk %}">حذف</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  {% endblock %}

@@ -1,0 +1,107 @@
+[
+    {
+        "model": "experiment.experimenttype",
+        "pk": 1,
+        "fields": {
+            "name": "آزمایش بتن"
+        }
+    },
+    {
+        "model": "experiment.experimenttype",
+        "pk": 2,
+        "fields": {
+            "name": "آزمایش آسفالت"
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 1,
+        "fields": {
+            "name": "مقاومت فشاری",
+            "experiment_type": 1
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 2,
+        "fields": {
+            "name": "مقاومت کششی",
+            "experiment_type": 1
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 3,
+        "fields": {
+            "name": "مقاومت خمشی",
+            "experiment_type": 1
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 4,
+        "fields": {
+            "name": "مقاومت کششی غیرمستقیم",
+            "experiment_type": 1
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 5,
+        "fields": {
+            "name": "مقاومت فشاری",
+            "experiment_type": 2
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 6,
+        "fields": {
+            "name": "مقاومت کششی",
+            "experiment_type": 2
+        }
+    },
+    {
+        "model": "experiment.experimentsubtype",
+        "pk": 7,
+        "fields": {
+            "name": "مقاومت خمشی",
+            "experiment_type": 2
+        }
+    },
+    {
+        "model": "experiment.concreteplace",
+        "pk": 1,
+        "fields": {
+            "name": "فونداسیون"
+        }
+    },
+    {
+        "model": "experiment.concreteplace",
+        "pk": 2,
+        "fields": {
+            "name": "ستون"
+        }
+    },
+    {
+        "model": "experiment.concreteplace",
+        "pk": 3,
+        "fields": {
+            "name": "تیر"
+        }
+    },
+    {
+        "model": "experiment.concreteplace",
+        "pk": 4,
+        "fields": {
+            "name": "سقف"
+        }
+    },
+    {
+        "model": "experiment.concreteplace",
+        "pk": 5,
+        "fields": {
+            "name": "دیوار"
+        }
+    }
+] 

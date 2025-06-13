@@ -1,0 +1,47 @@
+html, body {
+  min-height: 700px!important;
+  min-width: 1500px!important;
+  margin: 0;
+  padding: 0;
+  overflow: scroll; /* اجازه اسکرول */
+}
+
+
+#container {
+     position: relative;
+      min-width: 1150px;
+     min-height: 480px;
+     background-color: rgb(255, 255, 255);
+     border-radius: 10px;
+     
+
+ }
+
+ #mainCanvas {
+     background-color: rgb(251, 251, 251);
+     margin: 0px;
+ }
+
+ #y-axis-layer {
+     position: absolute;
+     left: 0;
+     top: 0;
+     width: 50px;
+
+     z-index: 10;
+     pointer-events: none;
+ }
+
+ #x-axis-layer {
+     position: absolute;
+     left: 45px;
+     /* هم‌راستا با نمودار */
+     bottom: 0;
+     /* باعث میشه بچسبه به پایین container */
+     height: 30px;
+     width: calc(100% - 45px);
+     /* عرض به جز y-axis */
+     background: white;
+     z-index: 10;
+     pointer-events: none;
+ }

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}لیست آزمایش های درخواست شده{% endblock %}
+
+{% block main %}
+  <div class="container">
+    <h1>لیست آزمایش های درخواست شده</h1>
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>نام پروژه</th>
+          <th>تاریخ درخواست</th>
+          <th>عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in experiment_requests %}
+          <tr>
+            <td>{{ request.project.name }}</td>
+            <td>{{ request.request_date }}</td>
+            <td><a href="{% url 'project:experiment_request_detail' request.id %}">جزئیات</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

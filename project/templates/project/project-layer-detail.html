@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+جزئیات لایه پروژه
+{% endblock title %}
+
+
+
+{% block main %}
+<div class="container mt-4 bg-white p-3 rounded rounded-2">
+    <h3 class="mb-4">جزئیات لایه پروژه</h3>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <p class="card-text">
+                <strong>نام پروژه:</strong> {{ project_layer.project.name }}
+            </p>
+            <p class="card-text">
+                <strong>نوع لایه:</strong> {{ project_layer.layer_type.name }}
+            </p>
+            <p class="card-text">
+                <strong>ضخامت (سانتی‌متر):</strong> {{ project_layer.thickness_cm }}
+            </p>
+            <p class="card-text">
+                <strong>ترتیب از بالا:</strong> {{ project_layer.order_from_top }}
+            </p>
+            <p class="card-text">
+                <strong>وضعیت:</strong> {{ project_layer.get_status_display }}
+            </p>
+            <a href="{% url 'project-layer-list' pk=project_layer.project.id %}" class="btn btn-primary mt-3">لایه های پروژه</a>
+            <a href="{% url 'project-detail' pk=project_layer.project.id %}" class="btn btn-secondary mt-3">بازگشت به
+                پروژه</a>
+
+        </div>
+    </div>
+</div>
+{% endblock main %}

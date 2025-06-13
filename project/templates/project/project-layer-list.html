@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}
+لیست لایه های پروژه
+{% endblock title %}
+
+{% block main %}
+<div class="container bg-white p-0 rounded rounded-2">
+  <div class="card shadow rounded-2">
+    <div class="card-header d-flex justify-content-between">
+      <h3>لیست لایه های پروژه {{project.name}}</h3>
+      <a class="btn btn-primary" href="{% url 'create-project-layer' pk=project.pk %}">ایجاد لایه</a>
+    </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>نام پروژه</th>
+              <th>نام لایه</th>
+              <th>وضعیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for layer in project_layers %}
+            <tr>
+              <td>
+                <a  href="{% url 'project-detail' layer.project.id %}">{{ layer.project.name }}</a>
+              </td>
+              <td>{{ layer.layer_type.name }}</td>
+              <td>{{ layer.get_status_display }}</td>
+
+              <td>
+                <a class="btn btn-outline-secondary " href="{% url 'project-layer-detail' pk=layer.pk %}">جزیات</a>
+                <a class="btn btn-outline-warning " href="{% url 'project-layer-update' pk=layer.pk %}">بروزرسانی</a>
+                <a class="btn btn-outline-danger " href="{% url 'project-layer-delete' pk=layer.pk %}">حذف</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  {% endblock %}

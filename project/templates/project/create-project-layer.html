@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+ایجاد لایه پروژه
+{% if project %}
+- {{ object.name }}
+{% endif %}
+{% endblock title %}
+
+{% block main %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-9">
+            <div class="card shadow-sm rounded-4 border-0">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4 text-center">ایجاد لایه پروژه</h4>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="container-fluid">
+                            {% for field in form %}
+                            {% if forloop.counter0|divisibleby:2 %}
+                            <div class="row">
+                                {% endif %}
+
+                                <div
+                                    class="{% if forloop.last and not forloop.counter|divisibleby:2 %}col-12{% else %}col-md-6{% endif %} mb-3">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                    <div class="text-danger small">
+                                        {{ field.errors|striptags }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                {% if forloop.counter|divisibleby:2 or forloop.last %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-6"><button type="submit" class="btn btn-primary w-100">ایجاد لایه</button></div>
+                            <div class="col-6"><a class="btn btn-outline-primary w-100"  href="{% url 'create-project-structure' pk=project.pk  %}">مرحله بعد</a></div>
+                        </div>
+                    </form>
+
+
+                    <div class="col-12 mt-4" style="overflow: scroll;">
+
+                        {% if layers %}
+                        <div class="mt-5">
+                            <h5 class="text-center">لایه‌های ثبت‌شده برای پروژه "{{ project.name }}"</h5>
+                            <table class="table table-bordered table-striped table-hover text-center mt-3">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>نام لایه</th>
+                                        <th>ترتیب از بالا</th>
+                                        <th>ضخامت(سانتی متر)</th>
+                                        <th>وضعیت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for layer in layers %}
+                                    <tr>
+                                        <td>{{ layer.layer_type }}</td>
+                                    
+                                        <td>{{layer.order_from_top}}</td>
+
+                                        <td>{{layer.thickness_cm}}</td>
+
+                                        <td>{{layer.get_status_display}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                            <p class="text-muted text-center mt-4">هنوز لایه‌ای برای این پروژه ثبت نشده است.</p>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // افزودن کلاس bootstrap به فیلدها
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputs = document.querySelectorAll("form input, form select, form textarea");
+        inputs.forEach(input => input.classList.add("form-control"));
+    });
+</script>
+{% endblock main %}

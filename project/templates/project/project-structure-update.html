@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}
+ابینه
+{% endblock title %}
+
+{% block main %}
+  <div class="container bg-white rounded rounded-2 p-3">
+    
+    <form class="form" method="post">
+        {% csrf_token %}
+        {{form.as_p}}
+        
+        <button class="btn btn-primary mt-3" type="submit">ذخیره</button>
+    </form>
+  </div>
+{% endblock %}

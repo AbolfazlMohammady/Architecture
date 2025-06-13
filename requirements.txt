@@ -1,0 +1,6 @@
+django==5.0.6
+django-jalali==7.4.0
+django-select2==8.4.0
+python-dotenv
+pandas
+openpyxl

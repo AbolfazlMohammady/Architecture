@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    خروج از سامانه کنترل کیفیت
+{% endblock title %}
+
+{% block main %}
+    <div class="container">
+        <h1>شما با موفقیت خارج شدید</h1>
+        <a href="{% url 'login' %}">ورود دوباره</a>
+        <p><a href="{% url 'home' %}">بازگشت به صفحه اصلی</a></p>
+    </div>
+{% endblock main %}

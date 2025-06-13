@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block main %}
+<div class="container mt-4 text-end">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ project.name }}</h4>
+        </div>
+        <div class="card-body">
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>نام پروژه:</strong> {{ project.name }}</p>
+                    <p><strong>تاریخ ایجاد:</strong> {{ project.created_at|date:"Y/m/d - H:i" }}</p>
+                    <p><strong>تاریخ به‌روزرسانی:</strong> {{ project.updated_at|date:"Y/m/d - H:i" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>بودجه:</strong> {{ project.budget|default:"تنظیم نشده" }}</p>
+                    <p><strong>تاریخ شروع:</strong> {% if project.start_date %}{{ project.start_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</p>
+                    <p><strong>تاریخ پایان:</strong> {% if project.end_date %}{{ project.end_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="row mb-3">
+                <div class="col-md-4"><strong>مدیر پروژه:</strong> {{ project.project_manager.username }}</div>
+                <div class="col-md-4"><strong>مدیر فنی:</strong> {{ project.technical_manager.username }}</div>
+                <div class="col-md-4"><strong>مدیر کنترل کیفیت:</strong> {{ project.quality_control_manager.username }}</div>
+            </div>
+
+            <div class="card my-3">
+                <div class="card-header bg-light">
+                    <strong>کارشناسان پروژه</strong>
+                </div>
+                <div class="card-body p-2">
+                    {% if project.project_experts.all %}
+                        <ul class="list-group list-group-flush">
+                            {% for member in project.project_experts.all %}
+                                <li class="list-group-item">{{ member.username }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">کارشناسی ثبت نشده است.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <table class="table table-bordered text-center">
+                <tbody>
+                    <tr>
+                        <th>فاصله (کیلومتر)</th>
+                        <td>{{ project.distance }}</td>
+                        <th>عرض (متر)</th>
+                        <td>{{ project.width }}</td>
+                    </tr>
+                    <tr>
+                        <th>کیلومتر شروع</th>
+                        <td>{{ project.start_kilometer }}</td>
+                        <th>کیلومتر پایان</th>
+                        <td>{{ project.end_kilometer }}</td>
+                    </tr>
+                    <tr>
+                        <th>فایل پروفیل</th>
+                        <td colspan="3">
+                            {% if project.profile_file %}
+                                <a href="{{ project.profile_file.url }}" target="_blank" class="btn d-block btn-outline-primary">دانلود فایل</a>
+                            {% else %}
+                                <span class="text-muted">فایل موجود نیست</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-4">
+                <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-outline-info me-2">داشبورد</a>
+                <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">لایه‌های پروژه</a>
+                <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">ابینه های پروژه</a>
+                {% if project.project_manager == request.user %}
+                
+                    <a href="{% url 'project-update' pk=project.pk %}" class="btn btn-outline-secondary me-2">بروزرسانی</a>
+                
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main %}

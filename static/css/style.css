@@ -1,0 +1,50 @@
+
+
+main {
+    background: url(../image/bg1.jpg); 
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    min-height: 90vh;
+}
+
+.galss{
+    background: rgba(255, 255, 255, 0.1); /* semi-transparent */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* for Safari */
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.dropdown-menu{
+    padding: 5px;
+}
+.dropdown-item{
+    border-left: 3px solid transparent; /* حاشیه پایین عادی */
+}
+
+.dropdown-item:hover {
+    border-left: 3px solid #0d6efd; /* حاشیه پایین هاور */
+}
+
+.nav-item {
+    --bs-nav-link-color: black; /* رنگ متن عادی */
+}
+
+.nav-link{
+    border-bottom: 3px solid transparent; /* حاشیه پایین عادی */
+}
+
+.nav-link.active {
+    --bs-nav-pills-link-active-bg:transparent; /* رنگ پس‌زمینه فعال */
+    --bs-nav-pills-link-active-color: black; /* رنگ متن فعال */
+    --bs-nav-pills-link-active-border-color: transparent; /* رنگ حاشیه فعال */
+}
+
+.nav-link.active:hover {
+    --bs-nav-pills-link-active-color: #0d6efd;
+}

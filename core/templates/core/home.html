@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+سامانه کنترل کیفیت
+{% endblock %}
+
+{% block btnback %}
+
+{% endblock %}
+
+{% block main %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mb-5 bg-white p-3 rounded rounded-2">
+  <div class="d-flex justify-content-center">
+    <h1>سامانه کنترل کیفیت</h1>
+  </div>
+
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      {% for i in "123" %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 m-2 p-0 text-center bg-white shadow rounded-2">
+        <canvas id="chart{{ forloop.counter }}" width="100" height="100"></canvas>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card shadow rounded-2">
+    <div class="card-header">
+      <div class="d-flex justify-content-between">
+        پروژه های فعال
+        <a href="{% url 'project-list'  %}" class="btn btn-primary">لیست پروژه ها</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">شناسه پروژه</th>
+            <th scope="col">نام پروژه</th>
+            <th scope="col">مدیر پروژه</th>
+            <th scope="col">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr>
+            <td>{{ project.pk }}</td>
+            <td>{{ project.name }}</td>
+            <td>{{ project.project_manager }}</td>
+            <td>
+              <a href="{% url 'project-detail' pk=project.pk %}">جزیات</a>
+            </td>
+          </tr>
+          {% empty %}
+          {% for i in "12345" %}
+          <tr>
+            <td colspan="4">تعریف نشده</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    {% for i in "123" %}
+    new Chart(document.getElementById('chart{{ forloop.counter }}'), {
+      type: 'pie',
+      data: {
+        labels: ['A', 'B', 'C'],
+        datasets: [{
+          data: [30, 40, 30],
+          backgroundColor: ['#f44336', '#2196f3', '#4caf50'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+    {% endfor %}
+  </script>
+  {% endblock %}

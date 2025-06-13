@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+داشبورد
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+<!-- بالای فایل HTML، مثلاً بعد از title -->
+{{ project_data|json_script:"project-data" }}
+
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid bg-light p-2 rounded rounded-2" >
+  <h3>{{ project.name }}</h3>
+  <div class="row row-cols-2 bg-white">
+    <!-- canvas contorolers -->
+    <div class="col-auto ">
+      <label for="xinput" class="col-form-label">کیلومتر</label>
+      <input id="xinput" type="text" class="form-control">
+      <input type="button" value="">
+      <input type="button" value="">
+    </div>
+    <div class="col-auto">
+      <label for="yinput" class="col-form-label" >ارتفاع</label>
+      <input id="yinput" type="text" class="form-control">
+    </div>
+
+    <!-- end canvas contorolers -->
+  </div>
+  <div class="row p-2">
+    <div class="col-2 bg-white rounded rounded-2 p-3">
+      <button class="btn btn-outline-primary w-100 m-1" id="notShowRaodLine">خط جاده</button>
+      <button class="btn btn-outline-primary w-100 m-1" id="notShowLandLine">خط زمین</button>
+      <button class="btn btn-outline-primary w-100 m-1" id="notShowLayerLine">لایه ها</button>
+      <button class="btn btn-outline-primary w-100 m-1" id="notShowBridge">پل ها</button>
+    </div>
+    <div class="col-10 p-2" dir="ltr">
+      <div id="container">
+        <div id="y-axis-layer">
+          <!-- محور Y -->
+          <canvas id="yAxisCanvas"
+            style="position: absolute; left: 0; top: 0; background: white; pointer-events: none;"></canvas>
+        </div>
+        <!-- نمودار اصلی -->
+        <canvas id="mainCanvas"
+          style="position: absolute; left: 50px; top: 0; background: rgb(255, 255, 255);"></canvas>
+
+        <div id="x-axis-layer">
+          <!-- محور X -->
+          <canvas id="xAxisCanvas"
+            style="position: absolute; left: 1px; bottom: 0; background: white; pointer-events: none;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="{% static 'js/main.js' %}"></script>
+<script type="module">
+  import { RoadCanvasApp } from "{% static 'js/main.js' %}";
+  window.onload = () => {
+    const project = JSON.parse(document.getElementById('project-data').textContent);
+    document.getElementById("xinput").value = project.start_kilometer
+    document.getElementById("yinput").value = 0
+    
+    const app = new RoadCanvasApp({
+      canvasId: 'mainCanvas',
+      width: 1100,
+      height: 450,
+      margin: 5,
+      project: {
+        distance: parseFloat(project.distance),
+        width: parseFloat(project.width),
+        start_kilometer: parseFloat(project.start_kilometer),
+        end_kilometer: parseFloat(project.end_kilometer),
+        profile_points: project.points,
+        layers:project.layers,
+        structures:project.structures
+      }
+    })
+
+    // اتصال دکمه‌ها
+    document.getElementById('notShowRaodLine').addEventListener('click', (e) => {
+      app.toggleRoadLine()
+      // e.target.innerText = app.getShowRoadLine() ? "Hide Road Line" : "Show Road Line";
+    })
+
+    document.getElementById('notShowLandLine').addEventListener('click', (e) => {
+      app.toggleLandLine()
+      // e.target.innerText = app.showLandLine ? "Hide Land Line" : "Show Land Line";
+    })
+
+    document.getElementById('notShowLayerLine').addEventListener('click', (e) => {
+      app.toggleLayerLine()
+      // e.target.innerText = app.showlayerline ? "Hide Layer Line" : "Show Layer Line";
+    })
+
+    document.getElementById('notShowBridge').addEventListener('click', (e) => {
+      app.toggleBridge()
+      // e.target.innerText = app.showBridge ? "Hide Bridge" : "Show Bridge";
+    })
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}
+لیست پروژه ها
+{% endblock %}
+
+{% block main %}
+<div class="container">
+  <div class="card shadow rounded-2">
+    <div class="card-header">
+      <div class="d-flex justify-content-between">
+        پروژه های فعال
+        <a href="{% url 'project-list'  %}" class="btn btn-primary">لیست پروژه ها</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <table class="table text-center">
+        <thead>
+          <tr>
+            <th scope="col">شناسه پروژه</th>
+            <th scope="col">نام پروژه</th>
+            <th scope="col">مدیر پروژه</th>
+            <th scope="col">پیشرفت</th>
+            <th scope="col">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr>
+            <td>{{ project.pk }}</td>
+            <td>{{ project.name }}</td>
+            <td>{{ project.project_manager }}</td>
+            <td>{{ project_progress|get_item:project.id }}%</td>
+            <td>
+              <a class="btn btn-outline-primary" href="{% url 'project-detail' pk=project.pk %}">جزیات</a>
+              <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">لایه‌های پروژه</a>
+              <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">ابینه های پروژه</a>
+              <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-outline-info me-2">داشبورد</a>
+            </td>
+          </tr>
+          {% empty %}
+            {% for i in "1234567" %}
+            <tr>
+              <td colspan="4">تعریف نشده</td>
+            </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

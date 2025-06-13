@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}لیست درخواست‌های آزمایش{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">لیست درخواست‌های آزمایش</h3>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="project">پروژه</label>
+                                    <select name="project" id="project" class="form-select select2">
+                                        <option value="">همه</option>
+                                        {% for project in projects %}
+                                            <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"i" %}selected{% endif %}>
+                                                {{ project.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="status">وضعیت</label>
+                                    <select name="status" id="status" class="form-select select2">
+                                        <option value="">همه</option>
+                                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>در انتظار پاسخ</option>
+                                        <option value="responded" {% if request.GET.status == 'responded' %}selected{% endif %}>پاسخ داده شده</option>
+                                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>تایید شده</option>
+                                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>رد شده</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="search">جستجو</label>
+                                    <input type="text" name="search" id="search" class="form-control" value="{{ request.GET.search }}" placeholder="جستجو در توضیحات...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">فیلتر</button>
+                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">پاک کردن فیلترها</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>شماره</th>
+                                    <th>پروژه</th>
+                                    <th>نوع آزمایش</th>
+                                    <th>تاریخ درخواست</th>
+                                    <th>وضعیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in experiment_requests %}
+                                <tr>
+                                    <td>{{ request.id }}</td>
+                                    <td>{{ request.project.name }}</td>
+                                    <td>{{ request.experiment_type.name }} - {{ request.experiment_subtype.name }}</td>
+                                    <td>{{ request.request_date }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning">در انتظار پاسخ</span>
+                                        {% elif request.status == 'responded' %}
+                                            <span class="badge bg-info">پاسخ داده شده</span>
+                                        {% elif request.status == 'approved' %}
+                                            <span class="badge bg-success">تایید شده</span>
+                                        {% elif request.status == 'rejected' %}
+                                            <span class="badge bg-danger">رد شده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'experiment:experiment_request_detail' request.id %}" class="btn btn-info btn-sm">جزئیات</a>
+                                        {% if request.status == 'pending' %}
+                                            <a href="{% url 'experiment:experiment_response_create' request.id %}" class="btn btn-primary btn-sm">پاسخ</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">هیچ درخواست آزمایشی یافت نشد.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2 on all select elements
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+});
+</script>
+{% endblock %} 

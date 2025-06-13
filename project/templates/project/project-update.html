@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}بروزرسانی پروژه{% endblock title %}
+
+{% block main %}
+<div class="container bg-white p-3 rounded rounded-2">
+    <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">ذخیره</button>
+</form>
+
+</div>
+
+{% endblock main %}

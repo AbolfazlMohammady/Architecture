@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+پروفایل کاربر
+{% endblock title %}
+
+{% block main %}
+<div class="container ">
+    <div class=" row d-flex d-xl-flex justify-content-center justify-content-xl-center">
+        <div class=" col-sm-12 col-lg-10 col-xl-9 col-xxl-7 bg-white shadow-lg" style="border-radius: 5px;">
+            <div class="p-5 ">
+                <div class="text-center">
+                    <h4 class="text-dark mb-4">پروفایل کاربر</h4>
+                </div>
+                <form method="post" class="user ">
+                    {% csrf_token %}
+
+
+                    <div class="row row-cols-md-2">
+                        <div class="mb-3">
+                            {{ form.first_name.label_tag }}
+                            {{ form.first_name }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.last_name.label_tag }}
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.national_id.label_tag }}
+                        {{ form.national_id }}
+                    </div>
+                    <div class="mb-3 ">
+                        <label class="form-label fw-bold">{{ form.groups.label }}</label>
+                        <div class="border rounded p-2 overflow-auto" style="max-height: 150px;">
+                            <div class="list-group">
+                                {% for group in form.groups %}
+                                <label class="list-group-item d-flex align-items-center">
+                                    {{ group.tag }}
+                                    <span class="ms-2">{{ group.choice_label }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- <button type="submit" class="btn btn-primary">ذخیره تغییرات</button> -->
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <ul>
+                            {% for field in form %}
+                            {% for error in field.errors %}
+
+                            <li>{{field.label_tag}} - {{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main %}

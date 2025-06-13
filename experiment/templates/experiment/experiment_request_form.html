@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %} {# این خط رو قبلا درست کردین، عالیه! #}
+
+{% block head %}
+{{ form.media }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}درخواست آزمایش{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">فرم درخواست آزمایش</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.project.id_for_label }}">پروژه</label>
+                                    {% render_field form.project class="form-select select2" %}
+                                    {% if form.project.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.project.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.layer.id_for_label }}">لایه</label>
+                                    {% render_field form.layer class="form-select select2" %}
+                                    {% if form.layer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.layer.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.experiment_type.id_for_label }}">نوع آزمایش</label>
+                                    {% render_field form.experiment_type class="form-select select2" %}
+                                    {% if form.experiment_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.experiment_type.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.experiment_subtype.id_for_label }}">زیرنوع آزمایش</label>
+                                    {% render_field form.experiment_subtype class="form-select select2" %}
+                                    {% if form.experiment_subtype.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.experiment_subtype.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.concrete_place.id_for_label }}">محل بتن‌ریزی</label>
+                                    {% render_field form.concrete_place class="form-select select2" %}
+                                    {% if form.concrete_place.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.concrete_place.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.request_date.id_for_label }}">تاریخ درخواست</label>
+                                    {% render_field form.request_date class="form-control" %}
+                                    {% if form.request_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.request_date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.start_kilometer.id_for_label }}">کیلومتر شروع</label>
+                                    {% render_field form.start_kilometer class="form-control" %}
+                                    {% if form.start_kilometer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.start_kilometer.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.end_kilometer.id_for_label }}">کیلومتر پایان</label>
+                                    {% render_field form.end_kilometer class="form-control" %}
+                                    {% if form.end_kilometer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.end_kilometer.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.description.id_for_label }}">توضیحات</label>
+                                    {% render_field form.description class="form-control" rows="3" %}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.description.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.target_density.id_for_label }}">دانسیته هدف</label>
+                                    {% render_field form.target_density class="form-control" %}
+                                    {% if form.target_density.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.target_density.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.target_strength.id_for_label }}">مقاومت هدف</label>
+                                    {% render_field form.target_strength class="form-control" %}
+                                    {% if form.target_strength.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.target_strength.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.request_file.id_for_label }}">فایل درخواست</label>
+                                    {% render_field form.request_file class="form-control" %}
+                                    {% if form.request_file.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.request_file.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">ثبت درخواست</button>
+                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2 on all select elements
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+
+    // Handle project change
+    $('#id_project').on('change', function() {
+        var projectId = $(this).val();
+        var layerSelect = $('#id_layer');
+        
+        if (projectId) {
+            $.ajax({
+                url: "{% url 'experiment:get_layers' %}",
+                data: {
+                    'project': projectId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    layerSelect.empty();
+                    layerSelect.append($('<option></option>').attr('value', '').text('---------'));
+                    $.each(data, function(index, item) {
+                        layerSelect.append(
+                            $('<option></option>')
+                                .attr('value', item.id)
+                                .text(item.name)
+                        );
+                    });
+                    layerSelect.trigger('change');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching layers:', error);
+                }
+            });
+        } else {
+            layerSelect.empty();
+            layerSelect.append($('<option></option>').attr('value', '').text('---------'));
+            layerSelect.trigger('change');
+        }
+    });
+
+    // Handle experiment type change
+    $('#id_experiment_type').on('change', function() {
+        var experimentTypeId = $(this).val();
+        var subtypeSelect = $('#id_experiment_subtype');
+        
+        console.log('Experiment type changed to:', experimentTypeId);
+        
+        if (experimentTypeId) {
+            $.ajax({
+                url: "{% url 'experiment:get_subtypes' %}",
+                data: {
+                    'experiment_type': experimentTypeId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    console.log('Received subtypes:', data);
+                    subtypeSelect.empty();
+                    subtypeSelect.append($('<option></option>').attr('value', '').text('---------'));
+                    $.each(data, function(index, item) {
+                        subtypeSelect.append(
+                            $('<option></option>')
+                                .attr('value', item.id)
+                                .text(item.name)
+                        );
+                    });
+                    subtypeSelect.trigger('change');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching subtypes:', error);
+                    console.error('Response:', xhr.responseText);
+                }
+            });
+        } else {
+            subtypeSelect.empty();
+            subtypeSelect.append($('<option></option>').attr('value', '').text('---------'));
+            subtypeSelect.trigger('change');
+        }
+    });
+
+    // Trigger change events if values are pre-selected
+    if ($('#id_project').val()) {
+        $('#id_project').trigger('change');
+    }
+    if ($('#id_experiment_type').val()) {
+        $('#id_experiment_type').trigger('change');
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
