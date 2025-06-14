@@ -5,88 +5,273 @@
 سامانه کنترل کیفیت
 {% endblock %}
 
-{% block btnback %}
-
+{% block head %}
+<style>
+    .charts-container {
+        overflow-x: auto;
+        padding: 20px 0;
+        margin: 20px 0;
+        -webkit-overflow-scrolling: touch;
+    }
+    .charts-wrapper {
+        display: flex;
+        gap: 20px;
+        padding: 10px;
+        min-width: min-content;
+    }
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-width: 300px;
+        transition: transform 0.3s ease;
+    }
+    .chart-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-title {
+        font-size: 1.2rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: 500;
+    }
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    .scroll-indicator {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 10;
+        display: none;
+    }
+    .charts-container:hover .scroll-indicator {
+        display: block;
+    }
+    .welcome-section {
+        text-align: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    .welcome-title {
+        font-size: 2.5rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+    .welcome-subtitle {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+    @media (max-width: 768px) {
+        .chart-card {
+            min-width: 250px;
+        }
+        .welcome-title {
+            font-size: 2rem;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block main %}
+<div class="container-fluid px-4">
+    <div class="welcome-section">
+        <h1 class="welcome-title">سامانه کنترل کیفیت</h1>
+        <p class="welcome-subtitle">مدیریت هوشمند پروژه‌های عمرانی</p>
+    </div>
+
+    <div class="charts-container">
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div class="charts-wrapper">
+            <!-- نمودار وضعیت کلی پروژه‌ها -->
+            <div class="chart-card">
+                <h3 class="chart-title">وضعیت کلی پروژه‌ها</h3>
+                <div class="chart-container">
+                    <canvas id="projectsStatusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- نمودار پیشرفت پروژه‌ها -->
+            <div class="chart-card">
+                <h3 class="chart-title">پیشرفت پروژه‌ها</h3>
+                <div class="chart-container">
+                    <canvas id="projectsProgressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- نمودار کیفیت آزمایشات -->
+            <div class="chart-card">
+                <h3 class="chart-title">کیفیت آزمایشات</h3>
+                <div class="chart-container">
+                    <canvas id="testsQualityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- نمودار وضعیت مالی -->
+            <div class="chart-card">
+                <h3 class="chart-title">وضعیت مالی</h3>
+                <div class="chart-container">
+                    <canvas id="financialStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<div class="container mb-5 bg-white p-3 rounded rounded-2">
-  <div class="d-flex justify-content-center">
-    <h1>سامانه کنترل کیفیت</h1>
-  </div>
-
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      {% for i in "123" %}
-      <div class="col-12 col-sm-6 col-md-4 col-lg-3 m-2 p-0 text-center bg-white shadow rounded-2">
-        <canvas id="chart{{ forloop.counter }}" width="100" height="100"></canvas>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  <div class="card shadow rounded-2">
-    <div class="card-header">
-      <div class="d-flex justify-content-between">
-        پروژه های فعال
-        <a href="{% url 'project-list'  %}" class="btn btn-primary">لیست پروژه ها</a>
-      </div>
-    </div>
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col">شناسه پروژه</th>
-            <th scope="col">نام پروژه</th>
-            <th scope="col">مدیر پروژه</th>
-            <th scope="col">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for project in projects %}
-          <tr>
-            <td>{{ project.pk }}</td>
-            <td>{{ project.name }}</td>
-            <td>{{ project.project_manager }}</td>
-            <td>
-              <a href="{% url 'project-detail' pk=project.pk %}">جزیات</a>
-            </td>
-          </tr>
-          {% empty %}
-          {% for i in "12345" %}
-          <tr>
-            <td colspan="4">تعریف نشده</td>
-          </tr>
-          {% endfor %}
-          {% endfor %}
-        </tbody>
-      </table>
-
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    {% for i in "123" %}
-    new Chart(document.getElementById('chart{{ forloop.counter }}'), {
-      type: 'pie',
-      data: {
-        labels: ['A', 'B', 'C'],
-        datasets: [{
-          data: [30, 40, 30],
-          backgroundColor: ['#f44336', '#2196f3', '#4caf50'],
-          borderColor: '#fff',
-          borderWidth: 2
-        }]
-      },
-      options: {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تنظیمات مشترک برای همه نمودارها
+    const commonOptions = {
         responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+        },
         plugins: {
-          legend: { position: 'bottom' }
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: {
+                        family: 'IRANSans',
+                        size: 12
+                    }
+                }
+            }
         }
-      }
+    };
+
+    // نمودار وضعیت کلی پروژه‌ها
+    new Chart(document.getElementById('projectsStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['در حال اجرا', 'تکمیل شده', 'متوقف شده'],
+            datasets: [{
+                data: [65, 25, 10],
+                backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...commonOptions,
+            cutout: '70%'
+        }
     });
-    {% endfor %}
-  </script>
-  {% endblock %}
+
+    // نمودار پیشرفت پروژه‌ها
+    new Chart(document.getElementById('projectsProgressChart'), {
+        type: 'bar',
+        data: {
+            labels: ['پروژه ۱', 'پروژه ۲', 'پروژه ۳', 'پروژه ۴'],
+            datasets: [{
+                label: 'درصد پیشرفت',
+                data: [75, 45, 90, 60],
+                backgroundColor: '#2196F3',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: value => value + '%'
+                    }
+                }
+            }
+        }
+    });
+
+    // نمودار کیفیت آزمایشات
+    new Chart(document.getElementById('testsQualityChart'), {
+        type: 'line',
+        data: {
+            labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+            datasets: [{
+                label: 'درصد قبولی',
+                data: [85, 88, 92, 87, 90, 95],
+                borderColor: '#4CAF50',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(76, 175, 80, 0.1)'
+            }]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: value => value + '%'
+                    }
+                }
+            }
+        }
+    });
+
+    // نمودار وضعیت مالی
+    new Chart(document.getElementById('financialStatusChart'), {
+        type: 'pie',
+        data: {
+            labels: ['بودجه مصرف شده', 'بودجه باقیمانده', 'هزینه‌های پیش‌بینی نشده'],
+            datasets: [{
+                data: [60, 35, 5],
+                backgroundColor: ['#FF5722', '#2196F3', '#FFC107'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...commonOptions,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.raw + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // اسکرول افقی با دکمه
+    const container = document.querySelector('.charts-container');
+    const wrapper = document.querySelector('.charts-wrapper');
+    const scrollButton = document.querySelector('.scroll-indicator');
+
+    scrollButton.addEventListener('click', () => {
+        container.scrollBy({
+            left: -300,
+            behavior: 'smooth'
+        });
+    });
+
+    // نمایش/مخفی کردن دکمه اسکرول بر اساس موقعیت
+    container.addEventListener('scroll', () => {
+        if (container.scrollLeft > 0) {
+            scrollButton.style.display = 'block';
+        } else {
+            scrollButton.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}
