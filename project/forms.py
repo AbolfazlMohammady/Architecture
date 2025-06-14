@@ -86,16 +86,25 @@ class ProjectLayerForm(forms.ModelForm):
         self.fields["project"].widget.attrs["class"] = "form-select"
         self.fields["project"].disabled = True
         
-        self.fields["status"].widget.attrs["class"] = "form-select "
+        self.fields["status"].widget.attrs["class"] = "form-select"
+        self.fields["state"].widget.attrs["class"] = "form-select"
         
         self.fields["layer_type"].widget.attrs["class"] = "form-select"
-        print("current status value:", self.instance.status)
-
+        
+        # اگر لایه جدید است، شماره ترتیب را به صورت خودکار تنظیم کن
+        if not self.instance.pk:
+            project = self.initial.get('project')
+            if project:
+                last_order = project_models.ProjectLayer.objects.filter(project=project).order_by('-order_from_top').first()
+                self.initial['order_from_top'] = (last_order.order_from_top + 1) if last_order else 1
     
     class Meta:
         model = project_models.ProjectLayer
-        fields = ['project', 'layer_type', 'thickness_cm', 'order_from_top', 'status']
-    
+        fields = ['project', 'layer_type', 'thickness_cm', 'order_from_top', 'state', 'status']
+        widgets = {
+            'state': forms.Select(choices=project_models.ProjectLayer.LAYER_STATE),
+        }
+
 class ProjectStructureForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProjectStructureForm, self).__init__(*args, **kwargs)

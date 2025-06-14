@@ -8,6 +8,52 @@
 {% endif %}
 {% endblock title %}
 
+{% block head %}
+<style>
+    .layer-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .layer-title {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #3498db;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+    .help-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .layer-table {
+        margin-top: 30px;
+    }
+    .layer-table th {
+        background-color: #f8f9fa;
+        font-weight: 500;
+    }
+    .state-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+    }
+    .state-variable {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    .state-fixed {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+</style>
+{% endblock %}
+
 {% block main %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -19,81 +65,90 @@
                     <form method="post" novalidate>
                         {% csrf_token %}
 
-                        <div class="container-fluid">
-                            {% for field in form %}
-                            {% if forloop.counter0|divisibleby:2 %}
-                            <div class="row">
-                                {% endif %}
-
-                                <div
-                                    class="{% if forloop.last and not forloop.counter|divisibleby:2 %}col-12{% else %}col-md-6{% endif %} mb-3">
-                                    <label class="form-label">{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.errors %}
-                                    <div class="text-danger small">
-                                        {{ field.errors|striptags }}
-                                    </div>
+                        <div class="layer-card">
+                            <h5 class="layer-title">
+                                <i class="fas fa-layer-group me-2"></i>
+                                اطلاعات لایه
+                            </h5>
+                            <div class="row g-3">
+                                {% for field in form %}
+                                    {% if field.name != 'project' %}
+                                        <div class="col-md-6">
+                                            <label class="form-label">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% if field.help_text %}
+                                                <div class="help-text">{{ field.help_text }}</div>
+                                            {% endif %}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">
+                                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                                    {{ field.errors|striptags }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
-                                </div>
-
-                                {% if forloop.counter|divisibleby:2 or forloop.last %}
+                                {% endfor %}
                             </div>
-                            {% endif %}
-                            {% endfor %}
-
                         </div>
 
                         <div class="row mt-4">
-                            <div class="col-6"><button type="submit" class="btn btn-primary w-100">ایجاد لایه</button></div>
-                            <div class="col-6"><a class="btn btn-outline-primary w-100"  href="{% url 'create-project-structure' pk=project.pk  %}">مرحله بعد</a></div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-2"></i>
+                                    ایجاد لایه
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <a class="btn btn-outline-primary w-100" href="{% url 'create-project-structure' pk=project.pk %}">
+                                    <i class="fas fa-arrow-right me-2"></i>
+                                    مرحله بعد
+                                </a>
+                            </div>
                         </div>
                     </form>
 
-
-                    <div class="col-12 mt-4" style="overflow: scroll;">
-
-                        {% if layers %}
-                        <div class="mt-5">
-                            <h5 class="text-center">لایه‌های ثبت‌شده برای پروژه "{{ project.name }}"</h5>
-                            <table class="table table-bordered table-striped table-hover text-center mt-3">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>نام لایه</th>
-                                        <th>ترتیب از بالا</th>
-                                        <th>ضخامت(سانتی متر)</th>
-                                        <th>وضعیت</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for layer in layers %}
-                                    <tr>
-                                        <td>{{ layer.layer_type }}</td>
-                                    
-                                        <td>{{layer.order_from_top}}</td>
-
-                                        <td>{{layer.thickness_cm}}</td>
-
-                                        <td>{{layer.get_status_display}}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    {% if layers %}
+                        <div class="layer-table">
+                            <h5 class="text-center mb-4">لایه‌های ثبت‌شده برای پروژه "{{ project.name }}"</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>نام لایه</th>
+                                            <th>ترتیب از بالا</th>
+                                            <th>ضخامت (سانتی‌متر)</th>
+                                            <th>حالت</th>
+                                            <th>وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for layer in layers %}
+                                            <tr>
+                                                <td>{{ layer.layer_type }}</td>
+                                                <td>{{ layer.order_from_top }}</td>
+                                                <td>{{ layer.thickness_cm }}</td>
+                                                <td>
+                                                    <span class="state-badge {% if layer.state == 0 %}state-variable{% else %}state-fixed{% endif %}">
+                                                        {{ layer.get_state_display }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ layer.get_status_display }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        {% else %}
-                            <p class="text-muted text-center mt-4">هنوز لایه‌ای برای این پروژه ثبت نشده است.</p>
-                        {% endif %}
-
-                    </div>
-
+                    {% else %}
+                        <p class="text-muted text-center mt-4">هنوز لایه‌ای برای این پروژه ثبت نشده است.</p>
+                    {% endif %}
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    // افزودن کلاس bootstrap به فیلدها
     document.addEventListener("DOMContentLoaded", function () {
         const inputs = document.querySelectorAll("form input, form select, form textarea");
         inputs.forEach(input => input.classList.add("form-control"));
