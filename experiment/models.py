@@ -7,7 +7,7 @@ from django_jalali.db import models as jmodels
 
 class ExperimentType(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="نام آزمایش")
-    
+
     def __str__(self):
         return self.name
     
@@ -25,10 +25,10 @@ class ExperimentSubType(models.Model):
     class Meta:
         verbose_name = "زیرنوع آزمایش"
         verbose_name_plural = "زیرنوع‌های آزمایش"
-
+    
 class ConcretePlace(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="محل بتن‌ریزی")
-    
+
     def __str__(self):
         return self.name
     

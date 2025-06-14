@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        ویرایش محل بتن‌ریزی
+    {% else %}
+        افزودن محل بتن‌ریزی جدید
+    {% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if form.instance.pk %}
+                            ویرایش محل بتن‌ریزی
+                        {% else %}
+                            افزودن محل بتن‌ریزی جدید
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">نام</label>
+                            {% render_field form.name class="form-control" %}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">ذخیره</button>
+                                <a href="{% url 'experiment:concrete_place_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

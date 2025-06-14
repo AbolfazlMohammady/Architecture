@@ -65,17 +65,40 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
-                aria-expanded="false">آزمایشات</a>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_list' %}">لیست آزمایشات</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_create' %}">درخواست آزمایش</a>
-                </li>
-              </ul>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'experiment:experiment_request_list' %}">
+                    <i class="nav-icon fas fa-flask"></i>
+                    <p>
+                        آزمایشات
+                        <i class="right fas fa-angle-left"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        <a href="{% url 'experiment:experiment_request_list' %}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>لیست درخواست‌ها</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'experiment:experiment_request_create' %}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>ثبت درخواست جدید</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'experiment:experiment_type_list' %}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>انواع آزمایشات</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'experiment:concrete_place_list' %}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>محل‌های بتن‌ریزی</p>
+                        </a>
+                    </li>
+                </ul>
             </li>
             {% if request.user.is_authenticated %}
             <li class="nav-item">

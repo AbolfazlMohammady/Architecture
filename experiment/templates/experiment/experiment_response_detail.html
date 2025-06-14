@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}جزئیات پاسخ آزمایش{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">جزئیات پاسخ آزمایش</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>اطلاعات درخواست</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>پروژه</th>
+                                    <td>{{ response.experiment_request.project.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>لایه</th>
+                                    <td>{{ response.experiment_request.layer.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>نوع آزمایش</th>
+                                    <td>{{ response.experiment_request.experiment_type.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>زیرگروه آزمایش</th>
+                                    <td>{{ response.experiment_request.experiment_subtype.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>محل بتن‌ریزی</th>
+                                    <td>{{ response.experiment_request.concrete_place.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>تاریخ درخواست</th>
+                                    <td>{{ response.experiment_request.request_date|date:"Y/m/d" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>اطلاعات پاسخ</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>تاریخ پاسخ</th>
+                                    <td>{{ response.response_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>چگالی</th>
+                                    <td>{{ response.density_result }}</td>
+                                </tr>
+                                <tr>
+                                    <th>ضخامت</th>
+                                    <td>{{ response.thickness_result }}</td>
+                                </tr>
+                                <tr>
+                                    <th>مقاومت 1</th>
+                                    <td>{{ response.strength_result1 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>مقاومت 2</th>
+                                    <td>{{ response.strength_result2 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>مقاومت 3</th>
+                                    <td>{{ response.strength_result3 }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4>توضیحات</h4>
+                            <p>{{ response.description|linebreaks }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if response.response_file %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4>فایل پاسخ</h4>
+                            <a href="{{ response.response_file.url }}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-download"></i> دانلود فایل
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <a href="{% url 'experiment:experiment_response_update' response.pk %}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> ویرایش
+                            </a>
+                            <a href="{% url 'experiment:experiment_response_delete' response.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> حذف
+                            </a>
+                            <a href="{% url 'experiment:experiment_response_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

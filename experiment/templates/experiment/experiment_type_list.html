@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}انواع آزمایشات{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">لیست انواع آزمایشات</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'experiment:experiment_type_create' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> افزودن نوع جدید
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>نام</th>
+                                    <th>زیرنوع‌ها</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type in experiment_types %}
+                                <tr>
+                                    <td>{{ type.name }}</td>
+                                    <td>
+                                        {% for subtype in type.experimentsubtype_set.all %}
+                                            <span class="badge bg-info">{{ subtype.name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'experiment:experiment_type_update' type.id %}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> ویرایش
+                                        </a>
+                                        <a href="{% url 'experiment:experiment_type_delete' type.id %}" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این نوع آزمایش اطمینان دارید؟')">
+                                            <i class="fas fa-trash"></i> حذف
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">هیچ نوع آزمایشی ثبت نشده است.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

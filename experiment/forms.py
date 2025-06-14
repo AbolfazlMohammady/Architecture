@@ -68,6 +68,10 @@ class ExperimentRequestForm(forms.ModelForm):
             'concrete_place', 'request_date', 'start_kilometer', 'end_kilometer',
             'description', 'target_density', 'target_strength', 'request_file'
         ]
+        widgets = {
+            'request_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
 
 class ExperimentResponseForm(forms.ModelForm):
     response_date = JalaliDateField(
@@ -97,6 +101,10 @@ class ExperimentResponseForm(forms.ModelForm):
             'strength_result1', 'strength_result2', 'strength_result3',
             'response_file'
         ]
+        widgets = {
+            'response_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
 
 class ExperimentApprovalForm(forms.ModelForm):
     approval_date = JalaliDateField(
@@ -123,4 +131,19 @@ class ExperimentApprovalForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['experiment_response'].widget = forms.HiddenInput()
         self.fields['status'].widget.attrs.update({'class': 'form-select'})
-        self.fields['description'].widget.attrs.update({'class': 'form-control'}) 
+        self.fields['description'].widget.attrs.update({'class': 'form-control'})
+
+class ExperimentTypeForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentType
+        fields = ['name']
+
+class ExperimentSubTypeForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentSubType
+        fields = ['name', 'experiment_type']
+
+class ConcretePlaceForm(forms.ModelForm):
+    class Meta:
+        model = models.ConcretePlace
+        fields = ['name'] 
