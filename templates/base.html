@@ -9,6 +9,217 @@
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.12.1/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <style>
+    .navbar {
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      color: #ffffff !important;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .navbar-brand:hover {
+      transform: scale(1.05);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .nav-link {
+      color: #ecf0f1 !important;
+      font-weight: 500;
+      padding: 0.5rem 1rem !important;
+      transition: all 0.3s ease;
+      position: relative;
+      margin: 0 0.2rem;
+      border-radius: 6px;
+    }
+
+    .nav-link:hover {
+      color: #ffffff !important;
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background: linear-gradient(to right, #3498db, #2ecc71);
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .dropdown-menu {
+      border: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      animation: fadeIn 0.3s ease;
+      background: linear-gradient(135deg, #ffffff, #f8f9fa);
+      border-radius: 12px;
+      padding: 0.8rem;
+      margin-top: 0.5rem;
+      border: 1px solid rgba(52, 152, 219, 0.1);
+    }
+
+    .dropdown-item {
+      padding: 0.8rem 1.5rem;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      color: #2c3e50;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      margin: 0.2rem 0;
+    }
+
+    .dropdown-item:hover {
+      background: linear-gradient(135deg, #3498db, #2ecc71);
+      transform: translateX(5px);
+      color: #ffffff;
+    }
+
+    .dropdown-item i {
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      margin-left: 0.5rem;
+    }
+
+    .dropdown-item:hover i {
+      transform: scale(1.2) rotate(5deg);
+      color: #ffffff;
+    }
+
+    .nav-link i {
+      transition: all 0.3s ease;
+      color: #3498db;
+    }
+
+    .nav-link:hover i {
+      transform: rotate(15deg) scale(1.1);
+      color: #2ecc71;
+    }
+
+    .dropdown-toggle::after {
+      transition: all 0.3s ease;
+      border-top-color: #3498db;
+    }
+
+    .dropdown.show .dropdown-toggle::after {
+      transform: rotate(180deg);
+      border-top-color: #2ecc71;
+    }
+
+    @keyframes fadeIn {
+      from { 
+        opacity: 0; 
+        transform: translateY(-15px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .navbar-toggler {
+      border: none;
+      padding: 0.5rem;
+      transition: all 0.3s ease;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+
+    .navbar-toggler:focus {
+      box-shadow: none;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    .offcanvas {
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+    }
+
+    .offcanvas-header {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .offcanvas-title {
+      color: #ffffff;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+    }
+
+    /* Active state styles */
+    .nav-link.active {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff !important;
+    }
+
+    .dropdown-item.active {
+      background: linear-gradient(135deg, #3498db, #2ecc71);
+      color: #ffffff;
+    }
+
+    /* Hover effects for menu items */
+    .dropdown-item:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0;
+      background: rgba(52, 152, 219, 0.1);
+      transition: width 0.3s ease;
+      border-radius: 8px;
+      z-index: -1;
+    }
+
+    .dropdown-item:hover:before {
+      width: 100%;
+    }
+
+    .navbar-treeview {
+      padding-right: 1rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    .navbar-treeview .nav-link {
+      padding: 0.5rem 1rem !important;
+      font-size: 0.9rem;
+    }
+
+    .navbar-treeview .nav-link:hover {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+  </style>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"
     integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -29,7 +240,7 @@
 </head>
 
 <body class="container-fluid bg-light">
-  <nav class="navbar ">
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container-fluid">
       <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar"
         aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation"><span
@@ -65,40 +276,38 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'experiment:experiment_request_list' %}">
-                    <i class="nav-icon fas fa-flask"></i>
-                    <p>
-                        آزمایشات
-                        <i class="right fas fa-angle-left"></i>
-                    </p>
-                </a>
-                <ul class="nav nav-treeview">
-                    <li class="nav-item">
-                        <a href="{% url 'experiment:experiment_request_list' %}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>لیست درخواست‌ها</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{% url 'experiment:experiment_request_create' %}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>ثبت درخواست جدید</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{% url 'experiment:experiment_type_list' %}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>انواع آزمایشات</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{% url 'experiment:concrete_place_list' %}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>محل‌های بتن‌ریزی</p>
-                        </a>
-                    </li>
-                </ul>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="bi bi-flask me-1"></i>
+                آزمایشات
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_list' %}">
+                    <i class="bi bi-list-ul me-2"></i>
+                    لیست درخواست‌ها
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_create' %}">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    ثبت درخواست جدید
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'experiment:experiment_type_list' %}">
+                    <i class="bi bi-gear me-2"></i>
+                    انواع آزمایشات
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'experiment:concrete_place_list' %}">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    محل‌های بتن‌ریزی
+                  </a>
+                </li>
+              </ul>
             </li>
             {% if request.user.is_authenticated %}
             <li class="nav-item">
