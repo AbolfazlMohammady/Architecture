@@ -6,64 +6,307 @@
     {{ form.media }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-section-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        .date-input-group {
+            position: relative;
+        }
+        .date-input-group i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #3498db;
+        }
+        .custom-file-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .submit-btn {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .field-error {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        .select2-container--bootstrap4 .select2-selection {
+            border-radius: 5px;
+            min-height: 38px;
+        }
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: 38px;
+            padding: 5px;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple {
+            min-height: 38px;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+            background-color: #3498db;
+            border: none;
+            color: white;
+            padding: 2px 8px;
+            margin: 2px;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white;
+            margin-right: 5px;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+        }
+        .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
+            background-color: #3498db;
+        }
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-right: 12px !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+    </style>
 {% endblock head %}
 
 {% block title %}ایجاد پروژه{% endblock %}
 {% block main %}
-<div class="container bg-white p-3 rounded rounded-2" style="max-width: 800px;" >
-    <form method="post" class="row" enctype="multipart/form-data">
+<div class="container bg-white p-4 rounded rounded-3 shadow-sm" style="max-width: 1200px;">
+    <div class="text-center mb-4">
+        <h1 class="display-5 mb-3">ایجاد پروژه جدید</h1>
+        <p class="lead text-muted">لطفاً اطلاعات پروژه را با دقت وارد کنید. فیلدهای ستاره‌دار اجباری هستند.</p>
+    </div>
+
+    <form method="post" class="row g-4" enctype="multipart/form-data">
+        {% csrf_token %}
+        
         {% if form.non_field_errors %}
-            <div class="alert alert-danger" role="alert">
-                {{ form.non_field_errors }}
+            <div class="col-12">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {{ form.non_field_errors }}
+                </div>
             </div>
         {% endif %}
-        {% if form.errors %}
-            <div class="alert alert-danger" role="alert">
-                لطفا خطاهای زیر را اصلاح کنید:
-                <ul>
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
+
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
-                    {{ message }}
+                <div class="col-12">
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 </div>
             {% endfor %}
         {% endif %}
-        {% csrf_token %}
-        <h1>ایجاد پروژه</h1>
-        <div class="container-fluid">
-            {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label">{{ field.label }}</label>
-                {% render_field field class="form-select select2" %}
-                {% if field.errors %}
-                <div class="text-danger small">
-                    {{ field.errors|striptags }}
+
+        <!-- اطلاعات اصلی -->
+        <div class="col-12">
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    اطلاعات اصلی
+                </h3>
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if forloop.counter <= 3 %}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ field.label }}</label>
+                                {% if field.field.widget.input_type == 'file' %}
+                                    <div class="custom-file">
+                                        {% render_field field class="form-control custom-file-input" onchange="updateFileName(this)" %}
+                                        <label class="form-control custom-file-label" for="{{ field.id_for_label }}">
+                                            انتخاب فایل
+                                        </label>
+                                    </div>
+                                {% elif 'date' in field.name %}
+                                    <div class="date-input-group">
+                                        {% render_field field class="form-control jalali_date-input" placeholder="تاریخ را انتخاب کنید" %}
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
+                                    {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
+                                {% else %}
+                                    {% render_field field class="form-control" placeholder=field.help_text %}
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="field-error">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {{ field.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
-                {% endif %}
             </div>
-            {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary mt-3">ایجاد</button>
+
+        <!-- اطلاعات مالی -->
+        <div class="col-12">
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    اطلاعات مالی
+                </h3>
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if forloop.counter > 3 and forloop.counter <= 6 %}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ field.label }}</label>
+                                {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
+                                    {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
+                                {% else %}
+                                    {% render_field field class="form-control" placeholder=field.help_text %}
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="field-error">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {{ field.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات فنی -->
+        <div class="col-12">
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-cogs me-2"></i>
+                    اطلاعات فنی
+                </h3>
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if forloop.counter > 6 %}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ field.label }}</label>
+                                {% if field.field.widget.input_type == 'file' %}
+                                    <div class="custom-file">
+                                        {% render_field field class="form-control custom-file-input" onchange="updateFileName(this)" %}
+                                        <label class="form-control custom-file-label" for="{{ field.id_for_label }}">
+                                            انتخاب فایل
+                                        </label>
+                                    </div>
+                                {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
+                                    {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
+                                {% else %}
+                                    {% render_field field class="form-control" placeholder=field.help_text %}
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="field-error">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {{ field.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 text-center mt-4">
+            <button type="submit" class="btn btn-primary submit-btn">
+                <i class="fas fa-save me-2"></i>
+                ثبت پروژه
+            </button>
+        </div>
     </form>
 </div>
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Select2 initialization
         $('.select2').select2({
             theme: 'bootstrap4',
-            width: '100%'
+            width: '100%',
+            placeholder: 'انتخاب کنید...',
+            allowClear: true,
+            dir: 'rtl',
+            language: {
+                noResults: function() {
+                    return "نتیجه‌ای یافت نشد";
+                },
+                searching: function() {
+                    return "در حال جستجو...";
+                }
+            },
+            dropdownParent: $('body')
+        });
+        
+        // Persian Datepicker initialization
+        $('.jalali_date-input').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: false,
+            autoClose: true,
+            position: 'auto',
+            calendar: {
+                persian: {
+                    locale: 'fa'
+                }
+            }
         });
     });
+
+    // File input handler
+    function updateFileName(input) {
+        const fileName = input.files[0]?.name || 'انتخاب فایل';
+        const label = input.nextElementSibling;
+        label.textContent = fileName;
+    }
 </script>
 {% endblock %}
 {% endblock main %}

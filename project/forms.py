@@ -2,9 +2,22 @@ from django import forms
 from . import models as project_models
 from django_select2.forms import Select2Widget,Select2MultipleWidget
 from core import models as core_models
+from jalali_date.fields import JalaliDateField
+from jalali_date.widgets import AdminJalaliDateWidget
 
 
 class ProjectForm(forms.ModelForm):
+    start_date = JalaliDateField(
+        widget=AdminJalaliDateWidget,
+        label='تاریخ شروع',
+        required=True
+    )
+    
+    end_date = JalaliDateField(
+        widget=AdminJalaliDateWidget,
+        label='تاریخ پایان',
+        required=False
+    )
     
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -27,7 +40,7 @@ class ProjectForm(forms.ModelForm):
         # self.fields["start_date"].widget.attrs["class"] = "form-control"
         # self.fields["end_date"].widget.attrs["class"] = "form-control"
         
-        # self.fields["budget"].widget.attrs["class"] = "form-control"
+        self.fields["budget"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["distance"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["width"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["start_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
@@ -43,12 +56,17 @@ class ProjectForm(forms.ModelForm):
         model = project_models.Project
         fields = ['name',
                   'project_manager',
-                  'technical_manager','quality_control_manager',
-                  "project_experts","distance",
-                  "width", "start_kilometer",
-                  "end_kilometer", "profile_file",
-                
-                  
+                  'technical_manager',
+                  'quality_control_manager',
+                  "project_experts",
+                  "budget",
+                  "distance",
+                  "width", 
+                  "start_kilometer",
+                  "end_kilometer", 
+                  "profile_file",
+                  "start_date",
+                  "end_date"
                   ]
         # , 'start_date' "budget",
         # widgets = {

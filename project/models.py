@@ -102,7 +102,6 @@ class ProjectLayer(models.Model):
     COMPLETED = 2
     STOPPED = 3
     CANCELED = 4
-    # اضافه کردن وضعیت پروژه به صورت انتخابی
     
     PROJECT_LAYER_STATUS = [
         (NOT_STARTED, 'شروع نشده'),
@@ -111,11 +110,25 @@ class ProjectLayer(models.Model):
         (STOPPED, 'متوقف شده'),
         (CANCELED, 'لغو شده'),
     ]
+
+    VARIABLE = 0
+    FIXED = 1
+    
+    LAYER_STATE = [
+        (VARIABLE, 'متغیر'),
+        (FIXED, 'ثابت'),
+    ]
     
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="پروژه")
     layer_type = models.ForeignKey(LayerType, on_delete=models.PROTECT, verbose_name="نوع لایه")
     thickness_cm = models.PositiveSmallIntegerField(verbose_name="ضخامت (سانتی‌متر)")
     order_from_top = models.PositiveSmallIntegerField(verbose_name="ترتیب از بالا")
+    state = models.PositiveSmallIntegerField(
+        choices=LAYER_STATE,
+        default=FIXED,
+        verbose_name="حالت",
+        help_text="حالت لایه را انتخاب کنید"
+    )
 
     status = models.PositiveSmallIntegerField(
         choices=PROJECT_LAYER_STATUS,
