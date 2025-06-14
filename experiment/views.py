@@ -117,7 +117,11 @@ def experiment_request_list(request):
 
     # اعمال فیلتر وضعیت
     if status:
-        experiment_requests = experiment_requests.filter(status=status)
+        try:
+            status = int(status)
+            experiment_requests = experiment_requests.filter(status=status)
+        except (ValueError, TypeError):
+            pass
 
     # اعمال جستجو در توضیحات
     if search_query:

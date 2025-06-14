@@ -17,4 +17,3 @@ urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = "سامانه کنترل کیفیت"
 admin.site.site_title = "سامانه کنترل کیفیت"
-

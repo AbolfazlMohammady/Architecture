@@ -37,10 +37,10 @@
                                     <label for="status">وضعیت</label>
                                     <select name="status" id="status" class="form-select select2">
                                         <option value="">همه</option>
-                                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>در انتظار پاسخ</option>
-                                        <option value="responded" {% if request.GET.status == 'responded' %}selected{% endif %}>پاسخ داده شده</option>
-                                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>تایید شده</option>
-                                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>رد شده</option>
+                                        <option value="0" {% if request.GET.status == '0' %}selected{% endif %}>در انتظار بررسی</option>
+                                        <option value="1" {% if request.GET.status == '1' %}selected{% endif %}>در حال انجام</option>
+                                        <option value="2" {% if request.GET.status == '2' %}selected{% endif %}>تکمیل شده</option>
+                                        <option value="3" {% if request.GET.status == '3' %}selected{% endif %}>رد شده</option>
                                     </select>
                                 </div>
                             </div>
@@ -79,19 +79,19 @@
                                     <td>{{ request.experiment_type.name }} - {{ request.experiment_subtype.name }}</td>
                                     <td>{{ request.request_date }}</td>
                                     <td>
-                                        {% if request.status == 'pending' %}
-                                            <span class="badge bg-warning">در انتظار پاسخ</span>
-                                        {% elif request.status == 'responded' %}
-                                            <span class="badge bg-info">پاسخ داده شده</span>
-                                        {% elif request.status == 'approved' %}
-                                            <span class="badge bg-success">تایید شده</span>
-                                        {% elif request.status == 'rejected' %}
+                                        {% if request.status == 0 %}
+                                            <span class="badge bg-warning">در انتظار بررسی</span>
+                                        {% elif request.status == 1 %}
+                                            <span class="badge bg-info">در حال انجام</span>
+                                        {% elif request.status == 2 %}
+                                            <span class="badge bg-success">تکمیل شده</span>
+                                        {% elif request.status == 3 %}
                                             <span class="badge bg-danger">رد شده</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <a href="{% url 'experiment:experiment_request_detail' request.id %}" class="btn btn-info btn-sm">جزئیات</a>
-                                        {% if request.status == 'pending' %}
+                                        {% if request.status == 0 %}
                                             <a href="{% url 'experiment:experiment_response_create' request.id %}" class="btn btn-primary btn-sm">پاسخ</a>
                                         {% endif %}
                                     </td>
