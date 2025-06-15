@@ -216,7 +216,7 @@ def experiment_approval_create(request, response_id):
                     user=experiment_response.experiment_request.project.quality_control_manager,
                     experiment_request=experiment_response.experiment_request,
                     message=f'پاسخ آزمایش برای پروژه {experiment_response.experiment_request.project.name} {status_text}.'
-                )
+            )
             
             messages.success(request, 'تایید آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=response_id)
