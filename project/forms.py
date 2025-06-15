@@ -104,7 +104,7 @@ class ProjectLayerForm(forms.ModelForm):
         widgets = {
             'state': forms.Select(choices=project_models.ProjectLayer.LAYER_STATE),
         }
-
+    
 class ProjectStructureForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProjectStructureForm, self).__init__(*args, **kwargs)

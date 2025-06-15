@@ -113,7 +113,7 @@
     </div>
 
     <form method="post" class="row g-4" enctype="multipart/form-data">
-        {% csrf_token %}
+    {% csrf_token %}
         
         {% if form.non_field_errors %}
             <div class="col-12">
@@ -260,7 +260,7 @@
                 بروزرسانی پروژه
             </button>
         </div>
-    </form>
+</form>
 </div>
 
 {% block extra_js %}

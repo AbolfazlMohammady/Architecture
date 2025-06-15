@@ -336,13 +336,6 @@
   {% endif %}
 
   <main class="py-4 ">
-    {% block btnback %}
-    <div class="mb-3 d-flex bg-white p-3 rounded-2 justify-content-between">
-      <a class="btn btn-outline-primary" href="{% url 'home' %}">صفحه اصلی</a>
-      <button class="btn btn-outline-secondary" onclick="history.back()">بازگشت</button>
-    </div>
-    {% endblock %}
-
     {% block main %}
     {% endblock %}
   </main>

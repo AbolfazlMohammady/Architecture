@@ -117,10 +117,10 @@
         
         {% if form.non_field_errors %}
             <div class="col-12">
-                <div class="alert alert-danger" role="alert">
+            <div class="alert alert-danger" role="alert">
                     <i class="fas fa-exclamation-circle me-2"></i>
-                    {{ form.non_field_errors }}
-                </div>
+                {{ form.non_field_errors }}
+            </div>
             </div>
         {% endif %}
 
@@ -129,7 +129,7 @@
                 <div class="col-12">
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                         <i class="fas fa-check-circle me-2"></i>
-                        {{ message }}
+                    {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 </div>
@@ -144,10 +144,10 @@
                     اطلاعات اصلی
                 </h3>
                 <div class="row g-3">
-                    {% for field in form %}
+            {% for field in form %}
                         {% if forloop.counter <= 3 %}
                             <div class="col-md-4">
-                                <label class="form-label">{{ field.label }}</label>
+                <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
                                     <div class="custom-file">
                                         {% render_field field class="form-control custom-file-input" onchange="updateFileName(this)" %}
@@ -168,10 +168,10 @@
                                 {% if field.help_text %}
                                     <div class="help-text">{{ field.help_text }}</div>
                                 {% endif %}
-                                {% if field.errors %}
+                {% if field.errors %}
                                     <div class="field-error">
                                         <i class="fas fa-exclamation-circle me-1"></i>
-                                        {{ field.errors|striptags }}
+                    {{ field.errors|striptags }}
                                     </div>
                                 {% endif %}
                             </div>
@@ -207,8 +207,8 @@
                                         {{ field.errors|striptags }}
                                     </div>
                                 {% endif %}
-                            </div>
-                        {% endif %}
+                </div>
+                {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -249,7 +249,7 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                    {% endfor %}
+            {% endfor %}
                 </div>
             </div>
         </div>

@@ -1,12 +1,9 @@
-
-
 main {
     background: url(../image/bg1.jpg); 
     background-repeat: no-repeat;
     background-size: cover;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     min-height: 90vh;
 }
 
@@ -15,7 +12,7 @@ main {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px); /* for Safari */
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   padding: 1rem;
 }
@@ -47,4 +44,71 @@ main {
 
 .nav-link.active:hover {
     --bs-nav-pills-link-active-color: #0d6efd;
+}
+
+body, html {
+    font-family: 'Vazirmatn', 'IRANSans', sans-serif !important;
+    background: #e9f0f7;
+}
+
+.charts-container {
+    background: rgba(255,255,255,0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.10);
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.charts-wrapper {
+    display: flex;
+    gap: 24px;
+    min-width: min-content;
+}
+
+.chart-card {
+    background: rgba(255,255,255,0.75) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 6px 24px rgba(44,62,80,0.08) !important;
+    transition: box-shadow 0.3s, transform 0.3s;
+    min-width: 320px;
+    margin: 0 8px;
+    border: none;
+    padding: 1.5rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-card:hover {
+    box-shadow: 0 12px 32px rgba(44,62,80,0.16) !important;
+    transform: translateY(-4px) scale(1.02);
+}
+
+.chart-title {
+    font-family: 'Vazirmatn', 'IRANSans', sans-serif !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.chart-container {
+    height: 220px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+::-webkit-scrollbar {
+    height: 8px;
+    background: #e9f0f7;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4d6;
+    border-radius: 8px;
 }
