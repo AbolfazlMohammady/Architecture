@@ -8,182 +8,202 @@
 <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
 {% endblock %}
 
-{% block title %}درخواست آزمایش{% endblock %}
+{% block title %}
+{% if form.instance.pk %}
+ویرایش درخواست آزمایش
+{% else %}
+ثبت درخواست آزمایش جدید
+{% endif %}
+{% endblock %}
 
 {% block main %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">فرم درخواست آزمایش</h3>
-                </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.project.id_for_label }}">پروژه</label>
-                                    {% render_field form.project class="form-select select2" %}
+<div class="container">
+    <div class="card shadow rounded-2">
+        <div class="card-header">
+            <h3 class="card-title">
+                {% if form.instance.pk %}
+                ویرایش درخواست آزمایش
+                {% else %}
+                ثبت درخواست آزمایش جدید
+                {% endif %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- اطلاعات اصلی -->
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">اطلاعات اصلی</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.project.id_for_label }}" class="form-label">پروژه</label>
+                                    {% render_field form.project class="form-control select2" %}
                                     {% if form.project.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.project.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.project.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.layer.id_for_label }}">لایه</label>
-                                    {% render_field form.layer class="form-select select2" %}
+
+                                <div class="mb-3">
+                                    <label for="{{ form.layer.id_for_label }}" class="form-label">لایه</label>
+                                    {% render_field form.layer class="form-control select2" %}
                                     {% if form.layer.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.layer.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.layer.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.experiment_type.id_for_label }}">نوع آزمایش</label>
-                                    {% render_field form.experiment_type class="form-select select2" %}
+                                <div class="mb-3">
+                                    <label for="{{ form.experiment_type.id_for_label }}" class="form-label">نوع آزمایش</label>
+                                    {% render_field form.experiment_type class="form-control select2" %}
                                     {% if form.experiment_type.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.experiment_type.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.experiment_type.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.experiment_subtype.id_for_label }}">زیرنوع آزمایش</label>
-                                    {% render_field form.experiment_subtype class="form-select select2" %}
+
+                                <div class="mb-3">
+                                    <label for="{{ form.experiment_subtype.id_for_label }}" class="form-label">زیرگروه آزمایش</label>
+                                    {% render_field form.experiment_subtype class="form-control select2" %}
                                     {% if form.experiment_subtype.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.experiment_subtype.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.experiment_subtype.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.concrete_place.id_for_label }}">محل بتن‌ریزی</label>
-                                    {% render_field form.concrete_place class="form-select select2" %}
+                    <!-- اطلاعات محل و کیلومتراژ -->
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">اطلاعات محل و کیلومتراژ</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.concrete_place.id_for_label }}" class="form-label">محل بتن‌ریزی</label>
+                                    {% render_field form.concrete_place class="form-control select2" %}
                                     {% if form.concrete_place.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.concrete_place.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.concrete_place.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.request_date.id_for_label }}">تاریخ درخواست</label>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.request_date.id_for_label }}" class="form-label">تاریخ درخواست</label>
                                     {% render_field form.request_date class="form-control" %}
                                     {% if form.request_date.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.request_date.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.request_date.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.start_kilometer.id_for_label }}">کیلومتر شروع</label>
+                                <div class="mb-3">
+                                    <label for="{{ form.start_kilometer.id_for_label }}" class="form-label">کیلومتراژ شروع</label>
                                     {% render_field form.start_kilometer class="form-control" %}
                                     {% if form.start_kilometer.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.start_kilometer.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.start_kilometer.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.end_kilometer.id_for_label }}">کیلومتر پایان</label>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.end_kilometer.id_for_label }}" class="form-label">کیلومتراژ پایان</label>
                                     {% render_field form.end_kilometer class="form-control" %}
                                     {% if form.end_kilometer.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.end_kilometer.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.end_kilometer.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="{{ form.description.id_for_label }}">توضیحات</label>
+                    <!-- اطلاعات تکمیلی -->
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">اطلاعات تکمیلی</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
                                     {% render_field form.description class="form-control" rows="3" %}
                                     {% if form.description.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.description.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.target_density.id_for_label }}">دانسیته هدف</label>
+                                <div class="mb-3">
+                                    <label for="{{ form.target_density.id_for_label }}" class="form-label">حد تراکم</label>
                                     {% render_field form.target_density class="form-control" %}
                                     {% if form.target_density.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.target_density.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.target_density.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.target_strength.id_for_label }}">مقاومت هدف</label>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.target_strength.id_for_label }}" class="form-label">حد مقاومت فشاری</label>
                                     {% render_field form.target_strength class="form-control" %}
                                     {% if form.target_strength.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.target_strength.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.target_strength.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="{{ form.request_file.id_for_label }}">فایل درخواست</label>
+                                <div class="mb-3">
+                                    <label for="{{ form.request_file.id_for_label }}" class="form-label">فایل درخواست</label>
                                     {% render_field form.request_file class="form-control" %}
                                     {% if form.request_file.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.request_file.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.request_file.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.instance.request_file %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">فایل فعلی: {{ form.instance.request_file.name }}</small>
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">ثبت درخواست</button>
-                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save me-2"></i>
+                        {% if form.instance.pk %}
+                        بروزرسانی درخواست
+                        {% else %}
+                        ثبت درخواست
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary btn-lg me-2">
+                        <i class="bi bi-x-circle me-2"></i>
+                        انصراف
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -197,12 +217,9 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Initialize Select2 on all select elements
     $('.select2').select2({
-        theme: 'bootstrap4',
-        width: '100%',
-        placeholder: 'انتخاب کنید',
-        allowClear: true
+        theme: 'bootstrap-5',
+        width: '100%'
     });
 
     // Handle project change
@@ -228,10 +245,6 @@ $(document).ready(function() {
                         );
                     });
                     layerSelect.trigger('change');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching layers:', error);
-                    console.error('Response:', xhr.responseText);
                 }
             });
         } else {
@@ -264,10 +277,6 @@ $(document).ready(function() {
                         );
                     });
                     subtypeSelect.trigger('change');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching subtypes:', error);
-                    console.error('Response:', xhr.responseText);
                 }
             });
         } else {
