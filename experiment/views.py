@@ -87,7 +87,10 @@ def experiment_request_create(request):
     if request.method == 'POST':
         form = forms.ExperimentRequestForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            experiment_request = form.save(commit=False)
+            experiment_request.user = request.user
+            experiment_request.save()
+            messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
     else:
         form = forms.ExperimentRequestForm()
@@ -364,36 +367,22 @@ def experiment_response_detail(request, pk):
 @login_required
 @require_http_methods(["GET"])
 def get_layers(request):
-    project_id = request.GET.get('project_id')
-    if not project_id:
-        return JsonResponse({'error': 'Project ID is required'}, status=400)
-    
-    try:
-        project = models.Project.objects.get(pk=project_id)
-        layers = project.projectlayer_set.all()
-        data = [{'id': layer.id, 'name': layer.layer_type.name} for layer in layers]
+    project_id = request.GET.get('project')
+    if project_id:
+        layers = ProjectLayer.objects.filter(project_id=project_id)
+        data = [{'id': layer.id, 'name': str(layer)} for layer in layers]
         return JsonResponse(data, safe=False)
-    except models.Project.DoesNotExist:
-        return JsonResponse({'error': 'Project not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse([], safe=False)
 
 @login_required
 @require_http_methods(["GET"])
 def get_subtypes(request):
-    experiment_type_id = request.GET.get('experiment_type_id')
-    if not experiment_type_id:
-        return JsonResponse({'error': 'Experiment Type ID is required'}, status=400)
-    
-    try:
-        experiment_type = models.ExperimentType.objects.get(pk=experiment_type_id)
-        subtypes = experiment_type.experimentsubtype_set.all()
-        data = [{'id': subtype.id, 'name': subtype.name} for subtype in subtypes]
+    experiment_type_id = request.GET.get('experiment_type')
+    if experiment_type_id:
+        subtypes = models.ExperimentSubType.objects.filter(experiment_type_id=experiment_type_id)
+        data = [{'id': subtype.id, 'name': str(subtype)} for subtype in subtypes]
         return JsonResponse(data, safe=False)
-    except models.ExperimentType.DoesNotExist:
-        return JsonResponse({'error': 'Experiment Type not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse([], safe=False)
 
 @login_required
 def get_project_layers(request):

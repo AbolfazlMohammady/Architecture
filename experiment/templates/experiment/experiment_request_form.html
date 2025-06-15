@@ -245,6 +245,11 @@ $(document).ready(function() {
                         );
                     });
                     layerSelect.trigger('change');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching layers:', error);
+                    layerSelect.empty();
+                    layerSelect.append($('<option></option>').attr('value', '').text('خطا در دریافت لایه‌ها'));
                 }
             });
         } else {
@@ -277,6 +282,11 @@ $(document).ready(function() {
                         );
                     });
                     subtypeSelect.trigger('change');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching subtypes:', error);
+                    subtypeSelect.empty();
+                    subtypeSelect.append($('<option></option>').attr('value', '').text('خطا در دریافت زیرگروه‌ها'));
                 }
             });
         } else {

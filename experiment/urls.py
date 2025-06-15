@@ -39,9 +39,9 @@ urlpatterns = [
     path('places/<int:pk>/update/', views.concrete_place_update, name='concrete_place_update'),
     path('places/<int:pk>/delete/', views.concrete_place_delete, name='concrete_place_delete'),
     
-    # API endpoints for dynamic loading
-    path('ajax/get-layers/', views.get_layers, name='get_layers'),
-    path('ajax/get-subtypes/', views.get_subtypes, name='get_subtypes'),
+    # API endpoints
+    path('api/get-layers/', views.get_layers, name='get_layers'),
+    path('api/get-subtypes/', views.get_subtypes, name='get_subtypes'),
     path('ajax/get-types/', views.get_experiment_types, name='get_types'),
     path('ajax/get-places/', views.get_concrete_places, name='get_places'),
     path('asphalt-test/create/<int:response_id>/', views.asphalt_test_create, name='asphalt_test_create'),
