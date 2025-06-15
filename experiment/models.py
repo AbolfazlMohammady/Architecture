@@ -104,28 +104,27 @@ class ExperimentResponse(models.Model):
         return f"{self.experiment_request.project.name} - {self.experiment_request.order}"
 
 class ExperimentApproval(models.Model):
-    APPROVED = 0
-    REJECTED = 1
-    
-    APPROVAL_STATUS = (
+    APPROVED = 1
+    REJECTED = 2
+    STATUS_CHOICES = (
         (APPROVED, 'تایید شده'),
         (REJECTED, 'رد شده'),
     )
-    
+
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
     approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
-    status = models.PositiveSmallIntegerField(choices=APPROVAL_STATUS, verbose_name="وضعیت")
+    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
+    penalty_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="درصد جریمه")
     description = models.TextField(verbose_name="توضیحات", null=True, blank=True)
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    penalty_percentage = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="درصد جریمه", null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "تاییدیه آزمایش"
-        verbose_name_plural = "تاییدیه‌های آزمایش"
-        unique_together = ('experiment_response', 'approver')
 
     def __str__(self):
-        return f"{self.experiment_response.experiment_request.project.name} - {self.approver.username}"
+        return f"تایید {self.experiment_response} توسط {self.approver}"
+
+    class Meta:
+        verbose_name = "تایید آزمایش"
+        verbose_name_plural = "تاییدهای آزمایش"
+        ordering = ['-created_at']
 
 class Message(models.Model):
     RESPONSE_MESSAGE = 0
@@ -145,3 +144,40 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.experiment_request.project.name}"
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
+    experiment_request = models.ForeignKey(ExperimentRequest, on_delete=models.CASCADE, verbose_name="درخواست آزمایش")
+    message = models.TextField(verbose_name="پیام")
+    is_read = models.BooleanField(default=False, verbose_name="خوانده شده")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    def __str__(self):
+        return f"اعلان برای {self.user} - {self.experiment_request}"
+
+    class Meta:
+        verbose_name = "اعلان"
+        verbose_name_plural = "اعلان‌ها"
+        ordering = ['-created_at']
+
+class AsphaltTest(models.Model):
+    experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
+    layer_type = models.CharField(max_length=50, choices=[
+        ('BINDER', 'بیندر'),
+        ('TOPAK', 'توپکا'),
+    ], verbose_name="نوع لایه")
+    density = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="چگالی")
+    air_void = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="درصد هوای مخلوط")
+    vma = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="VMA")
+    vfa = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="VFA")
+    stability = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="پایداری")
+    flow = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="روانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    def __str__(self):
+        return f"آزمایش آسفالت {self.layer_type} - {self.experiment_response}"
+
+    class Meta:
+        verbose_name = "آزمایش آسفالت"
+        verbose_name_plural = "آزمایشات آسفالت"
+        ordering = ['-created_at']

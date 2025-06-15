@@ -146,4 +146,31 @@ class ExperimentSubTypeForm(forms.ModelForm):
 class ConcretePlaceForm(forms.ModelForm):
     class Meta:
         model = models.ConcretePlace
-        fields = ['name'] 
+        fields = ['name']
+
+class AsphaltTestForm(forms.ModelForm):
+    class Meta:
+        model = models.AsphaltTest
+        fields = [
+            'layer_type', 'density', 'air_void', 'vma', 'vfa',
+            'stability', 'flow'
+        ]
+        widgets = {
+            'layer_type': forms.Select(attrs={'class': 'form-select'}),
+            'density': forms.NumberInput(attrs={'class': 'form-control'}),
+            'air_void': forms.NumberInput(attrs={'class': 'form-control'}),
+            'vma': forms.NumberInput(attrs={'class': 'form-control'}),
+            'vfa': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stability': forms.NumberInput(attrs={'class': 'form-control'}),
+            'flow': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class ExperimentApprovalForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentApproval
+        fields = ['status', 'penalty_percentage', 'description']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'penalty_percentage': forms.NumberInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        } 

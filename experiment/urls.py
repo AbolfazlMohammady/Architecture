@@ -44,4 +44,8 @@ urlpatterns = [
     path('ajax/get-subtypes/', views.get_subtypes, name='get_subtypes'),
     path('ajax/get-types/', views.get_experiment_types, name='get_types'),
     path('ajax/get-places/', views.get_concrete_places, name='get_places'),
+    path('asphalt-test/create/<int:response_id>/', views.asphalt_test_create, name='asphalt_test_create'),
+    path('experiment-approval/create/<int:response_id>/', views.experiment_approval_create, name='experiment_approval_create'),
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
 ]

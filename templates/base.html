@@ -265,50 +265,37 @@
             </li>
             {% endif %}
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                aria-expanded="false">پروژه</a>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="{% url 'create-project' %}">تعریف پروژه</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{% url 'project-list' %}">پروژه های کاربر</a>
-                </li>
+              <a class="nav-link dropdown-toggle" href="#" id="projectDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                پروژه‌ها
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="projectDropdown">
+                <li><a class="dropdown-item" href="{% url 'project-list' %}">لیست پروژه‌ها</a></li>
+                <li><a class="dropdown-item" href="{% url 'create-project' %}">ایجاد پروژه جدید</a></li>
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                aria-expanded="false">
-                <i class="bi bi-flask me-1"></i>
+              <a class="nav-link dropdown-toggle" href="#" id="experimentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 آزمایشات
               </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_list' %}">
-                    <i class="bi bi-list-ul me-2"></i>
-                    لیست درخواست‌ها
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:experiment_request_create' %}">
-                    <i class="bi bi-plus-circle me-2"></i>
-                    ثبت درخواست جدید
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:experiment_type_list' %}">
-                    <i class="bi bi-gear me-2"></i>
-                    انواع آزمایشات
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{% url 'experiment:concrete_place_list' %}">
-                    <i class="bi bi-geo-alt me-2"></i>
-                    محل‌های بتن‌ریزی
-                  </a>
-                </li>
+              <ul class="dropdown-menu" aria-labelledby="experimentDropdown">
+                <li><a class="dropdown-item" href="{% url 'experiment:experiment_request_list' %}">لیست درخواست‌ها</a></li>
+                <li><a class="dropdown-item" href="{% url 'experiment:experiment_request_create' %}">ثبت درخواست جدید</a></li>
+                <li><a class="dropdown-item" href="{% url 'experiment:experiment_type_list' %}">انواع آزمایشات</a></li>
+                <li><a class="dropdown-item" href="{% url 'experiment:concrete_place_list' %}">محل‌های بتن‌ریزی</a></li>
               </ul>
             </li>
+            {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link position-relative" href="{% url 'experiment:notification_list' %}">
+                اعلان‌ها
+                {% if unread_notifications_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ unread_notifications_count }}
+                </span>
+                {% endif %}
+              </a>
+            </li>
+            {% endif %}
             {% if request.user.is_authenticated %}
             <li class="nav-item">
               <form action="{% url 'logout' %}" method="post">

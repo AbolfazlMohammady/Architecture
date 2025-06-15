@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}اعلان‌ها{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">اعلان‌ها</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>پیام</th>
+                                    <th>تاریخ</th>
+                                    <th>وضعیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for notification in notifications %}
+                                <tr {% if not notification.is_read %}class="table-warning"{% endif %}>
+                                    <td>{{ notification.message }}</td>
+                                    <td>{{ notification.created_at|date:"Y/m/d H:i" }}</td>
+                                    <td>
+                                        {% if notification.is_read %}
+                                            <span class="badge bg-success">خوانده شده</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">خوانده نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not notification.is_read %}
+                                            <a href="{% url 'experiment:notification_mark_read' notification.pk %}" class="btn btn-sm btn-primary">
+                                                علامت‌گذاری به عنوان خوانده شده
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">هیچ اعلانی وجود ندارد.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

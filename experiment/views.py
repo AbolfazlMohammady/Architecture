@@ -135,19 +135,31 @@ def experiment_response_create(request, pk):
     return render(request, 'experiment/experiment_response_form.html', {'form': form, 'experiment_request': experiment_request})
 
 @login_required
-def experiment_approval_create(request, pk):
-    experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
+def experiment_approval_create(request, response_id):
+    experiment_response = get_object_or_404(models.ExperimentResponse, pk=response_id)
     if request.method == 'POST':
         form = forms.ExperimentApprovalForm(request.POST)
         if form.is_valid():
             approval = form.save(commit=False)
-            approval.experiment_request = experiment_request
+            approval.experiment_response = experiment_response
             approval.approver = request.user
             approval.save()
-            return redirect('experiment:experiment_request_list')
+            
+            # ایجاد اعلان برای کاربران مرتبط
+            notification = models.Notification.objects.create(
+                user=experiment_response.experiment_request.user,
+                experiment_request=experiment_response.experiment_request,
+                message=f'پاسخ آزمایش شما توسط {request.user.get_full_name()} تایید شد.'
+            )
+            
+            messages.success(request, 'تایید آزمایش با موفقیت ثبت شد.')
+            return redirect('experiment:experiment_response_detail', pk=response_id)
     else:
         form = forms.ExperimentApprovalForm()
-    return render(request, 'experiment/experiment_approval_form.html', {'form': form, 'request': experiment_request})
+    return render(request, 'experiment/experiment_approval_form.html', {
+        'form': form,
+        'experiment_response': experiment_response
+    })
 
 @login_required
 def experiment_type_list(request):
@@ -334,9 +346,20 @@ def experiment_response_list(request):
 
 @login_required
 def experiment_response_detail(request, pk):
-    """جزئیات پاسخ آزمایش"""
-    response = get_object_or_404(models.ExperimentResponse, pk=pk)
-    return render(request, 'experiment/experiment_response_detail.html', {'response': response})
+    experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
+    asphalt_test = models.AsphaltTest.objects.filter(experiment_response=experiment_response).first()
+    approvals = models.ExperimentApproval.objects.filter(experiment_response=experiment_response)
+    user_approval = models.ExperimentApproval.objects.filter(
+        experiment_response=experiment_response,
+        approver=request.user
+    ).first()
+    
+    return render(request, 'experiment/experiment_response_detail.html', {
+        'experiment_response': experiment_response,
+        'asphalt_test': asphalt_test,
+        'approvals': approvals,
+        'user_approval': user_approval,
+    })
 
 @login_required
 @require_http_methods(["GET"])
@@ -419,3 +442,35 @@ def get_concrete_places(request):
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+@login_required
+def asphalt_test_create(request, response_id):
+    experiment_response = get_object_or_404(models.ExperimentResponse, pk=response_id)
+    if request.method == 'POST':
+        form = forms.AsphaltTestForm(request.POST)
+        if form.is_valid():
+            asphalt_test = form.save(commit=False)
+            asphalt_test.experiment_response = experiment_response
+            asphalt_test.save()
+            messages.success(request, 'آزمایش آسفالت با موفقیت ثبت شد.')
+            return redirect('experiment:experiment_response_detail', pk=response_id)
+    else:
+        form = forms.AsphaltTestForm()
+    return render(request, 'experiment/asphalt_test_form.html', {
+        'form': form,
+        'experiment_response': experiment_response
+    })
+
+@login_required
+def notification_list(request):
+    notifications = models.Notification.objects.filter(user=request.user)
+    return render(request, 'experiment/notification_list.html', {
+        'notifications': notifications
+    })
+
+@login_required
+def notification_mark_read(request, notification_id):
+    notification = get_object_or_404(models.Notification, pk=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('experiment:notification_list')

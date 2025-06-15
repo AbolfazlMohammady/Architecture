@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}ثبت آزمایش آسفالت{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">ثبت آزمایش آسفالت</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.layer_type.id_for_label }}">نوع لایه</label>
+                                    {% render_field form.layer_type class="form-select" %}
+                                    {% if form.layer_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.layer_type.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.density.id_for_label }}">چگالی</label>
+                                    {% render_field form.density class="form-control" %}
+                                    {% if form.density.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.density.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.air_void.id_for_label }}">درصد هوای مخلوط</label>
+                                    {% render_field form.air_void class="form-control" %}
+                                    {% if form.air_void.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.air_void.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.vma.id_for_label }}">VMA</label>
+                                    {% render_field form.vma class="form-control" %}
+                                    {% if form.vma.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vma.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.vfa.id_for_label }}">VFA</label>
+                                    {% render_field form.vfa class="form-control" %}
+                                    {% if form.vfa.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vfa.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.stability.id_for_label }}">پایداری</label>
+                                    {% render_field form.stability class="form-control" %}
+                                    {% if form.stability.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.stability.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.flow.id_for_label }}">روانی</label>
+                                    {% render_field form.flow class="form-control" %}
+                                    {% if form.flow.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.flow.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">ذخیره</button>
+                                <a href="{% url 'experiment:experiment_response_detail' experiment_response.pk %}" class="btn btn-secondary">بازگشت</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
