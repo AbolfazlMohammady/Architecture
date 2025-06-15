@@ -110,7 +110,7 @@ class ExperimentApproval(models.Model):
         (APPROVED, 'تایید شده'),
         (REJECTED, 'رد شده'),
     )
-
+    
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
     approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
@@ -120,7 +120,7 @@ class ExperimentApproval(models.Model):
 
     def __str__(self):
         return f"تایید {self.experiment_response} توسط {self.approver}"
-
+    
     class Meta:
         verbose_name = "تایید آزمایش"
         verbose_name_plural = "تاییدهای آزمایش"

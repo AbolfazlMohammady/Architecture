@@ -18,27 +18,27 @@
                             <table class="table table-bordered">
                                 <tr>
                                     <th>پروژه</th>
-                                    <td>{{ response.experiment_request.project.name }}</td>
+                                    <td>{{ experiment_response.experiment_request.project.name }}</td>
                                 </tr>
                                 <tr>
                                     <th>لایه</th>
-                                    <td>{{ response.experiment_request.layer.name }}</td>
+                                    <td>{{ experiment_response.experiment_request.layer.name|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>نوع آزمایش</th>
-                                    <td>{{ response.experiment_request.experiment_type.name }}</td>
+                                    <td>{{ experiment_response.experiment_request.experiment_type.name }}</td>
                                 </tr>
                                 <tr>
                                     <th>زیرگروه آزمایش</th>
-                                    <td>{{ response.experiment_request.experiment_subtype.name }}</td>
+                                    <td>{{ experiment_response.experiment_request.experiment_subtype.name|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>محل بتن‌ریزی</th>
-                                    <td>{{ response.experiment_request.concrete_place.name }}</td>
+                                    <td>{{ experiment_response.experiment_request.concrete_place.name|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>تاریخ درخواست</th>
-                                    <td>{{ response.experiment_request.request_date|date:"Y/m/d" }}</td>
+                                    <td>{{ experiment_response.experiment_request.request_date|date:"Y/m/d" }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -47,27 +47,27 @@
                             <table class="table table-bordered">
                                 <tr>
                                     <th>تاریخ پاسخ</th>
-                                    <td>{{ response.response_date|date:"Y/m/d" }}</td>
+                                    <td>{{ experiment_response.response_date|date:"Y/m/d" }}</td>
                                 </tr>
                                 <tr>
                                     <th>چگالی</th>
-                                    <td>{{ response.density_result }}</td>
+                                    <td>{{ experiment_response.density_result|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>ضخامت</th>
-                                    <td>{{ response.thickness_result }}</td>
+                                    <td>{{ experiment_response.thickness_result|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>مقاومت 1</th>
-                                    <td>{{ response.strength_result1 }}</td>
+                                    <td>{{ experiment_response.strength_result1|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>مقاومت 2</th>
-                                    <td>{{ response.strength_result2 }}</td>
+                                    <td>{{ experiment_response.strength_result2|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>مقاومت 3</th>
-                                    <td>{{ response.strength_result3 }}</td>
+                                    <td>{{ experiment_response.strength_result3|default:"-" }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -76,15 +76,15 @@
                     <div class="row mt-4">
                         <div class="col-12">
                             <h4>توضیحات</h4>
-                            <p>{{ response.description|linebreaks }}</p>
+                            <p>{{ experiment_response.description|linebreaks|default:"-" }}</p>
                         </div>
                     </div>
                     
-                    {% if response.response_file %}
+                    {% if experiment_response.response_file %}
                     <div class="row mt-4">
                         <div class="col-12">
                             <h4>فایل پاسخ</h4>
-                            <a href="{{ response.response_file.url }}" class="btn btn-primary" target="_blank">
+                            <a href="{{ experiment_response.response_file.url }}" class="btn btn-primary" target="_blank" download>
                                 <i class="fas fa-download"></i> دانلود فایل
                             </a>
                         </div>
@@ -93,10 +93,10 @@
                     
                     <div class="row mt-4">
                         <div class="col-12">
-                            <a href="{% url 'experiment:experiment_response_update' response.pk %}" class="btn btn-warning">
+                            <a href="{{ update_url }}" class="btn btn-warning">
                                 <i class="fas fa-edit"></i> ویرایش
                             </a>
-                            <a href="{% url 'experiment:experiment_response_delete' response.pk %}" class="btn btn-danger">
+                            <a href="{% url 'experiment:experiment_response_delete' experiment_response.pk %}" class="btn btn-danger">
                                 <i class="fas fa-trash"></i> حذف
                             </a>
                             <a href="{% url 'experiment:experiment_response_list' %}" class="btn btn-secondary">

@@ -47,15 +47,28 @@ class ExperimentRequestDetailView(LoginRequiredMixin, generic.DetailView):
 class ExperimentResponseCreateView(LoginRequiredMixin, generic.CreateView):
     model = models.ExperimentResponse
     form_class = forms.ExperimentResponseForm
-    template_name = 'experiment/experiment-response-form.html'
-    success_url = reverse_lazy('experiment:experiment-request-list')
+    template_name = 'experiment/experiment_response_form.html'
+    success_url = reverse_lazy('experiment:experiment_request_list')
 
-    def get_initial(self):
-        initial = super().get_initial()
-        experiment_request_id = self.kwargs.get('pk')
-        if experiment_request_id:
-            initial['experiment_request'] = get_object_or_404(models.ExperimentRequest, pk=experiment_request_id)
-        return initial
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        experiment_request_id = self.kwargs.get('experiment_request_id')
+        experiment_request = get_object_or_404(models.ExperimentRequest, id=experiment_request_id)
+        context['experiment_request'] = experiment_request
+        return context
+
+    def form_valid(self, form):
+        experiment_request_id = self.kwargs.get('experiment_request_id')
+        experiment_request = get_object_or_404(models.ExperimentRequest, id=experiment_request_id)
+        form.instance.experiment_request = experiment_request
+        form.instance.user = self.request.user
+        response = super().form_valid(form)
+        
+        # Update experiment request status
+        experiment_request.status = 'completed'
+        experiment_request.save()
+        
+        return response
 
 class ExperimentApprovalCreateView(LoginRequiredMixin, generic.CreateView):
     model = models.ExperimentApproval
@@ -78,8 +91,29 @@ class ExperimentApprovalCreateView(LoginRequiredMixin, generic.CreateView):
 @login_required
 def experiment_request_list(request):
     experiment_requests = models.ExperimentRequest.objects.all()
+    projects = models.Project.objects.all()
+    
+    # فیلتر بر اساس پروژه
+    project_id = request.GET.get('project')
+    if project_id:
+        experiment_requests = experiment_requests.filter(project_id=project_id)
+    
+    # فیلتر بر اساس وضعیت
+    status = request.GET.get('status')
+    if status:
+        experiment_requests = experiment_requests.filter(status=status)
+    
+    # فیلتر بر اساس جستجو
+    search = request.GET.get('search')
+    if search:
+        experiment_requests = experiment_requests.filter(description__icontains=search)
+    
     return render(request, 'experiment/experiment_request_list.html', {
-        'experiment_requests': experiment_requests
+        'experiment_requests': experiment_requests,
+        'projects': projects,
+        'selected_project': project_id,
+        'selected_status': status,
+        'search_query': search
     })
 
 @login_required
@@ -117,8 +151,10 @@ def experiment_request_edit(request, pk):
 @login_required
 def experiment_request_detail(request, pk):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
+    experiment_responses = models.ExperimentResponse.objects.filter(experiment_request=experiment_request)
     return render(request, 'experiment/experiment_request_detail.html', {
-        'experiment_request': experiment_request
+        'experiment_request': experiment_request,
+        'experiment_responses': experiment_responses
     })
 
 @login_required
@@ -319,17 +355,21 @@ def experiment_request_delete(request, pk):
 
 @login_required
 def experiment_response_update(request, pk):
-    """ویرایش پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES, instance=experiment_response)
         if form.is_valid():
             form.save()
             messages.success(request, 'پاسخ آزمایش با موفقیت ویرایش شد.')
-            return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
+            return redirect('experiment:experiment_response_detail', pk=pk)
     else:
         form = forms.ExperimentResponseForm(instance=experiment_response)
-    return render(request, 'experiment/experiment_response_form.html', {'form': form})
+    
+    return render(request, 'experiment/experiment_response_form.html', {
+        'form': form,
+        'experiment_request': experiment_response.experiment_request,
+        'is_update': True
+    })
 
 @login_required
 def experiment_response_delete(request, pk):
@@ -350,18 +390,9 @@ def experiment_response_list(request):
 @login_required
 def experiment_response_detail(request, pk):
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
-    asphalt_test = models.AsphaltTest.objects.filter(experiment_response=experiment_response).first()
-    approvals = models.ExperimentApproval.objects.filter(experiment_response=experiment_response)
-    user_approval = models.ExperimentApproval.objects.filter(
-        experiment_response=experiment_response,
-        approver=request.user
-    ).first()
-    
     return render(request, 'experiment/experiment_response_detail.html', {
         'experiment_response': experiment_response,
-        'asphalt_test': asphalt_test,
-        'approvals': approvals,
-        'user_approval': user_approval,
+        'update_url': reverse('experiment:experiment_response_update', kwargs={'pk': pk})
     })
 
 @login_required

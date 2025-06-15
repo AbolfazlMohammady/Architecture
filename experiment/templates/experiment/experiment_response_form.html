@@ -10,76 +10,198 @@
 
 {% block title %}پاسخ به درخواست آزمایش{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/persian-datepicker.min.css' %}">
+{% endblock %}
+
 {% block main %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">فرم پاسخ به درخواست آزمایش</h3>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-reply me-2"></i>
+                        پاسخ به درخواست آزمایش
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
+                    <!-- اطلاعات درخواست -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3">اطلاعات درخواست</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">شماره درخواست:</label>
+                                        <p class="mb-0">{{ experiment_request.order }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">پروژه:</label>
+                                        <p class="mb-0">{{ experiment_request.project.name }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">لایه:</label>
+                                        <p class="mb-0">{{ experiment_request.layer.name }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">نوع آزمایش:</label>
+                                        <p class="mb-0">{{ experiment_request.experiment_type.name }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">زیرنوع آزمایش:</label>
+                                        <p class="mb-0">{{ experiment_request.experiment_subtype.name|default:"-" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">محل بتن‌ریزی:</label>
+                                        <p class="mb-0">{{ experiment_request.concrete_place.name|default:"-" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">کیلومتراژ:</label>
+                                        <p class="mb-0">{{ experiment_request.start_kilometer }} تا {{ experiment_request.end_kilometer }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">حد تراکم:</label>
+                                        <p class="mb-0">{{ experiment_request.target_density|default:"-" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="text-muted">حد مقاومت فشاری:</label>
+                                        <p class="mb-0">{{ experiment_request.target_strength|default:"-" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فرم پاسخ -->
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                         {% csrf_token %}
-                        
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.experiment_request.id_for_label }}">درخواست آزمایش</label>
-                                    {% render_field form.experiment_request class="form-control" readonly="readonly" %}
-                                    {% if form.experiment_request.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.experiment_request.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.response_date.id_for_label }}">تاریخ پاسخ</label>
-                                    {% render_field form.response_date class="form-control" %}
+                                <div class="mb-3">
+                                    <label for="{{ form.response_date.id_for_label }}" class="form-label">تاریخ پاسخ <span class="text-danger">*</span></label>
+                                    {{ form.response_date }}
                                     {% if form.response_date.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.response_date.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.response_date.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="{{ form.description.id_for_label }}">توضیحات</label>
-                                    {% render_field form.description class="form-control" rows="3" %}
-                                    {% if form.description.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.description.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="{{ form.response_file.id_for_label }}">فایل پاسخ</label>
-                                    {% render_field form.response_file class="form-control" %}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.response_file.id_for_label }}" class="form-label">فایل پاسخ <span class="text-danger">*</span></label>
+                                    {{ form.response_file }}
                                     {% if form.response_file.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.response_file.errors }}
-                                        </div>
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.response_file.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- نتایج آزمایش -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.density_result.id_for_label }}" class="form-label">نتیجه تراکم</label>
+                                    {{ form.density_result }}
+                                    {% if form.density_result.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.density_result.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.thickness_result.id_for_label }}" class="form-label">نتیجه ضخامت</label>
+                                    {{ form.thickness_result }}
+                                    {% if form.thickness_result.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.thickness_result.errors }}
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">ثبت پاسخ</button>
-                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.strength_result1.id_for_label }}" class="form-label">نتیجه مقاومت 1</label>
+                                    {{ form.strength_result1 }}
+                                    {% if form.strength_result1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.strength_result1.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.strength_result2.id_for_label }}" class="form-label">نتیجه مقاومت 2</label>
+                                    {{ form.strength_result2 }}
+                                    {% if form.strength_result2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.strength_result2.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.strength_result3.id_for_label }}" class="form-label">نتیجه مقاومت 3</label>
+                                    {{ form.strength_result3 }}
+                                    {% if form.strength_result3.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.strength_result3.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'experiment:experiment_request_detail' experiment_request.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                ثبت پاسخ
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -87,10 +209,97 @@
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5c636a;
+    border-color: #565e64;
+}
+
+.invalid-feedback {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date picker
+    if (typeof $.fn.datepicker !== 'undefined') {
+        $('#{{ form.response_date.id_for_label }}').datepicker({
+            format: 'yyyy/mm/dd',
+            autoclose: true,
+            todayBtn: 'linked',
+            language: 'fa'
+        });
+    }
+
+    // Form validation
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'js/persian-date.min.js' %}"></script>
+<script src="{% static 'js/persian-datepicker.min.js' %}"></script>
 <script>
 $(document).ready(function() {
     // Initialize Select2 on all select elements
@@ -98,6 +307,23 @@ $(document).ready(function() {
         theme: 'bootstrap4',
         width: '100%'
     });
+
+    var datePicker = $('#{{ form.response_date.id_for_label }}').persianDatepicker({
+        format: 'YYYY/MM/DD',
+        initialValue: false,
+        autoClose: true,
+        position: 'auto',
+        onSelect: function(unix) {
+            var date = new persianDate(unix);
+            $('#{{ form.response_date.id_for_label }}').val(date.format('YYYY/MM/DD'));
+        }
+    });
+
+    // اضافه کردن کلاس‌های Bootstrap به تقویم
+    $('.pwt-btn').addClass('btn btn-sm');
+    $('.pwt-btn-today').addClass('btn-primary');
+    $('.pwt-btn-clear').addClass('btn-secondary');
+    $('.pwt-btn-close').addClass('btn-secondary');
 });
 </script>
 {% endblock %} 

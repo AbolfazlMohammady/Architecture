@@ -80,30 +80,18 @@ class ExperimentResponseForm(forms.ModelForm):
         required=True
     )
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # تنظیم کلاس‌های فرم
-        for field in self.fields:
-            if isinstance(self.fields[field].widget, (forms.TextInput, forms.NumberInput, forms.Textarea)):
-                self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
-            elif isinstance(self.fields[field].widget, forms.Select):
-                self.fields[field].widget.attrs['class'] = 'form-select'
-        
-        # تنظیم ویجت Select2 برای درخواست آزمایش
-        self.fields['experiment_request'].widget = Select2Widget()
-    
     class Meta:
         model = models.ExperimentResponse
-        fields = [
-            'experiment_request', 'response_date', 'description',
-            'density_result', 'thickness_result',
-            'strength_result1', 'strength_result2', 'strength_result3',
-            'response_file'
-        ]
+        fields = ['response_date', 'response_file', 'density_result', 'thickness_result', 
+                 'strength_result1', 'strength_result2', 'strength_result3', 'description']
         widgets = {
-            'response_date': forms.DateInput(attrs={'type': 'date'}),
-            'description': forms.Textarea(attrs={'rows': 3}),
+            'response_file': forms.FileInput(attrs={'class': 'form-control'}),
+            'density_result': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'thickness_result': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'strength_result1': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'strength_result2': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'strength_result3': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 class ExperimentApprovalForm(forms.ModelForm):
@@ -146,7 +134,7 @@ class ExperimentSubTypeForm(forms.ModelForm):
 class ConcretePlaceForm(forms.ModelForm):
     class Meta:
         model = models.ConcretePlace
-        fields = ['name']
+        fields = ['name'] 
 
 class AsphaltTestForm(forms.ModelForm):
     class Meta:

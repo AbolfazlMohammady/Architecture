@@ -14,186 +14,129 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label>پروژه:</label>
-                                <p>{{ experiment_request.project.name }}</p>
-                            </div>
+                            <h4>اطلاعات درخواست</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>پروژه</th>
+                                    <td>{{ experiment_request.project.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>لایه</th>
+                                    <td>{{ experiment_request.layer.name|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>نوع آزمایش</th>
+                                    <td>{{ experiment_request.experiment_type.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>زیرگروه آزمایش</th>
+                                    <td>{{ experiment_request.experiment_subtype.name|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>محل بتن‌ریزی</th>
+                                    <td>{{ experiment_request.concrete_place.name|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>تاریخ درخواست</th>
+                                    <td>{{ experiment_request.request_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>کیلومتراژ</th>
+                                    <td>{{ experiment_request.start_kilometer }} تا {{ experiment_request.end_kilometer }}</td>
+                                </tr>
+                                <tr>
+                                    <th>حد تراکم</th>
+                                    <td>{{ experiment_request.target_density|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>حد مقاومت فشاری</th>
+                                    <td>{{ experiment_request.target_strength|default:"-" }}</td>
+                                </tr>
+                            </table>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label>لایه:</label>
-                                <p>{{ experiment_request.layer.name }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>نوع آزمایش:</label>
-                                <p>{{ experiment_request.experiment_type.name }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>زیرنوع آزمایش:</label>
-                                <p>{{ experiment_request.experiment_subtype.name }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>محل بتن‌ریزی:</label>
-                                <p>{{ experiment_request.concrete_place.name }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>تاریخ درخواست:</label>
-                                <p>{{ experiment_request.request_date }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>کیلومتراژ شروع:</label>
-                                <p>{{ experiment_request.start_kilometer }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>کیلومتراژ پایان:</label>
-                                <p>{{ experiment_request.end_kilometer }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>حد تراکم:</label>
-                                <p>{{ experiment_request.target_density }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>حد مقاومت فشاری:</label>
-                                <p>{{ experiment_request.target_strength }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label>توضیحات:</label>
-                                <p>{{ experiment_request.description }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label>فایل درخواست:</label>
-                                <p>
-                                    <a href="{{ experiment_request.request_file.url }}" class="btn btn-info btn-sm" target="_blank">
-                                        <i class="fas fa-download"></i> دانلود فایل
-                                    </a>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if experiment_request.experimentresponse %}
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <h4>پاسخ آزمایش</h4>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>تاریخ پاسخ:</label>
-                                                <p>{{ experiment_request.experimentresponse.response_date }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>فایل پاسخ:</label>
-                                                <p>
-                                                    <a href="{{ experiment_request.experimentresponse.response_file.url }}" class="btn btn-info btn-sm" target="_blank">
-                                                        <i class="fas fa-download"></i> دانلود فایل
-                                                    </a>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label>توضیحات:</label>
-                                                <p>{{ experiment_request.experimentresponse.description }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {% if experiment_request.experimentresponse.density_result %}
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>نتیجه تراکم:</label>
-                                                <p>{{ experiment_request.experimentresponse.density_result }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>نتیجه ضخامت:</label>
-                                                <p>{{ experiment_request.experimentresponse.thickness_result }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-
-                                    {% if experiment_request.experimentresponse.strength_result1 %}
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>نتیجه مقاومت 1:</label>
-                                                <p>{{ experiment_request.experimentresponse.strength_result1 }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>نتیجه مقاومت 2:</label>
-                                                <p>{{ experiment_request.experimentresponse.strength_result2 }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>نتیجه مقاومت 3:</label>
-                                                <p>{{ experiment_request.experimentresponse.strength_result3 }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
-                            {% if experiment_request.status == 0 %}
-                                <a href="{% url 'experiment:experiment_response_create' experiment_request.id %}" class="btn btn-primary">پاسخ به درخواست</a>
+                            <h4>توضیحات</h4>
+                            <p>{{ experiment_request.description|linebreaks|default:"-" }}</p>
+                            
+                            {% if experiment_request.request_file %}
+                            <h4 class="mt-4">فایل درخواست</h4>
+                            <a href="{{ experiment_request.request_file.url }}" class="btn btn-primary" target="_blank" download>
+                                <i class="fas fa-download"></i> دانلود فایل
+                            </a>
                             {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- پاسخ‌های آزمایش -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4>پاسخ‌های آزمایش</h4>
+                            {% if experiment_responses %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>تاریخ پاسخ</th>
+                                            <th>چگالی</th>
+                                            <th>ضخامت</th>
+                                            <th>مقاومت 1</th>
+                                            <th>مقاومت 2</th>
+                                            <th>مقاومت 3</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for response in experiment_responses %}
+                                        <tr>
+                                            <td>{{ response.response_date|date:"Y/m/d" }}</td>
+                                            <td>{{ response.density_result|default:"-" }}</td>
+                                            <td>{{ response.thickness_result|default:"-" }}</td>
+                                            <td>{{ response.strength_result1|default:"-" }}</td>
+                                            <td>{{ response.strength_result2|default:"-" }}</td>
+                                            <td>{{ response.strength_result3|default:"-" }}</td>
+                                            <td>
+                                                <a href="{% url 'experiment:experiment_response_detail' response.pk %}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-eye"></i> جزئیات
+                                                </a>
+                                                <a href="{% url 'experiment:experiment_response_update' response.pk %}" class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-edit"></i> ویرایش
+                                                </a>
+                                                <a href="{% url 'experiment:experiment_response_delete' response.pk %}" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> حذف
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                هنوز پاسخی برای این درخواست ثبت نشده است.
+                            </div>
+                            {% endif %}
+
+                            {% if experiment_request.status != 'completed' %}
+                            <div class="mt-3">
+                                <a href="{% url 'experiment:experiment_response_create' experiment_request.pk %}" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> ثبت پاسخ جدید
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <a href="{% url 'experiment:experiment_request_update' experiment_request.pk %}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> ویرایش
+                            </a>
+                            <a href="{% url 'experiment:experiment_request_delete' experiment_request.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> حذف
+                            </a>
+                            <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                            </a>
                         </div>
                     </div>
                 </div>

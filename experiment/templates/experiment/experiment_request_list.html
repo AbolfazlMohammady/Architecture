@@ -19,52 +19,55 @@
                 <div class="card-body">
                     <form method="get" class="mb-4">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="project">پروژه</label>
-                                    <select name="project" id="project" class="form-select select2">
+                                    <select name="project" id="project" class="form-select">
                                         <option value="">همه</option>
                                         {% for project in projects %}
-                                            <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"i" %}selected{% endif %}>
-                                                {{ project.name }}
-                                            </option>
+                                        <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"i" %}selected{% endif %}>
+                                            {{ project.name }}
+                                        </option>
                                         {% endfor %}
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="status">وضعیت</label>
-                                    <select name="status" id="status" class="form-select select2">
+                                    <select name="status" id="status" class="form-select">
                                         <option value="">همه</option>
-                                        <option value="0" {% if request.GET.status == '0' %}selected{% endif %}>در انتظار بررسی</option>
-                                        <option value="1" {% if request.GET.status == '1' %}selected{% endif %}>در حال انجام</option>
-                                        <option value="2" {% if request.GET.status == '2' %}selected{% endif %}>تکمیل شده</option>
-                                        <option value="3" {% if request.GET.status == '3' %}selected{% endif %}>رد شده</option>
+                                        <option value="0" {% if selected_status == "0" %}selected{% endif %}>در انتظار بررسی</option>
+                                        <option value="1" {% if selected_status == "1" %}selected{% endif %}>در حال انجام</option>
+                                        <option value="2" {% if selected_status == "2" %}selected{% endif %}>تکمیل شده</option>
+                                        <option value="3" {% if selected_status == "3" %}selected{% endif %}>رد شده</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="search">جستجو</label>
-                                    <input type="text" name="search" id="search" class="form-control" value="{{ request.GET.search }}" placeholder="جستجو در توضیحات...">
+                                    <input type="text" name="search" id="search" class="form-control" placeholder="جستجو در توضیحات..." value="{{ search_query }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">فیلتر</button>
-                                <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary">پاک کردن فیلترها</a>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> جستجو
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>
 
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
+                        <table class="table table-bordered table-hover">
                             <thead>
                                 <tr>
-                                    <th>شماره</th>
+                                    <th>شماره درخواست</th>
                                     <th>پروژه</th>
+                                    <th>لایه</th>
                                     <th>نوع آزمایش</th>
                                     <th>تاریخ درخواست</th>
                                     <th>وضعیت</th>
@@ -74,35 +77,47 @@
                             <tbody>
                                 {% for request in experiment_requests %}
                                 <tr>
-                                    <td>{{ request.id }}</td>
+                                    <td>{{ request.order }}</td>
                                     <td>{{ request.project.name }}</td>
-                                    <td>{{ request.experiment_type.name }} - {{ request.experiment_subtype.name }}</td>
-                                    <td>{{ request.request_date }}</td>
+                                    <td>{{ request.layer.name|default:"-" }}</td>
+                                    <td>{{ request.experiment_type.name }}</td>
+                                    <td>{{ request.request_date|date:"Y/m/d" }}</td>
                                     <td>
                                         {% if request.status == 0 %}
-                                            <span class="badge bg-warning">در انتظار بررسی</span>
+                                        <span class="badge bg-warning">در انتظار بررسی</span>
                                         {% elif request.status == 1 %}
-                                            <span class="badge bg-info">در حال انجام</span>
+                                        <span class="badge bg-info">در حال انجام</span>
                                         {% elif request.status == 2 %}
-                                            <span class="badge bg-success">تکمیل شده</span>
+                                        <span class="badge bg-success">تکمیل شده</span>
                                         {% elif request.status == 3 %}
-                                            <span class="badge bg-danger">رد شده</span>
+                                        <span class="badge bg-danger">رد شده</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'experiment:experiment_request_detail' request.id %}" class="btn btn-info btn-sm">جزئیات</a>
-                                        {% if request.status == 0 %}
-                                            <a href="{% url 'experiment:experiment_response_create' request.id %}" class="btn btn-primary btn-sm">پاسخ</a>
-                                        {% endif %}
+                                        <a href="{% url 'experiment:experiment_request_detail' request.pk %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i> جزئیات
+                                        </a>
+                                        <a href="{% url 'experiment:experiment_request_update' request.pk %}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> ویرایش
+                                        </a>
+                                        <a href="{% url 'experiment:experiment_request_delete' request.pk %}" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i> حذف
+                                        </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center">هیچ درخواست آزمایشی یافت نشد.</td>
+                                    <td colspan="7" class="text-center">هیچ درخواست آزمایشی یافت نشد.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{% url 'experiment:experiment_request_create' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> ثبت درخواست جدید
+                        </a>
                     </div>
                 </div>
             </div>

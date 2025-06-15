@@ -19,7 +19,7 @@
 {% block main %}
 <div class="container">
     <div class="card shadow rounded-2">
-        <div class="card-header">
+                <div class="card-header">
             <h3 class="card-title">
                 {% if form.instance.pk %}
                 ویرایش درخواست آزمایش
@@ -27,12 +27,12 @@
                 ثبت درخواست آزمایش جدید
                 {% endif %}
             </h3>
-        </div>
-        <div class="card-body">
+                </div>
+                <div class="card-body">
             <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-                {% csrf_token %}
-                
-                <div class="row">
+                        {% csrf_token %}
+                        
+                        <div class="row">
                     <!-- اطلاعات اصلی -->
                     <div class="col-md-4">
                         <div class="card mb-3">
@@ -44,9 +44,9 @@
                                     <label for="{{ form.project.id_for_label }}" class="form-label">پروژه</label>
                                     {% render_field form.project class="form-control select2" %}
                                     {% if form.project.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.project.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.project.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
 
@@ -54,19 +54,19 @@
                                     <label for="{{ form.layer.id_for_label }}" class="form-label">لایه</label>
                                     {% render_field form.layer class="form-control select2" %}
                                     {% if form.layer.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.layer.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.layer.errors }}
+                                        </div>
                                     {% endif %}
-                                </div>
+                        </div>
 
                                 <div class="mb-3">
                                     <label for="{{ form.experiment_type.id_for_label }}" class="form-label">نوع آزمایش</label>
                                     {% render_field form.experiment_type class="form-control select2" %}
                                     {% if form.experiment_type.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.experiment_type.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.experiment_type.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
 
@@ -74,14 +74,14 @@
                                     <label for="{{ form.experiment_subtype.id_for_label }}" class="form-label">زیرگروه آزمایش</label>
                                     {% render_field form.experiment_subtype class="form-control select2" %}
                                     {% if form.experiment_subtype.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.experiment_subtype.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.experiment_subtype.errors }}
+                                        </div>
                                     {% endif %}
+                                </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
                     <!-- اطلاعات محل و کیلومتراژ -->
                     <div class="col-md-4">
@@ -94,9 +94,9 @@
                                     <label for="{{ form.concrete_place.id_for_label }}" class="form-label">محل بتن‌ریزی</label>
                                     {% render_field form.concrete_place class="form-control select2" %}
                                     {% if form.concrete_place.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.concrete_place.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.concrete_place.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
 
@@ -104,19 +104,19 @@
                                     <label for="{{ form.request_date.id_for_label }}" class="form-label">تاریخ درخواست</label>
                                     {% render_field form.request_date class="form-control" %}
                                     {% if form.request_date.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.request_date.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.request_date.errors }}
+                                        </div>
                                     {% endif %}
-                                </div>
+                        </div>
 
                                 <div class="mb-3">
                                     <label for="{{ form.start_kilometer.id_for_label }}" class="form-label">کیلومتراژ شروع</label>
                                     {% render_field form.start_kilometer class="form-control" %}
                                     {% if form.start_kilometer.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.start_kilometer.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.start_kilometer.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
 
@@ -124,14 +124,14 @@
                                     <label for="{{ form.end_kilometer.id_for_label }}" class="form-label">کیلومتراژ پایان</label>
                                     {% render_field form.end_kilometer class="form-control" %}
                                     {% if form.end_kilometer.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.end_kilometer.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.end_kilometer.errors }}
+                                        </div>
                                     {% endif %}
+                                </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
                     <!-- اطلاعات تکمیلی -->
                     <div class="col-md-4">
@@ -144,19 +144,19 @@
                                     <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
                                     {% render_field form.description class="form-control" rows="3" %}
                                     {% if form.description.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.description.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.description.errors }}
+                                        </div>
                                     {% endif %}
-                                </div>
+                        </div>
 
                                 <div class="mb-3">
                                     <label for="{{ form.target_density.id_for_label }}" class="form-label">حد تراکم</label>
                                     {% render_field form.target_density class="form-control" %}
                                     {% if form.target_density.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.target_density.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.target_density.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
 
@@ -164,19 +164,19 @@
                                     <label for="{{ form.target_strength.id_for_label }}" class="form-label">حد مقاومت فشاری</label>
                                     {% render_field form.target_strength class="form-control" %}
                                     {% if form.target_strength.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.target_strength.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.target_strength.errors }}
+                                        </div>
                                     {% endif %}
-                                </div>
+                        </div>
 
                                 <div class="mb-3">
                                     <label for="{{ form.request_file.id_for_label }}" class="form-label">فایل درخواست</label>
                                     {% render_field form.request_file class="form-control" %}
                                     {% if form.request_file.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.request_file.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.request_file.errors }}
+                                        </div>
                                     {% endif %}
                                     {% if form.instance.request_file %}
                                     <div class="mt-2">
@@ -186,8 +186,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                            </div>
+                        </div>
 
                 <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
