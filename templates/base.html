@@ -286,12 +286,11 @@
           </li>
             {% if user.is_authenticated %}
             <li class="nav-item">
-              <a class="nav-link position-relative" href="{% url 'experiment:notification_list' %}">
+              <a class="nav-link" href="{% url 'experiment:notification_list' %}">
+                <i class="fas fa-bell"></i>
                 اعلان‌ها
                 {% if unread_notifications_count > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ unread_notifications_count }}
-                </span>
+                    <span class="badge bg-danger">{{ unread_notifications_count }}</span>
                 {% endif %}
               </a>
             </li>

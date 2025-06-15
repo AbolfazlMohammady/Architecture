@@ -4,17 +4,20 @@
 {% block title %}اعلان‌ها{% endblock %}
 
 {% block main %}
-<div class="container-fluid">
+<div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">اعلان‌ها</h3>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>
+                        اعلان‌ها
+                    </h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead>
+                        <table class="table table-hover">
+                            <thead class="table-light">
                                 <tr>
                                     <th>پیام</th>
                                     <th>تاریخ</th>
@@ -25,7 +28,14 @@
                             <tbody>
                                 {% for notification in notifications %}
                                 <tr {% if not notification.is_read %}class="table-warning"{% endif %}>
-                                    <td>{{ notification.message }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if not notification.is_read %}
+                                                <span class="badge bg-danger me-2">جدید</span>
+                                            {% endif %}
+                                            {{ notification.message }}
+                                        </div>
+                                    </td>
                                     <td>{{ notification.created_at|date:"Y/m/d H:i" }}</td>
                                     <td>
                                         {% if notification.is_read %}
@@ -36,15 +46,27 @@
                                     </td>
                                     <td>
                                         {% if not notification.is_read %}
-                                            <a href="{% url 'experiment:notification_mark_read' notification.pk %}" class="btn btn-sm btn-primary">
+                                            <a href="{% url 'experiment:notification_mark_read' notification.pk %}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-check me-1"></i>
                                                 علامت‌گذاری به عنوان خوانده شده
                                             </a>
                                         {% endif %}
+                                        <a href="{% url 'experiment:experiment_request_detail' notification.experiment_request.pk %}" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye me-1"></i>
+                                            مشاهده درخواست
+                                        </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="4" class="text-center">هیچ اعلانی وجود ندارد.</td>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-bell-slash fa-2x mb-3"></i>
+                                            <p>هیچ اعلانی وجود ندارد.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

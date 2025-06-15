@@ -124,14 +124,21 @@ def experiment_request_create(request):
             experiment_request = form.save(commit=False)
             experiment_request.user = request.user
             experiment_request.save()
+            
+            # ایجاد اعلان برای مدیر کنترل کیفیت
+            if experiment_request.project.quality_control_manager:
+                models.Notification.objects.create(
+                    user=experiment_request.project.quality_control_manager,
+                    experiment_request=experiment_request,
+                    message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای شما ارسال شده است.'
+                )
+            
             messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
     else:
         form = forms.ExperimentRequestForm()
     
-    return render(request, 'experiment/experiment_request_form.html', {
-        'form': form
-    })
+    return render(request, 'experiment/experiment_request_form.html', {'form': form})
 
 @login_required
 def experiment_request_edit(request, pk):
@@ -159,19 +166,30 @@ def experiment_request_detail(request, pk):
 
 @login_required
 def experiment_response_create(request, pk):
-    """ایجاد پاسخ آزمایش"""
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES)
         if form.is_valid():
             experiment_response = form.save(commit=False)
             experiment_response.experiment_request = experiment_request
+            experiment_response.user = request.user
             experiment_response.save()
+            
+            # ایجاد اعلان برای درخواست کننده
+            models.Notification.objects.create(
+                user=experiment_request.user,
+                experiment_request=experiment_request,
+                message=f'پاسخ آزمایش شما برای پروژه {experiment_request.project.name} ثبت شد.'
+            )
+            
             messages.success(request, 'پاسخ آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
     else:
         form = forms.ExperimentResponseForm()
-    return render(request, 'experiment/experiment_response_form.html', {'form': form, 'experiment_request': experiment_request})
+    return render(request, 'experiment/experiment_response_form.html', {
+        'form': form,
+        'experiment_request': experiment_request
+    })
 
 @login_required
 def experiment_approval_create(request, response_id):
@@ -185,11 +203,20 @@ def experiment_approval_create(request, response_id):
             approval.save()
             
             # ایجاد اعلان برای کاربران مرتبط
-            notification = models.Notification.objects.create(
+            status_text = "تایید شد" if approval.status == models.ExperimentApproval.APPROVED else "رد شد"
+            models.Notification.objects.create(
                 user=experiment_response.experiment_request.user,
                 experiment_request=experiment_response.experiment_request,
-                message=f'پاسخ آزمایش شما توسط {request.user.get_full_name()} تایید شد.'
+                message=f'پاسخ آزمایش شما توسط {request.user.get_full_name()} {status_text}.'
             )
+            
+            # اعلان برای مدیر کنترل کیفیت
+            if experiment_response.experiment_request.project.quality_control_manager:
+                models.Notification.objects.create(
+                    user=experiment_response.experiment_request.project.quality_control_manager,
+                    experiment_request=experiment_response.experiment_request,
+                    message=f'پاسخ آزمایش برای پروژه {experiment_response.experiment_request.project.name} {status_text}.'
+                )
             
             messages.success(request, 'تایید آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=response_id)
@@ -493,4 +520,5 @@ def notification_mark_read(request, notification_id):
     notification = get_object_or_404(models.Notification, pk=notification_id, user=request.user)
     notification.is_read = True
     notification.save()
+    messages.success(request, 'اعلان با موفقیت به عنوان خوانده شده علامت‌گذاری شد.')
     return redirect('experiment:notification_list')
