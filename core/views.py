@@ -10,6 +10,10 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.decorators import method_decorator
 from .permissions import role_required
+from experiment.models import ExperimentRequest, ExperimentApproval
+from project.models import ProjectLayer
+from datetime import datetime, timedelta
+from django.utils import timezone
 # Create your views here.
 
 class LoginView(Login):
@@ -24,12 +28,90 @@ class HomeView(LoginRequiredMixin,generic.ListView):
     template_name = "core/home.html"
     model = project_models.Project
     
-    
-    
     def get_queryset(self):
-        return super().get_queryset().order_by("-updated_at")[:5]
-        
+        return self.model.objects.all().order_by('-updated_at')[:5]
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['latest_projects'] = self.get_queryset()
+        
+        # محاسبه وضعیت کلی پروژه‌ها
+        total_projects = self.model.objects.count()
+        active_projects = self.model.objects.filter(end_date__isnull=True).count()
+        completed_projects = self.model.objects.filter(end_date__isnull=False).count()
+        stopped_projects = total_projects - active_projects - completed_projects
+        
+        context['project_status'] = {
+            'active': round((active_projects / total_projects) * 100) if total_projects > 0 else 0,
+            'completed': round((completed_projects / total_projects) * 100) if total_projects > 0 else 0,
+            'stopped': round((stopped_projects / total_projects) * 100) if total_projects > 0 else 0
+        }
+        
+        # محاسبه پیشرفت پروژه‌ها
+        projects = self.get_queryset()
+        project_progress = []
+        for project in projects:
+            total_layers = project.projectlayer_set.count()
+            completed_layers = project.projectlayer_set.filter(status=ProjectLayer.COMPLETED).count()
+            progress = round((completed_layers / total_layers) * 100) if total_layers > 0 else 0
+            project_progress.append({
+                'name': project.name,
+                'progress': progress
+            })
+        context['project_progress'] = project_progress
+        
+        # محاسبه کیفیت آزمایشات در 6 ماه اخیر
+        six_months_ago = timezone.now() - timedelta(days=180)
+        
+        # محاسبه تعداد آزمایشات تایید شده برای هر ماه
+        experiment_quality = []
+        for i in range(6):
+            month_start = timezone.now() - timedelta(days=30 * (i + 1))
+            month_end = timezone.now() - timedelta(days=30 * i)
+            
+            # تعداد آزمایشات تایید شده در این ماه
+            month_approved = ExperimentApproval.objects.filter(
+                created_at__gte=month_start,
+                created_at__lt=month_end,
+                status=ExperimentApproval.APPROVED
+            ).count()
+            
+            # تعداد کل آزمایشات در این ماه
+            month_total = ExperimentRequest.objects.filter(
+                created_at__gte=month_start,
+                created_at__lt=month_end
+            ).count()
+            
+            # محاسبه درصد قبولی
+            approval_rate = round((month_approved / month_total) * 100) if month_total > 0 else 0
+            
+            # اضافه کردن اطلاعات به لیست
+            experiment_quality.append({
+                'month': month_start.strftime('%Y-%m'),
+                'approved_count': month_approved,
+                'total_count': month_total,
+                'approval_rate': approval_rate
+            })
+        
+        context['experiment_quality'] = experiment_quality
+        
+        # محاسبه وضعیت مالی (فعلاً تخمینی)
+        total_budget = sum(project.budget or 0 for project in self.model.objects.all())
+        if total_budget > 0:
+            context['financial_status'] = {
+                'spent': 60,  # فعلاً تخمینی - 60% کل بودجه
+                'remaining': 35,  # فعلاً تخمینی - 35% کل بودجه
+                'unexpected': 5  # فعلاً تخمینی - 5% کل بودجه
+            }
+        else:
+            context['financial_status'] = {
+                'spent': 0,
+                'remaining': 0,
+                'unexpected': 0
+            }
+
+        return context
+
 class ProfileView(LoginRequiredMixin, generic.UpdateView):
     template_name = "core/profile.html"
     model = models.User

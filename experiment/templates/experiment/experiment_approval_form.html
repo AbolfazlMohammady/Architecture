@@ -15,11 +15,12 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        {{ form.experiment_response }}
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="{{ form.status.id_for_label }}">وضعیت</label>
+                                    <label for="{{ form.status.id_for_label }}">وضعیت تایید</label>
                                     {% render_field form.status class="form-select" %}
                                     {% if form.status.errors %}
                                         <div class="invalid-feedback d-block">
@@ -28,6 +29,20 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.approval_date.id_for_label }}">تاریخ تایید</label>
+                                    {% render_field form.approval_date class="form-control" %}
+                                    {% if form.approval_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.approval_date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.penalty_percentage.id_for_label }}">درصد جریمه</label>
@@ -57,7 +72,7 @@
 
                         <div class="row mt-3">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">ذخیره</button>
+                                <button type="submit" class="btn btn-primary">ثبت تایید</button>
                                 <a href="{% url 'experiment:experiment_response_detail' experiment_response.pk %}" class="btn btn-secondary">بازگشت</a>
                             </div>
                         </div>
@@ -67,4 +82,15 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    });
+</script>
 {% endblock %} 

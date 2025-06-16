@@ -110,16 +110,21 @@ class ExperimentApprovalForm(forms.ModelForm):
                 self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
             elif isinstance(self.fields[field].widget, forms.Select):
                 self.fields[field].widget.attrs['class'] = 'form-select'
+        
+        # تنظیم فیلدهای خاص
+        self.fields['experiment_response'].widget = forms.HiddenInput()
+        self.fields['status'].widget.attrs.update({'class': 'form-select'})
+        self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 3})
+        self.fields['penalty_percentage'].widget.attrs.update({'class': 'form-control'})
     
     class Meta:
         model = models.ExperimentApproval
-        fields = ['experiment_response', 'status', 'approval_date', 'description']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['experiment_response'].widget = forms.HiddenInput()
-        self.fields['status'].widget.attrs.update({'class': 'form-select'})
-        self.fields['description'].widget.attrs.update({'class': 'form-control'})
+        fields = ['experiment_response', 'status', 'approval_date', 'penalty_percentage', 'description']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'penalty_percentage': forms.NumberInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
 
 class ExperimentTypeForm(forms.ModelForm):
     class Meta:
@@ -151,14 +156,4 @@ class AsphaltTestForm(forms.ModelForm):
             'vfa': forms.NumberInput(attrs={'class': 'form-control'}),
             'stability': forms.NumberInput(attrs={'class': 'form-control'}),
             'flow': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-
-class ExperimentApprovalForm(forms.ModelForm):
-    class Meta:
-        model = models.ExperimentApproval
-        fields = ['status', 'penalty_percentage', 'description']
-        widgets = {
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'penalty_percentage': forms.NumberInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         } 

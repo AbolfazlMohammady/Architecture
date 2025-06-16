@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}
-سامانه کنترل کیفیت
-{% endblock %}
+{% block title %}صفحه اصلی{% endblock %}
 
 {% block head %}
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
@@ -110,18 +108,20 @@ body, html {
                     <canvas id="projectsProgressChart"></canvas>
                 </div>
             </div>
-            <!-- نمودار کیفیت آزمایشات -->
-            <div class="chart-card">
-                <h3 class="chart-title" style="color:#2ecc71;">کیفیت آزمایشات</h3>
-                <div class="chart-container">
-                    <canvas id="testsQualityChart"></canvas>
-                </div>
-            </div>
             <!-- نمودار وضعیت مالی -->
             <div class="chart-card">
                 <h3 class="chart-title" style="color:#FF5722;">وضعیت مالی</h3>
                 <div class="chart-container">
                     <canvas id="financialStatusChart"></canvas>
+                </div>
+            </div>
+            <!-- نمودار کیفیت آزمایشات -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">کیفیت آزمایشات</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="experimentQualityChart"></canvas>
                 </div>
             </div>
         </div>
@@ -157,7 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: ['در حال اجرا', 'تکمیل شده', 'متوقف شده'],
             datasets: [{
-                data: [65, 25, 10],
+                data: [
+                    {{ project_status.active }},
+                    {{ project_status.completed }},
+                    {{ project_status.stopped }}
+                ],
                 backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
                 borderWidth: 0
             }]
@@ -172,10 +176,18 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('projectsProgressChart'), {
         type: 'bar',
         data: {
-            labels: ['پروژه ۱', 'پروژه ۲', 'پروژه ۳', 'پروژه ۴'],
+            labels: [
+                {% for project in project_progress %}
+                    '{{ project.name }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
             datasets: [{
                 label: 'درصد پیشرفت',
-                data: [75, 45, 90, 60],
+                data: [
+                    {% for project in project_progress %}
+                        {{ project.progress }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
                 backgroundColor: '#2196F3',
                 borderRadius: 5
             }]
@@ -195,32 +207,73 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // نمودار کیفیت آزمایشات
-    new Chart(document.getElementById('testsQualityChart'), {
-        type: 'line',
-        data: {
-            labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
-            datasets: [{
-                label: 'درصد قبولی',
-                data: [85, 88, 92, 87, 90, 95],
-                borderColor: '#4CAF50',
-                tension: 0.4,
-                fill: true,
-                backgroundColor: 'rgba(76, 175, 80, 0.1)'
-            }]
-        },
+    var experimentQualityCtx = document.getElementById('experimentQualityChart').getContext('2d');
+    var experimentQualityData = {
+        labels: [{% for item in experiment_quality %}'{{ item.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'تعداد آزمایشات تایید شده',
+            data: [{% for item in experiment_quality %}{{ item.approved_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            type: 'bar'
+        }, {
+            label: 'درصد قبولی',
+            data: [{% for item in experiment_quality %}{{ item.approval_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1,
+            type: 'line',
+            yAxisID: 'percentage'
+        }]
+    };
+    var experimentQualityConfig = {
+        type: 'bar',
+        data: experimentQualityData,
         options: {
-            ...commonOptions,
+            responsive: true,
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'تعداد آزمایشات'
+                    }
+                },
+                percentage: {
+                    position: 'right',
+                    beginAtZero: true,
                     max: 100,
-                    ticks: {
-                        callback: value => value + '%'
+                    title: {
+                        display: true,
+                        text: 'درصد قبولی'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            var label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.dataset.type === 'bar') {
+                                label += context.raw + ' آزمایش';
+                            } else {
+                                label += context.raw + '%';
+                            }
+                            return label;
+                        }
                     }
                 }
             }
         }
-    });
+    };
+    new Chart(experimentQualityCtx, experimentQualityConfig);
 
     // نمودار وضعیت مالی
     new Chart(document.getElementById('financialStatusChart'), {
@@ -228,7 +281,11 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: ['بودجه مصرف شده', 'بودجه باقیمانده', 'هزینه‌های پیش‌بینی نشده'],
             datasets: [{
-                data: [60, 35, 5],
+                data: [
+                    {{ financial_status.spent }},
+                    {{ financial_status.remaining }},
+                    {{ financial_status.unexpected }}
+                ],
                 backgroundColor: ['#FF5722', '#2196F3', '#FFC107'],
                 borderWidth: 0
             }]

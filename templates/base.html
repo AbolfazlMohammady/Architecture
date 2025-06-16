@@ -18,15 +18,13 @@
     }
 
     .navbar-brand {
-      font-weight: 600;
-      color: #ffffff !important;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
+      color: #2c3e50 !important;
+      font-weight: 700;
+      transition: color 0.3s ease;
     }
 
     .navbar-brand:hover {
-      transform: scale(1.05);
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      color: #3498db !important;
     }
 
     .nav-link {
@@ -234,18 +232,22 @@
   {% endblock %}
   <title>
     {% block title %}
-    سامانه کنترل کیفیت
+    <a href="{% url 'home' %}" style="text-decoration: none; color: inherit;">
+      {% if title %}{{ title }} - {% endif %}سامانه کنترل کیفیت
+    </a>
     {% endblock %}
   </title>
 </head>
 
 <body class="container-fluid bg-light">
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg sticky-top bg-white shadow-sm">
     <div class="container-fluid">
-      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar"
-        aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation"><span
-            class="navbar-toggler-icon"></span></button>
-      <a class="navbar-brand" href="#">سامانه کنترل کیفیت</a>
+      <a class="navbar-brand" href="{% url 'home' %}">
+        <h4 class="mb-0">سامانه کنترل کیفیت</h4>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvas" aria-controls="navbarOffcanvas" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
       <div class="offcanvas offcanvas-end " tabindex="-1" id="offcanvasDarkNavbar"
         aria-labelledby="offcanvasDarkNavbarLabel">
         <div class="offcanvas-header">
