@@ -31,19 +31,6 @@
                         {{ form.national_id }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">{{ form.roles.label }}</label>
-                        <div class="border rounded p-2 overflow-auto" style="max-height: 150px;">
-                            <div class="list-group">
-                                {% for role in form.roles %}
-                                <label class="list-group-item d-flex align-items-center">
-                                    {{ role.tag }}
-                                    <span class="ms-2">{{ role.choice_label }}</span>
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label fw-bold">{{ form.accessible_projects.label }}</label>
                         <div class="border rounded p-2 overflow-auto" style="max-height: 150px;">
                             <div class="list-group">

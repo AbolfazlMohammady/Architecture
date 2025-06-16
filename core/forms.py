@@ -5,16 +5,10 @@ from .models import User as CustomUser, Role
 class UserProfileForm(forms.ModelForm):
     # فیلد فقط‌خواندنی (مثلاً national_id)
     national_id = forms.CharField(min_length=10, max_length=10, disabled=True, label="کد ملی", required=False)
-    roles = forms.ModelMultipleChoiceField(
-        queryset=Role.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        label="نقش‌ها",
-        required=False
-    )
 
     class Meta:
         model = CustomUser
-        fields = ["first_name", "last_name", "national_id", "roles"]
+        fields = ["first_name", "last_name", "national_id"]
 
     def __init__(self, *args, **kwargs):
         user_instance = kwargs.get('instance')
