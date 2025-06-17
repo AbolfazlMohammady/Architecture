@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}داشبورد{% endblock %}
+{% block main %}
+<div class="container py-4">
+    <div class="row mb-4 justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0 user-info-card position-relative overflow-hidden">
+                <div class="user-info-bg"></div>
+                <div class="card-body text-center position-relative">
+                    <img src="https://ui-avatars.com/api/?name={{ user_info.full_name|urlencode }}&background=2196F3&color=fff&size=96" class="rounded-circle mb-3 border border-3 border-white shadow" alt="avatar" width="96" height="96">
+                    <h4 class="card-title mb-1 fw-bold">{{ user_info.full_name }}</h4>
+                    <div class="text-muted mb-2">نام کاربری: <span class="fw-bold">{{ user_info.username }}</span></div>
+                    <div class="mb-2">کد ملی: <span class="fw-bold">{{ user_info.national_id }}</span></div>
+                    <div class="mb-2">نقش‌ها:
+                        {% for role in roles %}
+                            <span class="badge-role">{{ role }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-4 justify-content-center">
+        {% for item in access %}
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <a href="{{ item.url }}" class="text-decoration-none">
+                <div class="card h-100 shadow border-0 dashboard-card-pro py-4 px-2 text-center position-relative">
+                    <div class="dashboard-icon mb-3 mx-auto">
+                        {% if 'پروژه' in item.name %}
+                            <i class="bi bi-diagram-3"></i>
+                        {% elif 'آزمایش' in item.name %}
+                            <i class="bi bi-beaker"></i>
+                        {% elif 'اعلان' in item.name %}
+                            <i class="bi bi-bell"></i>
+                        {% elif 'مدیریت' in item.name %}
+                            <i class="bi bi-people"></i>
+                        {% elif 'پروفایل' in item.name %}
+                            <i class="bi bi-person-circle"></i>
+                        {% else %}
+                            <i class="bi bi-grid"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">{{ item.name }}</h5>
+                    <div class="card-subtitle text-muted small">دسترسی سریع به {{ item.name }}</div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">شما دسترسی به هیچ بخشی ندارید.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<style>
+.user-info-card {
+    background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.10);
+}
+.user-info-bg {
+    position: absolute;
+    top: -40px; left: -40px; right: -40px; height: 120px;
+    background: linear-gradient(90deg, #2196F3 0%, #21CBF3 100%);
+    opacity: 0.15;
+    z-index: 0;
+    border-radius: 0 0 50% 50%/0 0 100% 100%;
+}
+.badge-role {
+    background: linear-gradient(90deg, #1976d2 0%, #2196F3 100%);
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 1rem;
+    padding: 0.4em 1.1em;
+    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
+    margin: 0 0.2em 0.2em 0;
+    display: inline-block;
+}
+.dashboard-card-pro {
+    border-radius: 1.2rem;
+    background: linear-gradient(135deg, #f8fafc 60%, #e3f0ff 100%);
+    box-shadow: 0 4px 24px 0 rgba(33,150,243,0.08);
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+    min-height: 220px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+.dashboard-card-pro:hover {
+    transform: translateY(-8px) scale(1.04);
+    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+    background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
+}
+.dashboard-icon {
+    width: 70px; height: 70px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
+    font-size: 2.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    transition: background 0.2s, color 0.2s;
+}
+.dashboard-card-pro:hover .dashboard-icon {
+    background: linear-gradient(135deg, #21CBF3 0%, #2196F3 100%);
+    color: #2196F3;
+}
+</style>
+{% endblock %} 

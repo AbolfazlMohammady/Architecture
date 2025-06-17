@@ -257,6 +257,9 @@
         </div>
         <div class="offcanvas-body">
           <ul class="navbar-nav menu-list justify-content-end flex-grow-1 pe-3">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'dashboard' %}">داشبورد</a>
+            </li>
             {% if request.user.is_authenticated %}
             <li class="nav-item">
               <a class="nav-link" href="{% url 'profile' %}">پروفایل</a>

@@ -14,11 +14,14 @@ from experiment.models import ExperimentRequest, ExperimentApproval
 from project.models import ProjectLayer
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.urls import reverse, NoReverseMatch
 # Create your views here.
 
 class LoginView(Login):
     redirect_authenticated_user = True
     template_name = "core/login.html"
+    def get_success_url(self):
+        return "/dashboard/"
 
 class LogoutView(logout):
     template_name = "core/logout.html"
@@ -162,6 +165,13 @@ class ProfileView(LoginRequiredMixin, generic.UpdateView):
             })
         context['all_user_projects'] = all_user_projects
         context['accessible_projects'] = user.accessible_projects.all()
+        context['user_info'] = {
+            'full_name': user.get_full_name(),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username,
+            'national_id': user.national_id,
+        }
         return context
 
 @method_decorator(role_required(['ادمین']), name='dispatch')
@@ -225,4 +235,71 @@ class AdminUserDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.Delet
         response = super().delete(request, *args, **kwargs)
         messages.success(request, "کاربر با موفقیت حذف شد.")
         return response
+
+class DashboardView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "core/dashboard.html"
+
+    # تعریف دسترسی‌ها بر اساس نقش و url nameهای درست
+    ROLE_ACCESS = {
+        'ادمین': [
+            {'name': 'مدیریت کاربران', 'url_name': 'admin-user-list'},
+            {'name': 'پروفایل', 'url_name': 'profile'},
+            {'name': 'لیست پروژه‌ها', 'url_name': 'project-list'},
+            {'name': 'ایجاد پروژه', 'url_name': 'create-project'},
+            {'name': 'لیست آزمایشات', 'url_name': 'experiment:experiment_request_list'},
+            {'name': 'ثبت درخواست آزمایش', 'url_name': 'experiment:experiment_request_create'},
+            {'name': 'انواع آزمایشات', 'url_name': 'experiment:experiment_type_list'},
+            {'name': 'اعلان‌ها', 'url_name': 'experiment:notification_list'},
+        ],
+        'مدیر عامل موسسه': [
+            {'name': 'پروفایل', 'url_name': 'profile'},
+            {'name': 'لیست پروژه‌ها', 'url_name': 'project-list'},
+            {'name': 'لیست آزمایشات', 'url_name': 'experiment:experiment_request_list'},
+            {'name': 'اعلان‌ها', 'url_name': 'experiment:notification_list'},
+        ],
+        'مدیر فنی موسسه': [
+            {'name': 'پروفایل', 'url_name': 'profile'},
+            {'name': 'لیست پروژه‌ها', 'url_name': 'project-list'},
+            {'name': 'لیست آزمایشات', 'url_name': 'experiment:experiment_request_list'},
+        ],
+        'مدیر کنترل کیفی موسسه': [
+            {'name': 'پروفایل', 'url_name': 'profile'},
+            {'name': 'لیست پروژه‌ها', 'url_name': 'project-list'},
+            {'name': 'لیست آزمایشات', 'url_name': 'experiment:experiment_request_list'},
+        ],
+        'کارشناس موسسه': [
+            {'name': 'پروفایل', 'url_name': 'profile'},
+            {'name': 'لیست پروژه‌ها', 'url_name': 'project-list'},
+        ],
+        # سایر نقش‌ها را به همین صورت اضافه کن...
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        roles = user.roles.values_list('name', flat=True)
+        context['roles'] = list(roles)
+        # جمع‌آوری دسترسی‌های یکتا
+        access_set = set()
+        access_list = []
+        for role in roles:
+            for item in self.ROLE_ACCESS.get(role, []):
+                key = (item['name'], item['url_name'])
+                if key not in access_set:
+                    # تلاش برای ساخت url
+                    try:
+                        url = reverse(item['url_name'])
+                    except NoReverseMatch:
+                        url = "#"
+                    access_list.append({'name': item['name'], 'url': url})
+                    access_set.add(key)
+        context['access'] = access_list
+        context['user_info'] = {
+            'full_name': user.get_full_name(),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username,
+            'national_id': user.national_id,
+        }
+        return context
 
