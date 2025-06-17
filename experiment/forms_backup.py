@@ -26,7 +26,10 @@ class ExperimentRequestForm(forms.ModelForm):
         
         # تنظیم ویجت‌های Select2 و queryset‌ها
         self.fields['project'].widget = Select2Widget()
-        self.fields['project'].queryset = Project.objects.all()
+        if user is not None:
+            self.fields['project'].queryset = Project.objects.filter(users_with_access=user)
+        else:
+            self.fields['project'].queryset = Project.objects.all()
         
         self.fields['layer'].widget = Select2Widget()
         if self.instance.pk and self.instance.project:

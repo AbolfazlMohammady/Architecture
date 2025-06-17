@@ -1,25 +1,31 @@
 html, body {
-  min-height: 700px!important;
-  min-width: 1500px!important;
+  min-height: 100vh;
+  min-width: 0;
   margin: 0;
   padding: 0;
-  overflow: scroll; /* اجازه اسکرول */
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
 }
 
 
 #container {
      position: relative;
-      min-width: 1150px;
      min-height: 480px;
      background-color: rgb(255, 255, 255);
      border-radius: 10px;
-     
-
+     max-width: 100%;
+     box-sizing: border-box;
+     overflow: hidden;
  }
 
  #mainCanvas {
      background-color: rgb(251, 251, 251);
      margin: 0px;
+     max-width: 100%;
+     box-sizing: border-box;
  }
 
  #y-axis-layer {
@@ -27,9 +33,9 @@ html, body {
      left: 0;
      top: 0;
      width: 50px;
-
      z-index: 10;
      pointer-events: none;
+     box-sizing: border-box;
  }
 
  #x-axis-layer {
@@ -44,4 +50,59 @@ html, body {
      background: white;
      z-index: 10;
      pointer-events: none;
+     box-sizing: border-box;
  }
+
+/* اضافه کردن استایل‌های جدید برای رفع مشکلات layout */
+.dashboard-main {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.dashboard-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.dashboard-col {
+    box-sizing: border-box;
+    padding: 0 12px;
+    margin-bottom: 24px;
+}
+
+/* تنظیم responsive برای کارت‌ها */
+@media (max-width: 768px) {
+    .dashboard-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .chart-card {
+        min-width: auto;
+        width: 100%;
+        margin: 0 0 16px 0;
+    }
+    
+    .charts-wrapper {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 8px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .chart-container {
+        height: 180px;
+    }
+}

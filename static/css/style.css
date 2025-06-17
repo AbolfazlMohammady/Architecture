@@ -49,6 +49,15 @@ main {
 body, html {
     font-family: 'Vazirmatn', 'IRANSans', sans-serif !important;
     background: #e9f0f7;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 .charts-container {
@@ -60,12 +69,14 @@ body, html {
     padding: 2rem 1rem;
     margin-bottom: 2rem;
     overflow-x: auto;
+    max-width: 100%;
 }
 
 .charts-wrapper {
     display: flex;
     gap: 24px;
     min-width: min-content;
+    flex-wrap: wrap;
 }
 
 .chart-card {
@@ -73,13 +84,15 @@ body, html {
     border-radius: 20px !important;
     box-shadow: 0 6px 24px rgba(44,62,80,0.08) !important;
     transition: box-shadow 0.3s, transform 0.3s;
-    min-width: 320px;
+    min-width: 200px;
+    max-width: 100%;
     margin: 0 8px;
     border: none;
     padding: 1.5rem 1.2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .chart-card:hover {
@@ -98,9 +111,11 @@ body, html {
 .chart-container {
     height: 220px;
     width: 100%;
+    max-width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 ::-webkit-scrollbar {
@@ -111,4 +126,39 @@ body, html {
 ::-webkit-scrollbar-thumb {
     background: #b0c4d6;
     border-radius: 8px;
+}
+
+/* اضافه کردن استایل‌های جدید برای داشبورد */
+.dashboard-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 12px;
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.row {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.col-12, .col-lg-4, .col-lg-8, .col-md-6, .col-lg-3, .col-sm-6 {
+    box-sizing: border-box;
+    padding: 0 12px;
+}
+
+.card {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.card-body {
+    box-sizing: border-box;
+    max-width: 100%;
 }
