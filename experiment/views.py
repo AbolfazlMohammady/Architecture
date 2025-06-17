@@ -119,7 +119,7 @@ def experiment_request_list(request):
 @login_required
 def experiment_request_create(request):
     if request.method == 'POST':
-        form = forms.ExperimentRequestForm(request.POST, request.FILES)
+        form = forms.ExperimentRequestForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             experiment_request = form.save(commit=False)
             experiment_request.user = request.user
@@ -136,7 +136,7 @@ def experiment_request_create(request):
             messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
     else:
-        form = forms.ExperimentRequestForm()
+        form = forms.ExperimentRequestForm(user=request.user)
     
     return render(request, 'experiment/experiment_request_form.html', {'form': form})
 
