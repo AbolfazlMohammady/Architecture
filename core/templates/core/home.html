@@ -36,12 +36,14 @@ body, html {
     box-shadow: 0 8px 32px rgba(44,62,80,0.10);
     padding: 2rem 1rem;
     margin-bottom: 2rem;
-    overflow-x: auto;
+    overflow-x: auto;    /* فعال کردن اسکرول افقی */
+    overflow-y: hidden;  /* جلوگیری از اسکرول عمودی */
 }
 .charts-wrapper {
     display: flex;
     gap: 24px;
-    min-width: min-content;
+    min-width: max-content;  /* اجازه میده عرضش به اندازه محتوا باشه، جلوگیری از شکست خط */
+    flex-wrap: nowrap;       /* جلوگیری از افتادن آیتم ها زیر هم */
 }
 .chart-card {
     background: rgba(255,255,255,0.75) !important;
@@ -70,6 +72,33 @@ body, html {
 .chart-container {
     height: 220px;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card {  /* این رو هم برای کارت کیفیت آزمایشات اضافه کردم چون استایل chart-card رو نداشت */
+    background: rgba(255,255,255,0.75);
+    border-radius: 20px;
+    box-shadow: 0 6px 24px rgba(44,62,80,0.08);
+    margin: 0 8px;
+    padding: 1.5rem 1.2rem;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+}
+.card-header {
+    border-bottom: none;
+    margin-bottom: 1rem;
+}
+.card-title {
+    font-family: 'Vazirmatn', 'IRANSans', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    text-align: center;
+}
+.card-body {
+    height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
