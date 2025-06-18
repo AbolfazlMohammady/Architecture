@@ -106,3 +106,172 @@ html, body {
         height: 180px;
     }
 }
+
+/* هدر داشبورد */
+.dashboard-header {
+    background: linear-gradient(90deg, #1976d2 0%, #2196F3 100%);
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 1.5rem 2rem 1rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 24px 0 rgba(33,150,243,0.10);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.dashboard-header h2 {
+    font-weight: bold;
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* کارت‌های KPI */
+.dashboard-kpi-row {
+    margin-bottom: 2rem;
+}
+.kpi-card {
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 24px 0 rgba(33,150,243,0.08);
+    background: #fff;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: box-shadow 0.2s, transform 0.2s;
+    position: relative;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.kpi-card:hover {
+    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+    transform: translateY(-6px) scale(1.03);
+}
+.kpi-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+.kpi-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+.kpi-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 0.2rem;
+}
+.kpi-desc {
+    font-size: 0.95rem;
+    color: #888;
+}
+.kpi-blue .kpi-icon { color: #1976d2; }
+.kpi-green .kpi-icon { color: #43a047; }
+.kpi-orange .kpi-icon { color: #ff9800; }
+.kpi-red .kpi-icon { color: #e53935; }
+.kpi-blue .kpi-value { color: #1976d2; }
+.kpi-green .kpi-value { color: #43a047; }
+.kpi-orange .kpi-value { color: #ff9800; }
+.kpi-red .kpi-value { color: #e53935; }
+
+/* جدول پروژه‌ها */
+.table {
+    font-size: 1rem;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+.table thead th {
+    background: #e3f0ff;
+    color: #1976d2;
+    font-weight: bold;
+    border: none;
+}
+.table tbody tr {
+    transition: background 0.15s;
+}
+.table tbody tr:hover {
+    background: #f1f8fe;
+}
+
+/* کارت دسترسی */
+.dashboard-access-card {
+    border-radius: 1.2rem;
+    background: linear-gradient(135deg, #f8fafc 60%, #e3f0ff 100%);
+    box-shadow: 0 4px 24px 0 rgba(33,150,243,0.08);
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+    min-height: 180px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+.dashboard-access-card:hover {
+    transform: translateY(-8px) scale(1.04);
+    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+    background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
+}
+.dashboard-access-card .dashboard-icon {
+    width: 70px; height: 70px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
+    font-size: 2.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    transition: background 0.2s, color 0.2s;
+}
+.dashboard-access-card:hover .dashboard-icon {
+    background: linear-gradient(135deg, #21CBF3 0%, #2196F3 100%);
+    color: #2196F3;
+}
+
+/* نقش‌ها */
+.badge-role {
+    background: linear-gradient(90deg, #1976d2 0%, #2196F3 100%);
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 1rem;
+    padding: 0.4em 1.1em;
+    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
+    margin: 0 0.2em 0.2em 0;
+    display: inline-block;
+}
+
+/* اعلان‌ها */
+.card-header.bg-gradient-warning {
+    background: linear-gradient(90deg, #ffe082 0%, #ffd54f 100%) !important;
+    color: #333 !important;
+}
+
+/* ریسپانسیو */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1rem 1rem 0.5rem 1rem;
+        font-size: 1.2rem;
+    }
+    .kpi-card {
+        min-height: 120px;
+        padding: 1rem 0.5rem;
+    }
+    .dashboard-access-card {
+        min-height: 120px;
+    }
+}
+@media (max-width: 576px) {
+    .dashboard-header {
+        font-size: 1rem;
+    }
+    .kpi-card {
+        min-height: 90px;
+        font-size: 0.95rem;
+    }
+    .dashboard-access-card {
+        min-height: 90px;
+    }
+ }

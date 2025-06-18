@@ -1,424 +1,160 @@
 {% extends 'base.html' %}
-{% block title %}داشبورد{% endblock %}
+{% block title %}داشبورد مدیریتی{% endblock %}
 {% block main %}
-<div class="dashboard-main">
-    <div class="container py-4">
-        <div class="row g-4">
-            <!-- ستون پروفایل کاربر -->
-            <div class="col-12 col-lg-4">
-                <div class="card shadow border-0 user-info-card position-relative overflow-hidden h-100">
-                    <div class="user-info-bg"></div>
-                    <div class="card-body text-center position-relative">
-                        <img src="https://ui-avatars.com/api/?name={{ user_info.full_name|urlencode }}&background=2196F3&color=fff&size=96" class="rounded-circle mb-3 border border-3 border-white shadow" alt="avatar" width="96" height="96">
-                        <h4 class="card-title mb-1 fw-bold">{{ user_info.full_name }}</h4>
-                        <div class="text-muted mb-2">نام کاربری: <span class="fw-bold">{{ user_info.username }}</span></div>
-                        <div class="mb-2">کد ملی: <span class="fw-bold">{{ user_info.national_id }}</span></div>
-                        <div class="mb-2">نقش‌ها:
-                            {% for role in roles %}
-                                <span class="badge-role">{{ role }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ستون چپ: چارت‌ها، پروژه‌ها، اعلان‌ها، دسترسی‌ها -->
-            <div class="col-12 col-lg-8 d-flex flex-column gap-4">
-                <!-- چارت‌ها -->
-                <div class="card shadow border-0">
-                    <div class="card-header bg-gradient-primary text-white">
-                        <h5 class="mb-0">شاخص‌های کلیدی پروژه‌ها و آزمایشات</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6 col-lg-3">
-                                <div class="chart-card">
-                                    <h6 class="chart-title">وضعیت کلی پروژه‌ها</h6>
-                                    <div class="chart-container">
-                                        <canvas id="projectsStatusChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="chart-card">
-                                    <h6 class="chart-title">پیشرفت پروژه‌ها</h6>
-                                    <div class="chart-container">
-                                        <canvas id="projectsProgressChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="chart-card">
-                                    <h6 class="chart-title">وضعیت مالی</h6>
-                                    <div class="chart-container">
-                                        <canvas id="financialStatusChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="chart-card">
-                                    <h6 class="chart-title">کیفیت آزمایشات</h6>
-                                    <div class="chart-container">
-                                        <canvas id="experimentQualityChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- پروژه‌های من -->
-                <div class="card shadow border-0">
-                    <div class="card-header bg-gradient-info text-white">
-                        <h5 class="mb-0">پروژه‌های من</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if user_projects %}
-                        <ul class="list-group list-group-flush">
-                            {% for p in user_projects %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ p.name }}</span>
-                                <span class="badge bg-primary">%{{ p.progress }}</span>
-                                <a href="/project/{{ p.id }}/" class="btn btn-sm btn-outline-info ms-2">جزئیات</a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <div class="alert alert-warning">پروژه‌ای برای شما ثبت نشده است.</div>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- اعلان‌ها -->
-                <div class="card shadow border-0">
-                    <div class="card-header bg-gradient-warning text-dark">
-                        <h5 class="mb-0">آخرین اعلان‌ها</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if notifications %}
-                        <ul class="list-group list-group-flush">
-                            {% for n in notifications %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ n.message|truncatechars:40 }}</span>
-                                <span class="badge bg-light text-dark">{{ n.created_at|date:'Y/m/d H:i' }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        <a href="{% url 'experiment:notification_list' %}" class="btn btn-link mt-2">مشاهده همه اعلان‌ها</a>
-                        {% else %}
-                        <div class="alert alert-info">اعلانی برای شما وجود ندارد.</div>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- دسترسی‌ها -->
-                <div class="card shadow border-0">
-                    <div class="card-header bg-gradient-secondary text-dark">
-                        <h5 class="mb-0">دسترسی‌های من</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 justify-content-center">
-                            {% for item in access %}
-                            <div class="col-12 col-sm-6 col-lg-3">
-                                <a href="{{ item.url }}" class="text-decoration-none">
-                                    <div class="card h-100 shadow border-0 dashboard-card-pro text-center py-4 px-2">
-                                        <div class="dashboard-icon mb-3 mx-auto">
-                                            {% if 'پروژه' in item.name %}
-                                                <i class="bi bi-diagram-3"></i>
-                                            {% elif 'آزمایش' in item.name %}
-                                                <i class="bi bi-beaker"></i>
-                                            {% elif 'اعلان' in item.name %}
-                                                <i class="bi bi-bell"></i>
-                                            {% elif 'مدیریت' in item.name %}
-                                                <i class="bi bi-people"></i>
-                                            {% elif 'پروفایل' in item.name %}
-                                                <i class="bi bi-person-circle"></i>
-                                            {% else %}
-                                                <i class="bi bi-grid"></i>
-                                            {% endif %}
-                                        </div>
-                                        <h6 class="card-title fw-bold mb-2">{{ item.name }}</h6>
-                                        <div class="card-subtitle text-muted small">دسترسی سریع به {{ item.name }}</div>
-                                    </div>
-                                </a>
-                            </div>
-                            {% empty %}
-                            <div class="col-12">
-                                <div class="alert alert-warning">شما دسترسی به هیچ بخشی ندارید.</div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="dashboard-overlay"></div>
+<div class="container py-5">
+  <!-- User Info -->
+  <section class="user-info mb-5">
+  <div class="card shadow-lg border-0 rounded-4 overflow-hidden position-relative">
+    <div class="bg-gradient py-4 px-5 d-flex flex-column flex-md-row align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar bg-white text-primary rounded-circle d-flex justify-content-center align-items-center shadow" style="width: 70px; height: 70px; font-size: 2.5rem;">
+          <i class="bi bi-person-circle"></i>
         </div>
+        <div class="text-white">
+          <h4 class="fw-bold mb-1">@{{ user_info.full_name }}</h4>
+          <div class="small">نام کاربری: <span class="fw-semibold">{{ user_info.username }}</span> | کد ملی: <span class="fw-semibold">{{ user_info.national_id }}</span></div>
+        </div>
+      </div>
     </div>
-</div>
-<!-- نمودارها -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-            duration: 2000,
-            easing: 'easeInOutQuart'
-        },
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    font: {
-                        family: 'IRANSans',
-                        size: 12
-                    }
-                }
-            }
-        }
-    };
-    new Chart(document.getElementById('projectsStatusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['در حال اجرا', 'تکمیل شده', 'متوقف شده'],
-            datasets: [{
-                data: [
-                    {{ project_status.active }},
-                    {{ project_status.completed }},
-                    {{ project_status.stopped }}
-                ],
-                backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            ...commonOptions,
-            cutout: '70%'
-        }
-    });
-    new Chart(document.getElementById('projectsProgressChart'), {
-        type: 'bar',
-        data: {
-            labels: [
-                {% for project in project_progress %}
-                    '{{ project.name }}'{% if not forloop.last %},{% endif %}
+    <div class="bg-white px-4 py-3">
+      <div class="d-flex flex-wrap gap-2">
+        {% for role in roles %}
+          <span class="badge bg-gradient-primary text-white px-3 py-2 rounded-pill shadow-sm d-flex align-items-center gap-1">
+            <i class="bi bi-award-fill"></i> {{ role }}
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- KPI Cards -->
+  <section class="kpi-section mb-5">
+    <div class="row g-4">
+      {% for kpi in kpis %}
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="card text-center shadow-sm p-4 rounded-4">
+          <div class="position-relative">
+            <canvas id="{{ kpi.canvas_id }}" width="100" height="100"></canvas>
+            <div class="kpi-center-text position-absolute top-50 start-50 translate-middle fw-bold text-dark">{{ kpi.value }}%</div>
+          </div>
+          <div class="fw-semibold text-primary mt-3">{{ kpi.label }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Project List -->
+  <section class="project-list mb-5">
+    <h5 class="mb-4 fw-bold">پروژه‌های من</h5>
+    <div class="row g-4">
+      {% for project in user_projects %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">{{ project.name }}</h6>
+            <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+          </div>
+          <div class="card-body">
+            <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ project.progress }}%;">
+                {{ project.progress }}%
+              </div>
+            </div>
+            <div class="mb-3">
+              {% for role in project.roles %}
+                <span class="badge bg-outline-primary border text-dark fw-light">{{ role }}</span>
+              {% endfor %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for access in project.accesses %}
+                <a href="{{ access.url }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">{{ access.name }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="alert alert-warning text-center">پروژه‌ای برای شما تعریف نشده است.</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Experiments -->
+  <section class="row g-4">
+    <div class="col-12">
+      <div class="card shadow rounded-4">
+        <div class="card-header bg-gradient text-white d-flex align-items-center">
+          <i class="bi bi-beaker me-2"></i>
+          <strong class="fs-6">آخرین درخواست‌های آزمایش</strong>
+        </div>
+        <div class="card-body p-0">
+          {% if latest_experiments %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-striped">
+              <thead class="table-light">
+                <tr>
+                  <th>پروژه</th>
+                  <th>شماره اردر</th>
+                  <th>نوع آزمایش</th>
+                  <th>وضعیت</th>
+                  <th>تاریخ</th>
+                  <th>فایل</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for exp in latest_experiments %}
+                <tr>
+                  <td>{{ exp.project }}</td>
+                  <td>{{ exp.order }}</td>
+                  <td>{{ exp.type }}</td>
+                  <td><span class="badge bg-secondary">{{ exp.status }}</span></td>
+                  <td>{{ exp.created_at|date:'Y-m-d' }}</td>
+                  <td>{% if exp.request_file %}<a href="{{ exp.request_file }}" target="_blank">📎</a>{% else %}-{% endif %}</td>
+                </tr>
                 {% endfor %}
-            ],
-            datasets: [{
-                label: 'درصد پیشرفت',
-                data: [
-                    {% for project in project_progress %}
-                        {{ project.progress }}{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                backgroundColor: '#2196F3',
-                borderRadius: 5
-            }]
-        },
-        options: {
-            ...commonOptions,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: value => value + '%'
-                    }
-                }
-            }
-        }
-    });
-    var experimentQualityCtx = document.getElementById('experimentQualityChart').getContext('2d');
-    var experimentQualityData = {
-        labels: [{% for item in experiment_quality %}'{{ item.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'تعداد آزمایشات تایید شده',
-            data: [{% for item in experiment_quality %}{{ item.approved_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-            type: 'bar'
-        }, {
-            label: 'درصد قبولی',
-            data: [{% for item in experiment_quality %}{{ item.approval_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1,
-            type: 'line',
-            yAxisID: 'percentage'
-        }]
-    };
-    var experimentQualityConfig = {
-        type: 'bar',
-        data: experimentQualityData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'تعداد آزمایشات'
-                    }
-                },
-                percentage: {
-                    position: 'right',
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'درصد قبولی'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            var label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.dataset.type === 'bar') {
-                                label += context.raw + ' آزمایش';
-                            } else {
-                                label += context.raw + '%';
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }
-        }
-    };
-    new Chart(experimentQualityCtx, experimentQualityConfig);
-    new Chart(document.getElementById('financialStatusChart'), {
-        type: 'pie',
-        data: {
-            labels: ['بودجه مصرف شده', 'بودجه باقیمانده', 'هزینه‌های پیش‌بینی نشده'],
-            datasets: [{
-                data: [
-                    {{ financial_status.spent }},
-                    {{ financial_status.remaining }},
-                    {{ financial_status.unexpected }}
-                ],
-                backgroundColor: ['#FF5722', '#2196F3', '#FFC107'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            ...commonOptions,
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + context.raw + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-});
-</script>
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info text-center">هیچ درخواستی ثبت نشده است.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 <style>
-.user-info-card {
-    background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
-    border-radius: 1.5rem;
-    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.10);
+.dashboard-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: -1;
 }
-.user-info-bg {
-    position: absolute;
-    top: -40px; left: -40px; right: -40px; height: 120px;
-    background: linear-gradient(90deg, #2196F3 0%, #21CBF3 100%);
-    opacity: 0.15;
-    z-index: 0;
-    border-radius: 0 0 50% 50%/0 0 100% 100%;
+.avatar {
+  width: 60px; height: 60px;
+  font-size: 2rem;
 }
-.badge-role {
-    background: linear-gradient(90deg, #1976d2 0%, #2196F3 100%);
-    color: #fff !important;
-    font-weight: 600;
-    font-size: 1rem;
-    border-radius: 1rem;
-    padding: 0.4em 1.1em;
-    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
-    margin: 0 0.2em 0.2em 0;
-    display: inline-block;
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
 }
-.dashboard-card-pro {
-    border-radius: 1.2rem;
-    background: linear-gradient(135deg, #f8fafc 60%, #e3f0ff 100%);
-    box-shadow: 0 4px 24px 0 rgba(33,150,243,0.08);
-    transition: transform 0.18s, box-shadow 0.18s;
-    cursor: pointer;
-    min-height: 180px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    position: relative;
-    overflow: hidden;
-    box-sizing: border-box;
-    max-width: 100%;
+.bg-gradient-primary {
+  background: linear-gradient(to right, #1976d2, #43a047) !important;
 }
-.dashboard-card-pro:hover {
-    transform: translateY(-8px) scale(1.04);
-    box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
-    background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
+.kpi-center-text {
+  font-size: 1.05rem;
+  z-index: 2;
 }
-.dashboard-icon {
-    width: 70px; height: 70px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
-    box-shadow: 0 2px 8px 0 rgba(33,150,243,0.10);
-    font-size: 2.5rem;
-    color: #fff;
-    margin-bottom: 0.5rem;
-    transition: background 0.2s, color 0.2s;
+.project-card {
+  transition: all 0.3s ease;
 }
-.dashboard-card-pro:hover .dashboard-icon {
-    background: linear-gradient(135deg, #21CBF3 0%, #2196F3 100%);
-    color: #2196F3;
-}
-
-/* اضافه کردن استایل‌های responsive */
-@media (max-width: 768px) {
-    .dashboard-card-pro {
-        min-height: 150px;
-    }
-    
-    .dashboard-icon {
-        width: 60px;
-        height: 60px;
-        font-size: 2rem;
-    }
-    
-    .chart-container {
-        height: 200px;
-    }
-}
-
-@media (max-width: 576px) {
-    .container {
-        padding: 0 8px;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .chart-container {
-        height: 180px;
-    }
-    
-    .dashboard-card-pro {
-        min-height: 120px;
-    }
-    
-    .dashboard-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-    }
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 </style>
-{% endblock %} 
+{% endblock %}
