@@ -83,33 +83,21 @@ export class ProjectDashboard {
 
     render() {
         this.canvas.clear();
-        
-        // محاسبه مقیاس‌ها
+        this.profileTooltipData = [];
         this.calculateScales();
-        
-        // رسم محورها
         this.drawAxes();
-        
-        // رسم خطوط پروفیل
         if (this.showLandLine) {
             this.drawLandProfile();
         }
-        
         if (this.showRoadLine) {
             this.drawRoadProfile();
         }
-        
-        // رسم لایه‌ها
         if (this.showLayerLine) {
             this.drawLayers();
         }
-        
-        // رسم ابنیه‌ها
         if (this.showStructures) {
             this.drawStructures();
         }
-        
-        // رسم آزمایش‌ها
         if (this.showExperiments) {
             this.drawExperiments();
         }
@@ -174,7 +162,9 @@ export class ProjectDashboard {
         if (!profileData.land_points || profileData.land_points.length === 0) return;
         const points = profileData.land_points.map(point => ({
             x: this.transformX(point.x),
-            y: this.transformY(point.y)
+            y: this.transformY(point.y),
+            realX: point.x,
+            realY: point.y
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
@@ -183,38 +173,44 @@ export class ProjectDashboard {
         grad.addColorStop(0, '#43e97b');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.shadowColor = '#38f9d7';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
+        // خطوط نرم با Bezier
+        for (let i = 1; i < points.length - 2; i++) {
+            const xc = (points[i].x + points[i + 1].x) / 2;
+            const yc = (points[i].y + points[i + 1].y) / 2;
+            ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
         }
+        ctx.quadraticCurveTo(
+            points[points.length - 2].x,
+            points[points.length - 2].y,
+            points[points.length - 1].x,
+            points[points.length - 1].y
+        );
         ctx.stroke();
         ctx.shadowBlur = 0;
         // نقاط مهم (شروع، پایان، مینیمم، ماکزیمم)
         const minY = Math.min(...points.map(p => p.y));
         const maxY = Math.max(...points.map(p => p.y));
-        [0, points.length-1].forEach(idx => {
-            ctx.beginPath();
-            ctx.arc(points[idx].x, points[idx].y, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = '#00b894';
-            ctx.shadowColor = '#00b894';
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
-        // مینیمم و ماکزیمم
+        const specialPoints = [0, points.length-1];
         points.forEach((p, i) => {
-            if (p.y === minY || p.y === maxY) {
+            if (specialPoints.includes(i) || p.y === minY || p.y === maxY) {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
-                ctx.fillStyle = '#fdcb6e';
-                ctx.shadowColor = '#fdcb6e';
-                ctx.shadowBlur = 8;
+                ctx.arc(p.x, p.y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894';
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 16;
                 ctx.fill();
                 ctx.shadowBlur = 0;
+                // ذخیره مختصات برای تولتیپ
+                if (!this.profileTooltipData) this.profileTooltipData = [];
+                this.profileTooltipData.push({
+                    x: p.x, y: p.y, r: 10, realX: p.realX, realY: p.realY,
+                    type: specialPoints.includes(i) ? (i === 0 ? 'شروع' : 'پایان') : (p.y === minY ? 'مینیمم' : 'ماکزیمم')
+                });
             }
         });
         ctx.restore();
@@ -450,16 +446,35 @@ export class ProjectDashboard {
         const rect = e.target.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
         // بروزرسانی نمایش مختصات
         const realX = this.xMin + (x - this.margin - 50) / (this.xScale * this.zoomLevel);
         const realY = this.yMax - (y - this.margin) / (this.yScale * this.zoomLevel);
-        
         document.getElementById('xinput').value = realX.toFixed(3);
         document.getElementById('yinput').value = realY.toFixed(3);
-        
-        // نمایش تولتیپ
+        // نمایش تولتیپ نقاط پروفیل
+        this.showProfileTooltip(x, y);
+        // نمایش تولتیپ آزمایش‌ها
         this.showTooltip(x, y);
+    }
+
+    showProfileTooltip(x, y) {
+        const tooltip = document.getElementById('tooltip');
+        if (!this.profileTooltipData) return;
+        const hovered = this.profileTooltipData.find(pt =>
+            Math.abs(x - pt.x) < pt.r && Math.abs(y - pt.y) < pt.r
+        );
+        if (hovered) {
+            tooltip.innerHTML = `
+                <strong>نقطه ${hovered.type}</strong><br>
+                کیلومتر: ${hovered.realX.toFixed(3)}<br>
+                ارتفاع: ${hovered.realY.toFixed(2)}
+            `;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (x + 12) + 'px';
+            tooltip.style.top = (y - 12) + 'px';
+        } else {
+            tooltip.style.display = 'none';
+        }
     }
 
     showTooltip(x, y) {
