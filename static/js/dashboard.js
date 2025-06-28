@@ -176,7 +176,48 @@ export class ProjectDashboard {
             x: this.transformX(point.x),
             y: this.transformY(point.y)
         }));
-        this.canvas.drawLandLine(points);
+        const ctx = this.canvas.ctx;
+        ctx.save();
+        // گرادینت سبز-آبی برای پروفیل زمین
+        const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
+        grad.addColorStop(0, '#43e97b');
+        grad.addColorStop(1, '#38f9d7');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#38f9d7';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // نقاط مهم (شروع، پایان، مینیمم، ماکزیمم)
+        const minY = Math.min(...points.map(p => p.y));
+        const maxY = Math.max(...points.map(p => p.y));
+        [0, points.length-1].forEach(idx => {
+            ctx.beginPath();
+            ctx.arc(points[idx].x, points[idx].y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00b894';
+            ctx.shadowColor = '#00b894';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+        // مینیمم و ماکزیمم
+        points.forEach((p, i) => {
+            if (p.y === minY || p.y === maxY) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#fdcb6e';
+                ctx.shadowColor = '#fdcb6e';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        });
+        ctx.restore();
     }
 
     drawRoadProfile() {
@@ -186,7 +227,34 @@ export class ProjectDashboard {
             x: this.transformX(point.x),
             y: this.transformY(point.y)
         }));
-        this.canvas.drawRoadLine(points);
+        const ctx = this.canvas.ctx;
+        ctx.save();
+        // گرادینت آبی-بنفش برای پروفیل جاده
+        const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
+        grad.addColorStop(0, '#00c6ff');
+        grad.addColorStop(1, '#0072ff');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#00c6ff';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // نقاط مهم (شروع و پایان)
+        [0, points.length-1].forEach(idx => {
+            ctx.beginPath();
+            ctx.arc(points[idx].x, points[idx].y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#0984e3';
+            ctx.shadowColor = '#0984e3';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+        ctx.restore();
     }
 
     drawLayers() {
