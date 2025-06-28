@@ -2,106 +2,228 @@
 {% load static %}
 
 {% block title %}
-داشبورد
+داشبورد پروژه - {{ project.name }}
 {% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
-<!-- بالای فایل HTML، مثلاً بعد از title -->
 {{ project_data|json_script:"project-data" }}
-
 {% endblock %}
 
 {% block main %}
-<div class="container-fluid bg-light p-2 rounded rounded-2" >
-  <h3>{{ project.name }}</h3>
-  <div class="row row-cols-2 bg-white">
-    <!-- canvas contorolers -->
-    <div class="col-auto ">
-      <label for="xinput" class="col-form-label">کیلومتر</label>
-      <input id="xinput" type="text" class="form-control">
-      <input type="button" value="">
-      <input type="button" value="">
-    </div>
-    <div class="col-auto">
-      <label for="yinput" class="col-form-label" >ارتفاع</label>
-      <input id="yinput" type="text" class="form-control">
-    </div>
-
-    <!-- end canvas contorolers -->
-  </div>
-  <div class="row p-2">
-    <div class="col-2 bg-white rounded rounded-2 p-3">
-      <button class="btn btn-outline-primary w-100 m-1" id="notShowRaodLine">خط جاده</button>
-      <button class="btn btn-outline-primary w-100 m-1" id="notShowLandLine">خط زمین</button>
-      <button class="btn btn-outline-primary w-100 m-1" id="notShowLayerLine">لایه ها</button>
-      <button class="btn btn-outline-primary w-100 m-1" id="notShowBridge">پل ها</button>
-    </div>
-    <div class="col-10 p-2" dir="ltr">
-      <div id="container">
-        <div id="y-axis-layer">
-          <!-- محور Y -->
-          <canvas id="yAxisCanvas"
-            style="position: absolute; left: 0; top: 0; background: white; pointer-events: none;"></canvas>
+<div class="container-fluid bg-light p-3 rounded rounded-2">
+  <div class="row mb-3">
+    <div class="col-12">
+      <h3 class="text-primary">{{ project.name }}</h3>
+      <div class="row">
+        <div class="col-md-3">
+          <small class="text-muted">مسافت پروژه:</small>
+          <strong>{{ project.distance }} کیلومتر</strong>
         </div>
-        <!-- نمودار اصلی -->
-        <canvas id="mainCanvas"
-          style="position: absolute; left: 50px; top: 0; background: rgb(255, 255, 255);"></canvas>
-
-        <div id="x-axis-layer">
-          <!-- محور X -->
-          <canvas id="xAxisCanvas"
-            style="position: absolute; left: 1px; bottom: 0; background: white; pointer-events: none;"></canvas>
+        <div class="col-md-3">
+          <small class="text-muted">کیلومتر شروع:</small>
+          <strong>{{ project.start_kilometer }}</strong>
+        </div>
+        <div class="col-md-3">
+          <small class="text-muted">کیلومتر پایان:</small>
+          <strong>{{ project.end_kilometer }}</strong>
+        </div>
+        <div class="col-md-3">
+          <small class="text-muted">عرض پروژه:</small>
+          <strong>{{ project.width }} متر</strong>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- کنترل‌های نمودار -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">کنترل‌های نمودار</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-2">
+              <label for="xinput" class="form-label">کیلومتر</label>
+              <input id="xinput" type="text" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="col-md-2">
+              <label for="yinput" class="form-label">ارتفاع</label>
+              <input id="yinput" type="text" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="col-md-8">
+              <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary btn-sm" id="toggleRoadLine">
+                  <i class="fas fa-road"></i> خط جاده
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleLandLine">
+                  <i class="fas fa-mountain"></i> خط زمین
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleLayerLine">
+                  <i class="fas fa-layer-group"></i> لایه‌ها
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleStructures">
+                  <i class="fas fa-bridge"></i> ابنیه‌ها
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleExperiments">
+                  <i class="fas fa-flask"></i> آزمایش‌ها
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نمودار اصلی -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">نمودار پروفیل طولی پروژه</h6>
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn btn-outline-secondary" id="zoomIn">
+              <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="btn btn-outline-secondary" id="zoomOut">
+              <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-outline-secondary" id="resetZoom">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div id="dashboard-container" style="position: relative; overflow: auto;">
+            <!-- محور Y -->
+            <canvas id="yAxisCanvas" style="position: absolute; left: 0; top: 0; background: white; pointer-events: none; z-index: 10;"></canvas>
+            
+            <!-- نمودار اصلی -->
+            <canvas id="mainCanvas" style="position: absolute; left: 50px; top: 0; background: white; cursor: crosshair;"></canvas>
+            
+            <!-- محور X -->
+            <canvas id="xAxisCanvas" style="position: absolute; left: 50px; bottom: 0; background: white; pointer-events: none; z-index: 10;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- اطلاعات لایه‌ها -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">وضعیت لایه‌ها</h6>
+        </div>
+        <div class="card-body">
+          <div class="row" id="layers-info">
+            <!-- اطلاعات لایه‌ها اینجا نمایش داده می‌شود -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تولتیپ برای نمایش اطلاعات -->
+  <div id="tooltip" class="tooltip-custom" style="display: none; position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 8px; border-radius: 4px; font-size: 12px; z-index: 1000; pointer-events: none;"></div>
 </div>
 
-<script type="module" src="{% static 'js/main.js' %}"></script>
+<script type="module" src="{% static 'js/dashboard.js' %}"></script>
 <script type="module">
-  import { RoadCanvasApp } from "{% static 'js/main.js' %}";
+  import { ProjectDashboard } from "{% static 'js/dashboard.js' %}";
+  
   window.onload = () => {
-    const project = JSON.parse(document.getElementById('project-data').textContent);
-    document.getElementById("xinput").value = project.start_kilometer
-    document.getElementById("yinput").value = 0
+    const projectData = JSON.parse(document.getElementById('project-data').textContent);
     
-    const app = new RoadCanvasApp({
-      canvasId: 'mainCanvas',
-      width: 1100,
-      height: 450,
-      margin: 5,
-      project: {
-        distance: parseFloat(project.distance),
-        width: parseFloat(project.width),
-        start_kilometer: parseFloat(project.start_kilometer),
-        end_kilometer: parseFloat(project.end_kilometer),
-        profile_points: project.points,
-        layers:project.layers,
-        structures:project.structures
+    // تنظیم مقادیر اولیه کنترل‌ها
+    document.getElementById("xinput").value = projectData.start_kilometer;
+    document.getElementById("yinput").value = "0";
+    
+    // ایجاد نمونه داشبورد
+    const dashboard = new ProjectDashboard({
+      containerId: 'dashboard-container',
+      projectData: projectData,
+      width: 1200,
+      height: 500,
+      margin: 50
+    });
+    
+    // اتصال دکمه‌های کنترل
+    document.getElementById('toggleRoadLine').addEventListener('click', () => {
+      dashboard.toggleRoadLine();
+      updateButtonState('toggleRoadLine', dashboard.showRoadLine);
+    });
+    
+    document.getElementById('toggleLandLine').addEventListener('click', () => {
+      dashboard.toggleLandLine();
+      updateButtonState('toggleLandLine', dashboard.showLandLine);
+    });
+    
+    document.getElementById('toggleLayerLine').addEventListener('click', () => {
+      dashboard.toggleLayerLine();
+      updateButtonState('toggleLayerLine', dashboard.showLayerLine);
+    });
+    
+    document.getElementById('toggleStructures').addEventListener('click', () => {
+      dashboard.toggleStructures();
+      updateButtonState('toggleStructures', dashboard.showStructures);
+    });
+    
+    document.getElementById('toggleExperiments').addEventListener('click', () => {
+      dashboard.toggleExperiments();
+      updateButtonState('toggleExperiments', dashboard.showExperiments);
+    });
+    
+    // کنترل‌های زوم
+    document.getElementById('zoomIn').addEventListener('click', () => dashboard.zoomIn());
+    document.getElementById('zoomOut').addEventListener('click', () => dashboard.zoomOut());
+    document.getElementById('resetZoom').addEventListener('click', () => dashboard.resetZoom());
+    
+    // نمایش اطلاعات لایه‌ها
+    displayLayersInfo(projectData.layers);
+    
+    function updateButtonState(buttonId, isActive) {
+      const button = document.getElementById(buttonId);
+      if (isActive) {
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-primary');
+      } else {
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
       }
-    })
-
-    // اتصال دکمه‌ها
-    document.getElementById('notShowRaodLine').addEventListener('click', (e) => {
-      app.toggleRoadLine()
-      // e.target.innerText = app.getShowRoadLine() ? "Hide Road Line" : "Show Road Line";
-    })
-
-    document.getElementById('notShowLandLine').addEventListener('click', (e) => {
-      app.toggleLandLine()
-      // e.target.innerText = app.showLandLine ? "Hide Land Line" : "Show Land Line";
-    })
-
-    document.getElementById('notShowLayerLine').addEventListener('click', (e) => {
-      app.toggleLayerLine()
-      // e.target.innerText = app.showlayerline ? "Hide Layer Line" : "Show Layer Line";
-    })
-
-    document.getElementById('notShowBridge').addEventListener('click', (e) => {
-      app.toggleBridge()
-      // e.target.innerText = app.showBridge ? "Hide Bridge" : "Show Bridge";
-    })
-  }
+    }
+    
+    function displayLayersInfo(layers) {
+      const container = document.getElementById('layers-info');
+      container.innerHTML = '';
+      
+      layers.forEach(layer => {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'col-md-3 mb-2';
+        
+        const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'secondary';
+        const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'شروع نشده';
+        const stateText = layer.state === 1 ? 'ثابت' : 'متغیر';
+        
+        layerDiv.innerHTML = `
+          <div class="card border-${statusClass}">
+            <div class="card-body p-2">
+              <h6 class="card-title mb-1">${layer.name}</h6>
+              <small class="text-muted">${stateText} - ${layer.thickness_cm}cm</small>
+              <div class="mt-1">
+                <span class="badge bg-${statusClass}">${statusText}</span>
+                <span class="badge bg-info">${layer.experiments.length} آزمایش</span>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(layerDiv);
+      });
+    }
+  };
 </script>
 {% endblock %}

@@ -159,46 +159,111 @@ class ProjectDashboardView(generic.DetailView):
         context = super().get_context_data(**kwargs)
         project:project_models.Project = self.get_object()
         
-        points = self.read_file(project.profile_file)
+        # خواندن فایل پروفیل
+        profile_data = self.read_file(project.profile_file)
         
-        layers = project_models.ProjectLayer.objects.filter(project=project)
-        structures = project_models.ProjectStructure.objects.filter(project=project)
+        # دریافت لایه‌ها و مرتب‌سازی بر اساس ترتیب از بالا
+        layers = project_models.ProjectLayer.objects.filter(project=project).order_by('order_from_top')
+        
+        # دریافت ابنیه‌ها
+        structures = project_models.ProjectStructure.objects.filter(project=project).order_by('kilometer_location')
+        
+        # دریافت درخواست‌های آزمایش
+        from experiment.models import ExperimentRequest, ExperimentResponse, ExperimentApproval
+        experiment_requests = ExperimentRequest.objects.filter(project=project).select_related(
+            'layer', 'experiment_type', 'experiment_subtype'
+        ).prefetch_related('experimentresponse_set__experimentapproval_set')
+        
+        # گروه‌بندی درخواست‌ها بر اساس لایه و کیلومتراژ
+        experiment_data = {}
+        for request in experiment_requests:
+            layer_id = request.layer.id
+            if layer_id not in experiment_data:
+                experiment_data[layer_id] = []
+            
+            # بررسی وضعیت تایید
+            approval_status = None
+            if hasattr(request, 'experimentresponse_set') and request.experimentresponse_set.exists():
+                response = request.experimentresponse_set.first()
+                if hasattr(response, 'experimentapproval_set') and response.experimentapproval_set.exists():
+                    approval = response.experimentapproval_set.first()
+                    approval_status = approval.status
+            
+            experiment_data[layer_id].append({
+                'id': request.id,
+                'kilometer_start': float(request.start_kilometer),
+                'kilometer_end': float(request.end_kilometer),
+                'experiment_type': request.experiment_type.name,
+                'experiment_subtype': request.experiment_subtype.name if request.experiment_subtype else None,
+                'status': request.status,
+                'approval_status': approval_status,
+                'request_date': request.request_date.strftime('%Y/%m/%d') if request.request_date else None,
+                'description': request.description,
+            })
+        
         # تبدیل شیء Project به دیکشنری ساده قابل JSON
         context['project_data'] = {
-            'distance': project.distance,
-            'width': project.width,
-            'start_kilometer': project.start_kilometer,
-            'end_kilometer': project.end_kilometer,
-            "points":points,
-            "layers": list(layers.values()),  # ✅ تبدیل به لیست دیکشنری
-            "structures": list(structures.values()),  # 
-            
+            'id': project.id,
+            'name': project.name,
+            'distance': float(project.distance),
+            'width': float(project.width),
+            'start_kilometer': float(project.start_kilometer),
+            'end_kilometer': float(project.end_kilometer),
+            "profile_data": profile_data,
+            "layers": [
+                {
+                    'id': layer.id,
+                    'name': layer.layer_type.name,
+                    'thickness_cm': layer.thickness_cm,
+                    'order_from_top': layer.order_from_top,
+                    'state': layer.state,  # 0: متغیر, 1: ثابت
+                    'status': layer.status,  # 0: شروع نشده, 1: در حال انجام, 2: تکمیل شده
+                    'experiments': experiment_data.get(layer.id, [])
+                } for layer in layers
+            ],
+            "structures": [
+                {
+                    'id': structure.id,
+                    'name': structure.structure_type.name,
+                    'kilometer_location': structure.kilometer_location,
+                    'start_kilometer': structure.start_kilometer,
+                    'end_kilometer': structure.end_kilometer,
+                    'status': structure.status
+                } for structure in structures
+            ],
         }
         return context
 
-    def read_file(self,profile_file):
-        context = {}
-        if profile_file:
-            try:
-                df = pd.read_excel(profile_file, engine='openpyxl')
-                
-                # فرض بر این است که ۳ ستون اول فایل اکسل هستند: x، y، elevation (یا هر چیزی که هست)
-                # می‌تونی نام ستون‌ها را به‌دلخواه تغییر بده
-                data_points = df.iloc[:, :3].values.tolist()  # فقط ۳ ستون اول را بخوان
-                land_points = []
-                road_points = []
-                for row in data_points:
-                    land_points.append({"x":row[0],"y":row[1]})
-                    road_points.append({"x":row[0],"y":row[2]})
-                
-                context['profile_points'] = {"landpoints":land_points,"roadpoints":road_points}
-            except Exception as e:
-                context['profile_points'] = []
-                context['profile_error'] = str(e)
-        else:
-            context['profile_points'] = []
+    def read_file(self, profile_file):
+        if not profile_file:
+            return {'land_points': [], 'road_points': [], 'error': 'فایل پروفیل موجود نیست'}
         
-        return context
+        try:
+            df = pd.read_excel(profile_file, engine='openpyxl')
+            
+            # بررسی تعداد ستون‌ها
+            if df.shape[1] < 3:
+                return {'land_points': [], 'road_points': [], 'error': 'فایل باید حداقل 3 ستون داشته باشد'}
+            
+            # خواندن 3 ستون اول: کیلومتراژ، ارتفاع زمین، ارتفاع پروژه
+            data_points = df.iloc[:, :3].values.tolist()
+            
+            land_points = []
+            road_points = []
+            
+            for row in data_points:
+                if len(row) >= 3 and all(pd.notna(val) for val in row[:3]):
+                    land_points.append({"x": float(row[0]), "y": float(row[1])})
+                    road_points.append({"x": float(row[0]), "y": float(row[2])})
+            
+            return {
+                'land_points': land_points,
+                'road_points': road_points,
+                'total_points': len(land_points)
+            }
+            
+        except Exception as e:
+            return {'land_points': [], 'road_points': [], 'error': str(e)}
     
 class ProjectUpdateView(generic.UpdateView):
     model = project_models.Project

@@ -10,6 +10,269 @@ html, body {
   height: auto;
 }
 
+/* استایل‌های داشبورد پروژه */
+#dashboard-container {
+  position: relative;
+  min-height: 500px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+#mainCanvas {
+  background-color: #fafafa;
+  margin: 0px;
+  max-width: 100%;
+  box-sizing: border-box;
+  cursor: crosshair;
+}
+
+#yAxisCanvas {
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+}
+
+#xAxisCanvas {
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* کنترل‌های نمودار */
+.chart-controls {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.chart-controls .btn-group .btn {
+  border-radius: 6px;
+  margin: 0 2px;
+  font-size: 0.875rem;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+}
+
+.chart-controls .btn-group .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-controls .btn-group .btn.active {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+/* تولتیپ */
+.tooltip-custom {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: 250px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.tooltip-custom::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -5px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid rgba(0, 0, 0, 0.9);
+}
+
+/* کارت‌های اطلاعات لایه‌ها */
+.layer-info-card {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.layer-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.layer-info-card.border-success {
+  border-left: 4px solid #28a745;
+}
+
+.layer-info-card.border-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.layer-info-card.border-secondary {
+  border-left: 4px solid #6c757d;
+}
+
+/* بج‌های وضعیت */
+.badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+.badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+/* دکمه‌های زوم */
+.zoom-controls .btn {
+  border-radius: 4px;
+  margin: 0 1px;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+}
+
+.zoom-controls .btn:hover {
+  background-color: #e9ecef;
+}
+
+/* استایل‌های responsive */
+@media (max-width: 768px) {
+  #dashboard-container {
+    min-height: 400px;
+  }
+  
+  .chart-controls .btn-group {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .chart-controls .btn-group .btn {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .tooltip-custom {
+    max-width: 200px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 576px) {
+  #dashboard-container {
+    min-height: 350px;
+  }
+  
+  .chart-controls {
+    padding: 10px;
+  }
+  
+  .chart-controls .btn-group .btn {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+  
+  .layer-info-card {
+    margin-bottom: 10px;
+  }
+}
+
+/* انیمیشن‌ها */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* استایل‌های اضافی برای بهبود UX */
+.card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #e0e0e0;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+/* استایل‌های فرم کنترل */
+.form-control-sm {
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  font-size: 0.875rem;
+}
+
+.form-control-sm:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* استایل‌های متن */
+.text-primary {
+  color: #007bff !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+/* استایل‌های اضافی برای نمودار */
+canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* استایل‌های برای حالت تاریک (اختیاری) */
+@media (prefers-color-scheme: dark) {
+  #dashboard-container {
+    background-color: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  #mainCanvas {
+    background-color: #1a202c;
+  }
+  
+  .tooltip-custom {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(255,255,255,0.2);
+  }
+}
 
 #container {
      position: relative;
@@ -19,13 +282,6 @@ html, body {
      max-width: 100%;
      box-sizing: border-box;
      overflow: hidden;
- }
-
- #mainCanvas {
-     background-color: rgb(251, 251, 251);
-     margin: 0px;
-     max-width: 100%;
-     box-sizing: border-box;
  }
 
  #y-axis-layer {
