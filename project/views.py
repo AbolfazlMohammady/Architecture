@@ -237,31 +237,38 @@ class ProjectDashboardView(generic.DetailView):
     def read_file(self, profile_file):
         if not profile_file:
             return {'land_points': [], 'road_points': [], 'error': 'فایل پروفیل موجود نیست'}
-        
         try:
             df = pd.read_excel(profile_file, engine='openpyxl')
-            
-            # بررسی تعداد ستون‌ها
-            if df.shape[1] < 3:
-                return {'land_points': [], 'road_points': [], 'error': 'فایل باید حداقل 3 ستون داشته باشد'}
-            
-            # خواندن 3 ستون اول: کیلومتراژ، ارتفاع زمین، ارتفاع پروژه
-            data_points = df.iloc[:, :3].values.tolist()
-            
-            land_points = []
-            road_points = []
-            
-            for row in data_points:
-                if len(row) >= 3 and all(pd.notna(val) for val in row[:3]):
-                    land_points.append({"x": float(row[0]), "y": float(row[1])})
-                    road_points.append({"x": float(row[0]), "y": float(row[2])})
-            
+            # تشخیص نام ستون‌ها
+            columns = [col.lower() for col in df.columns]
+            # حالت ۱: فایل با ستون‌های استاندارد (station, cutFill, graph)
+            if 'station' in columns and 'cutfill' in columns:
+                x = df[df.columns[columns.index('station')]].astype(float) / 1000  # تبدیل به کیلومتر
+                y1 = df[df.columns[columns.index('cutfill')]].astype(float)
+                land_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y1)]
+                # اگر ستون ارتفاع دوم (مثلاً graph) وجود داشت و غیر صفر بود
+                if 'graph' in columns and df[df.columns[columns.index('graph')]].abs().sum() > 0:
+                    y2 = df[df.columns[columns.index('graph')]].astype(float)
+                    road_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y2)]
+                else:
+                    road_points = []
+            # حالت ۲: فایل با سه ستون عددی (بدون نام خاص)
+            elif len(df.columns) >= 2:
+                x = df.iloc[:, 0].astype(float) / 1000
+                y1 = df.iloc[:, 1].astype(float)
+                land_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y1)]
+                if len(df.columns) >= 3 and df.iloc[:, 2].abs().sum() > 0:
+                    y2 = df.iloc[:, 2].astype(float)
+                    road_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y2)]
+                else:
+                    road_points = []
+            else:
+                return {'land_points': [], 'road_points': [], 'error': 'ساختار فایل اکسل نامعتبر است'}
             return {
                 'land_points': land_points,
                 'road_points': road_points,
                 'total_points': len(land_points)
             }
-            
         except Exception as e:
             return {'land_points': [], 'road_points': [], 'error': str(e)}
     

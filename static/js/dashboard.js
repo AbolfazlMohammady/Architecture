@@ -171,25 +171,21 @@ export class ProjectDashboard {
 
     drawLandProfile() {
         const profileData = this.projectData.profile_data;
-        if (!profileData.land_points) return;
-        
+        if (!profileData.land_points || profileData.land_points.length === 0) return;
         const points = profileData.land_points.map(point => ({
             x: this.transformX(point.x),
             y: this.transformY(point.y)
         }));
-        
         this.canvas.drawLandLine(points);
     }
 
     drawRoadProfile() {
         const profileData = this.projectData.profile_data;
-        if (!profileData.road_points) return;
-        
+        if (!profileData.road_points || profileData.road_points.length === 0) return;
         const points = profileData.road_points.map(point => ({
             x: this.transformX(point.x),
             y: this.transformY(point.y)
         }));
-        
         this.canvas.drawRoadLine(points);
     }
 
