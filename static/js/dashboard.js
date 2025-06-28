@@ -173,23 +173,21 @@ export class ProjectDashboard {
         grad.addColorStop(0, '#43e97b');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 4.5;
         ctx.shadowColor = '#38f9d7';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 16;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-        // خطوط نرم با Bezier
-        for (let i = 1; i < points.length - 2; i++) {
-            const xc = (points[i].x + points[i + 1].x) / 2;
-            const yc = (points[i].y + points[i + 1].y) / 2;
-            ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        // خطوط نرم cubic Bezier
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i];
+            const p1 = points[i + 1];
+            const cp1x = p0.x + (p1.x - p0.x) / 3;
+            const cp1y = p0.y;
+            const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
+            const cp2y = p1.y;
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
         }
-        ctx.quadraticCurveTo(
-            points[points.length - 2].x,
-            points[points.length - 2].y,
-            points[points.length - 1].x,
-            points[points.length - 1].y
-        );
         ctx.stroke();
         ctx.shadowBlur = 0;
         // نقاط مهم (شروع، پایان، مینیمم، ماکزیمم)
@@ -198,17 +196,24 @@ export class ProjectDashboard {
         const specialPoints = [0, points.length-1];
         points.forEach((p, i) => {
             if (specialPoints.includes(i) || p.y === minY || p.y === maxY) {
+                ctx.save();
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 8, 0, 2 * Math.PI);
+                ctx.arc(p.x, p.y, 10, 0, 2 * Math.PI);
                 ctx.fillStyle = p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894';
                 ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 16;
+                ctx.shadowBlur = 18;
+                ctx.globalAlpha = 0.92;
                 ctx.fill();
                 ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+                ctx.restore();
                 // ذخیره مختصات برای تولتیپ
                 if (!this.profileTooltipData) this.profileTooltipData = [];
                 this.profileTooltipData.push({
-                    x: p.x, y: p.y, r: 10, realX: p.realX, realY: p.realY,
+                    x: p.x, y: p.y, r: 13, realX: p.realX, realY: p.realY,
                     type: specialPoints.includes(i) ? (i === 0 ? 'شروع' : 'پایان') : (p.y === minY ? 'مینیمم' : 'ماکزیمم')
                 });
             }
@@ -383,9 +388,7 @@ export class ProjectDashboard {
 
     drawExperimentPixel(experiment, x, y, layer) {
         const ctx = this.canvas.ctx;
-        
         ctx.save();
-        
         // انتخاب رنگ بر اساس وضعیت
         const colors = {
             0: '#ffc107', // در انتظار
@@ -393,28 +396,41 @@ export class ProjectDashboard {
             2: '#28a745', // تکمیل شده
             3: '#dc3545'  // رد شده
         };
-        
         ctx.fillStyle = colors[experiment.status] || '#ffc107';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        // افکت glow
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 12;
         // رسم پیکسل آزمایش
-        const pixelSize = 8;
-        ctx.fillRect(x - pixelSize/2, y - pixelSize/2, pixelSize, pixelSize);
-        ctx.strokeRect(x - pixelSize/2, y - pixelSize/2, pixelSize, pixelSize);
-        
+        const pixelSize = 13;
+        ctx.beginPath();
+        ctx.arc(x, y, pixelSize / 2, 0, 2 * Math.PI);
+        ctx.globalAlpha = 0.95;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
         // اضافه کردن نشانگر برای آزمایش‌های تایید شده
         if (experiment.approval_status === 1) {
-            ctx.fillStyle = '#28a745';
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = '#28a745';
             ctx.fill();
         }
-        
         ctx.restore();
-        
         // ذخیره اطلاعات برای تولتیپ
-        this.addTooltipData(x, y, experiment, layer);
+        if (!this.tooltipData) this.tooltipData = [];
+        this.tooltipData.push({
+            x: x,
+            y: y,
+            width: pixelSize,
+            height: pixelSize,
+            data: {
+                experiment: experiment,
+                layer: layer
+            }
+        });
     }
 
     addTooltipData(x, y, experiment, layer) {
@@ -479,34 +495,30 @@ export class ProjectDashboard {
 
     showTooltip(x, y) {
         const tooltip = document.getElementById('tooltip');
-        
         if (!this.tooltipData) return;
-        
-        const hoveredItem = this.tooltipData.find(item => 
-            x >= item.x - item.width/2 && 
-            x <= item.x + item.width/2 && 
-            y >= item.y - item.height/2 && 
+        const hoveredItem = this.tooltipData.find(item =>
+            x >= item.x - item.width/2 &&
+            x <= item.x + item.width/2 &&
+            y >= item.y - item.height/2 &&
             y <= item.y + item.height/2
         );
-        
         if (hoveredItem) {
             const data = hoveredItem.data;
             const experiment = data.experiment;
             const layer = data.layer;
-            
-            const tooltipContent = `
-                <strong>آزمایش ${experiment.experiment_type}</strong><br>
-                لایه: ${layer.name}<br>
-                کیلومتر: ${experiment.kilometer_start} - ${experiment.kilometer_end}<br>
-                تاریخ: ${experiment.request_date || 'نامشخص'}<br>
-                وضعیت: ${this.getStatusText(experiment.status)}<br>
-                ${experiment.description ? `توضیحات: ${experiment.description}` : ''}
+            tooltip.innerHTML = `
+                <div style="min-width:160px;max-width:260px;">
+                <div style="font-weight:bold;font-size:15px;color:#222;margin-bottom:2px;">آزمایش ${experiment.experiment_type}</div>
+                <div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>
+                <div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} - ${experiment.kilometer_end}</b></div>
+                <div style="font-size:13px;color:#555;">تاریخ: <b>${experiment.request_date || 'نامشخص'}</b></div>
+                <div style="font-size:13px;color:#555;">وضعیت: <b>${this.getStatusText(experiment.status)}</b></div>
+                ${experiment.description ? `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>` : ''}
+                </div>
             `;
-            
-            tooltip.innerHTML = tooltipContent;
             tooltip.style.display = 'block';
-            tooltip.style.left = (x + 10) + 'px';
-            tooltip.style.top = (y - 10) + 'px';
+            tooltip.style.left = (x + 16) + 'px';
+            tooltip.style.top = (y - 16) + 'px';
         } else {
             tooltip.style.display = 'none';
         }
