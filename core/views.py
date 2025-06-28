@@ -21,7 +21,7 @@ class LoginView(Login):
     redirect_authenticated_user = True
     template_name = "core/login.html"
     def get_success_url(self):
-        return "/dashboard/"
+        return "/"
 
 class LogoutView(logout):
     template_name = "core/logout.html"

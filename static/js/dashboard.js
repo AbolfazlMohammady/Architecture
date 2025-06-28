@@ -29,6 +29,9 @@ export class ProjectDashboard {
         this.xOffset = 0;
         this.yOffset = 0;
         
+        this.mouseX = null;
+        this.mouseY = null;
+        
         this.init();
     }
 
@@ -84,6 +87,8 @@ export class ProjectDashboard {
     render() {
         this.canvas.clear();
         this.profileTooltipData = [];
+        this.tooltipData = [];
+        this._hoveredExperiment = null;
         this.calculateScales();
         this.drawAxes();
         if (this.showLandLine) {
@@ -100,6 +105,12 @@ export class ProjectDashboard {
         }
         if (this.showExperiments) {
             this.drawExperiments();
+        }
+        // crosshair را فقط اینجا بکش
+        if (this.mouseX !== null && this.mouseY !== null) {
+            this.drawCrosshair(this.mouseX, this.mouseY);
+            this.showProfileTooltip(this.mouseX, this.mouseY);
+            this.showTooltip(this.mouseX, this.mouseY);
         }
     }
 
@@ -168,17 +179,32 @@ export class ProjectDashboard {
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
-        // گرادینت سبز-آبی برای پروفیل زمین
+        // سایه ضخیم زیر پروفیل
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i];
+            const p1 = points[i + 1];
+            const cp1x = p0.x + (p1.x - p0.x) / 3;
+            const cp1y = p0.y;
+            const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
+            const cp2y = p1.y;
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
+        }
+        ctx.strokeStyle = 'rgba(56,249,215,0.18)';
+        ctx.lineWidth = 16;
+        ctx.shadowColor = '#38f9d7';
+        ctx.shadowBlur = 24;
+        ctx.stroke();
+        // خط اصلی پروفیل
+        ctx.shadowBlur = 0;
         const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
         grad.addColorStop(0, '#43e97b');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
         ctx.lineWidth = 4.5;
-        ctx.shadowColor = '#38f9d7';
-        ctx.shadowBlur = 16;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-        // خطوط نرم cubic Bezier
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = points[i];
             const p1 = points[i + 1];
@@ -189,7 +215,6 @@ export class ProjectDashboard {
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
         }
         ctx.stroke();
-        ctx.shadowBlur = 0;
         // نقاط مهم (شروع، پایان، مینیمم، ماکزیمم)
         const minY = Math.min(...points.map(p => p.y));
         const maxY = Math.max(...points.map(p => p.y));
@@ -197,23 +222,31 @@ export class ProjectDashboard {
         points.forEach((p, i) => {
             if (specialPoints.includes(i) || p.y === minY || p.y === maxY) {
                 ctx.save();
+                // دایره gradient
+                let gradCircle = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 12);
+                gradCircle.addColorStop(0, '#fff');
+                gradCircle.addColorStop(1, p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894');
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 10, 0, 2 * Math.PI);
-                ctx.fillStyle = p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894';
-                ctx.shadowColor = ctx.fillStyle;
+                ctx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
+                ctx.fillStyle = gradCircle;
+                ctx.globalAlpha = 0.95;
+                ctx.shadowColor = gradCircle;
                 ctx.shadowBlur = 18;
-                ctx.globalAlpha = 0.92;
                 ctx.fill();
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1;
-                ctx.lineWidth = 2.5;
+                // border دو رنگ
+                ctx.lineWidth = 3.5;
                 ctx.strokeStyle = '#fff';
+                ctx.stroke();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#222';
                 ctx.stroke();
                 ctx.restore();
                 // ذخیره مختصات برای تولتیپ
                 if (!this.profileTooltipData) this.profileTooltipData = [];
                 this.profileTooltipData.push({
-                    x: p.x, y: p.y, r: 13, realX: p.realX, realY: p.realY,
+                    x: p.x, y: p.y, r: 15, realX: p.realX, realY: p.realY,
                     type: specialPoints.includes(i) ? (i === 0 ? 'شروع' : 'پایان') : (p.y === minY ? 'مینیمم' : 'ماکزیمم')
                 });
             }
@@ -398,23 +431,36 @@ export class ProjectDashboard {
         };
         ctx.fillStyle = colors[experiment.status] || '#ffc107';
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         // افکت glow
         ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18;
         // رسم پیکسل آزمایش
-        const pixelSize = 13;
+        const pixelSize = 16;
         ctx.beginPath();
         ctx.arc(x, y, pixelSize / 2, 0, 2 * Math.PI);
-        ctx.globalAlpha = 0.95;
+        ctx.globalAlpha = 0.98;
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
         ctx.stroke();
+        // افکت hover (اگر موس روی این نقطه است)
+        if (this._hoveredExperiment && this._hoveredExperiment.x === x && this._hoveredExperiment.y === y) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, pixelSize / 2 + 4, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#1976d2';
+            ctx.lineWidth = 3.5;
+            ctx.shadowColor = '#1976d2';
+            ctx.shadowBlur = 16;
+            ctx.globalAlpha = 0.7;
+            ctx.stroke();
+            ctx.restore();
+        }
         // اضافه کردن نشانگر برای آزمایش‌های تایید شده
         if (experiment.approval_status === 1) {
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fillStyle = '#28a745';
             ctx.fill();
         }
@@ -460,17 +506,15 @@ export class ProjectDashboard {
 
     handleMouseMove(e) {
         const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        this.mouseX = e.clientX - rect.left;
+        this.mouseY = e.clientY - rect.top;
         // بروزرسانی نمایش مختصات
-        const realX = this.xMin + (x - this.margin - 50) / (this.xScale * this.zoomLevel);
-        const realY = this.yMax - (y - this.margin) / (this.yScale * this.zoomLevel);
+        const realX = this.xMin + (this.mouseX - this.margin - 50) / (this.xScale * this.zoomLevel);
+        const realY = this.yMax - (this.mouseY - this.margin) / (this.yScale * this.zoomLevel);
         document.getElementById('xinput').value = realX.toFixed(3);
         document.getElementById('yinput').value = realY.toFixed(3);
-        // نمایش تولتیپ نقاط پروفیل
-        this.showProfileTooltip(x, y);
-        // نمایش تولتیپ آزمایش‌ها
-        this.showTooltip(x, y);
+        // فقط render را صدا بزن تا crosshair و بقیه اجزا دوباره کشیده شوند
+        this.render();
     }
 
     showProfileTooltip(x, y) {
@@ -503,23 +547,36 @@ export class ProjectDashboard {
             y <= item.y + item.height/2
         );
         if (hoveredItem) {
+            this._hoveredExperiment = {x: hoveredItem.x, y: hoveredItem.y};
             const data = hoveredItem.data;
             const experiment = data.experiment;
             const layer = data.layer;
+            // رنگ border بر اساس وضعیت
+            const statusColors = {
+                0: '#ffc107', 1: '#17a2b8', 2: '#28a745', 3: '#dc3545'
+            };
+            const statusColor = statusColors[experiment.status] || '#888';
             tooltip.innerHTML = `
-                <div style="min-width:160px;max-width:260px;">
-                <div style="font-weight:bold;font-size:15px;color:#222;margin-bottom:2px;">آزمایش ${experiment.experiment_type}</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:18px;">🧪</span>
+                  <span style="font-weight:bold;color:${statusColor};font-size:15px;">آزمایش ${experiment.experiment_type}</span>
+                </div>
                 <div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>
                 <div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} - ${experiment.kilometer_end}</b></div>
                 <div style="font-size:13px;color:#555;">تاریخ: <b>${experiment.request_date || 'نامشخص'}</b></div>
                 <div style="font-size:13px;color:#555;">وضعیت: <b>${this.getStatusText(experiment.status)}</b></div>
                 ${experiment.description ? `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>` : ''}
-                </div>
+                <div style='width:0;height:0;border:8px solid transparent;border-top:10px solid ${statusColor};margin:0 auto;'></div>
             `;
             tooltip.style.display = 'block';
-            tooltip.style.left = (x + 16) + 'px';
-            tooltip.style.top = (y - 16) + 'px';
+            tooltip.style.left = (x + 18) + 'px';
+            tooltip.style.top = (y - 24) + 'px';
+            tooltip.style.border = `2.5px solid ${statusColor}`;
+            tooltip.style.borderRadius = '12px';
+            tooltip.style.boxShadow = '0 6px 24px rgba(0,0,0,0.18)';
+            tooltip.style.animation = 'fadeInTooltip 0.22s';
         } else {
+            this._hoveredExperiment = null;
             tooltip.style.display = 'none';
         }
     }
@@ -614,5 +671,19 @@ export class ProjectDashboard {
         this.panX = 0;
         this.panY = 0;
         this.render();
+    }
+
+    drawCrosshair(x, y) {
+        const ctx = this.canvas.ctx;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(44,62,80,0.18)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, this.height);
+        ctx.moveTo(0, y);
+        ctx.lineTo(this.width, y);
+        ctx.stroke();
+        ctx.restore();
     }
 } 
