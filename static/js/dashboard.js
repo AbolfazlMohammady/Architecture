@@ -97,6 +97,10 @@ export class ProjectDashboard {
         if (this.showRoadLine) {
             this.drawRoadProfile();
         }
+        // --- SHADING BETWEEN PROFILES ---
+        if (this.showLandLine && this.showRoadLine) {
+            this.drawShadingBetweenProfiles();
+        }
         if (this.showLayerLine) {
             this.drawLayers();
         }
@@ -684,6 +688,60 @@ export class ProjectDashboard {
         ctx.moveTo(0, y);
         ctx.lineTo(this.width, y);
         ctx.stroke();
+        ctx.restore();
+    }
+
+    // --- SHADING BETWEEN LAND AND ROAD PROFILES ---
+    drawShadingBetweenProfiles() {
+        const profileData = this.projectData.profile_data;
+        if (!profileData.land_points || !profileData.road_points) return;
+        if (profileData.land_points.length !== profileData.road_points.length) return;
+        const ctx = this.canvas.ctx;
+        ctx.save();
+        for (let i = 0; i < profileData.land_points.length - 1; i++) {
+            const landA = profileData.land_points[i];
+            const landB = profileData.land_points[i + 1];
+            const roadA = profileData.road_points[i];
+            const roadB = profileData.road_points[i + 1];
+            const x1 = this.transformX(landA.x);
+            const x2 = this.transformX(landB.x);
+            const yLand1 = this.transformY(landA.y);
+            const yLand2 = this.transformY(landB.y);
+            const yRoad1 = this.transformY(roadA.y);
+            const yRoad2 = this.transformY(roadB.y);
+
+            // تعیین نوع (خاکبرداری یا خاکریزی)
+            const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده
+            const isEmbankment = yLand1 > yRoad1 && yLand2 > yRoad2; // جاده بالاتر از زمین
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x1, yLand1);
+            ctx.lineTo(x2, yLand2);
+            ctx.lineTo(x2, yRoad2);
+            ctx.lineTo(x1, yRoad1);
+            ctx.closePath();
+            ctx.clip();
+
+            // هاشور مورب با زاویه ۴۵ درجه
+            let color = 'rgba(200,200,200,0.15)';
+            if (isExcavation) color = 'rgba(255,0,0,0.5)';
+            if (isEmbankment) color = 'rgba(0,100,255,0.4)';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.2;
+            // خطوط مورب ۴۵ درجه
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(yLand1, yRoad1, yLand2, yRoad2);
+            const maxY = Math.max(yLand1, yRoad1, yLand2, yRoad2);
+            for (let d = minX - (maxY - minY); d < maxX + (maxY - minY); d += 8) {
+                ctx.beginPath();
+                ctx.moveTo(d, minY - 20);
+                ctx.lineTo(d + (maxY - minY) + 40, maxY + 20);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
         ctx.restore();
     }
 } 

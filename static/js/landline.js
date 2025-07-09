@@ -18,7 +18,7 @@ export class LandLine {
     update(points) {
         this.points = points;
         this.draw();
-        // this.fillClosedArea(); // بعد از رسم خط زمین، فضاهای بسته رو رنگ می‌کنیم
+        this.fillClosedArea(); // بعد از رسم خط زمین، فضاهای بسته رو رنگ می‌کنیم
     }
 
     draw() {
