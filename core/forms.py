@@ -17,11 +17,6 @@ class UserProfileForm(forms.ModelForm):
         self.fields['first_name'].widget.attrs["class"] = "form-control"
         self.fields['last_name'].widget.attrs["class"] = "form-control"
         
-        # اگر کاربر ادمین نیست، فقط نقش‌های خودش را می‌بیند
-        if user_instance and not user_instance.is_staff:
-            self.fields['roles'].queryset = user_instance.roles.all()
-            self.fields['roles'].disabled = True
-
 class AdminUserForm(forms.ModelForm):
     password1 = forms.CharField(label="رمز عبور", widget=forms.PasswordInput)
     password2 = forms.CharField(label="تکرار رمز عبور", widget=forms.PasswordInput)

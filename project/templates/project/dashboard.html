@@ -97,15 +97,18 @@
           </div>
         </div>
         <div class="card-body p-0">
-          <div id="dashboard-container" style="position: relative; overflow: auto;">
-            <!-- محور Y -->
-            <canvas id="yAxisCanvas" style="position: absolute; left: 0; top: 0; background: white; pointer-events: none; z-index: 10;"></canvas>
-            
-            <!-- نمودار اصلی -->
-            <canvas id="mainCanvas" style="position: absolute; left: 50px; top: 0; background: white; cursor: crosshair;"></canvas>
-            
-            <!-- محور X -->
-            <canvas id="xAxisCanvas" style="position: absolute; left: 50px; bottom: 0; background: white; pointer-events: none; z-index: 10;"></canvas>
+          <div id="dashboard-flex" style="display: flex; flex-direction: row; width: 100%; background: #fff; min-height: 500px; direction: ltr;">
+            <!-- ستون چپ: محور Y -->
+            <div style="flex: 0 0 50px; background: #fff; z-index: 20; display: flex; flex-direction: column; align-items: flex-end;">
+              <canvas id="yAxisCanvas" style="width: 50px; height: 470px; background: white; pointer-events: none;"></canvas>
+            </div>
+            <!-- ستون راست: نمودار و محور X -->
+            <div id="dashboard-container" style="flex: 1 1 auto; overflow-x: auto; overflow-y: hidden; min-width: 1200px; position: relative; white-space: nowrap;">
+              <div style="position: relative; width: 100%; min-width: 1200px;">
+                <canvas id="mainCanvas" style="width: 100%; min-width: 1200px; height: 470px; background: white; cursor: crosshair; display: inline-block;"></canvas>
+                <canvas id="xAxisCanvas" style="width: 100%; min-width: 1200px; height: 30px; background: white; pointer-events: none; position: absolute; left: 0; bottom: 0; z-index: 10; display: inline-block;"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>

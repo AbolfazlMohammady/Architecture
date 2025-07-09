@@ -13,40 +13,38 @@
                 <div class="text-center">
                     <h4 class="text-dark mb-4">پروفایل کاربر</h4>
                 </div>
-                <form method="post" class="user">
-                    {% csrf_token %}
-
-                    <div class="row row-cols-md-2">
-                        <div class="mb-3">
-                            {{ form.first_name.label_tag }}
-                            {{ form.first_name }}
-                        </div>
-                        <div class="mb-3">
-                            {{ form.last_name.label_tag }}
-                            {{ form.last_name }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.national_id.label_tag }}
-                        {{ form.national_id }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">{{ form.accessible_projects.label }}</label>
-                        <div class="border rounded p-2 overflow-auto" style="max-height: 150px;">
-                            <div class="list-group">
-                                {% for project in form.accessible_projects %}
-                                <label class="list-group-item d-flex align-items-center">
-                                    {{ project.tag }}
-                                    <span class="ms-2">{{ project.choice_label }}</span>
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
-                    </div>
+<div class="card shadow rounded-3 mb-4 border-0">
+    <div class="card-header bg-gradient bg-primary text-white d-flex align-items-center">
+        <i class="bi bi-person-badge fs-4 me-2"></i>
+        <h5 class="mb-0">اطلاعات کاربر</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3 align-items-center">
+            <div class="col-sm-4 text-secondary fw-semibold">
+                <i class="bi bi-person-fill me-1 text-primary"></i> نام:
+            </div>
+            <div class="col-sm-8 fw-bold">{{ user_info.first_name }}</div>
+        </div>
+        <div class="row mb-3 align-items-center">
+            <div class="col-sm-4 text-secondary fw-semibold">
+                <i class="bi bi-person-vcard me-1 text-primary"></i> نام خانوادگی:
+            </div>
+            <div class="col-sm-8 fw-bold">{{ user_info.last_name }}</div>
+        </div>
+        <div class="row mb-3 align-items-center">
+            <div class="col-sm-4 text-secondary fw-semibold">
+                <i class="bi bi-credit-card-2-back me-1 text-primary"></i> کد ملی:
+            </div>
+            <div class="col-sm-8 fw-bold">{{ user_info.national_id }}</div>
+        </div>
+        <div class="row mb-1 align-items-center">
+            <div class="col-sm-4 text-secondary fw-semibold">
+                <i class="bi bi-person-lines-fill me-1 text-primary"></i> نام کاربری:
+            </div>
+            <div class="col-sm-8 fw-bold">{{ user_info.username }}</div>
+        </div>
+    </div>
+</div>
 
                     {% if form.errors %}
                     <div class="alert alert-danger mt-3">
@@ -69,12 +67,6 @@
                             <div class="card shadow-sm h-100">
                                 <div class="card-body">
                                     <h6 class="card-title">{{ item.project.name }}</h6>
-                                    <div class="mb-2">
-                                        <span class="fw-bold">نقش شما:</span>
-                                        {% for role in item.roles %}
-                                            <span class="badge bg-primary me-1">{{ role }}</span>
-                                        {% endfor %}
-                                    </div>
                                     <a href="/project/{{ item.project.id }}/" class="btn btn-outline-info btn-sm">جزئیات پروژه</a>
                                 </div>
                             </div>
@@ -89,3 +81,5 @@
     </div>
 </div>
 {% endblock main %}
+
+

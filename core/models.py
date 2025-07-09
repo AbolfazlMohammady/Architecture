@@ -27,7 +27,7 @@ class User(AbstractUser):
                                    verbose_name="کد ملی",
                                    validators=[validate_national_code]
                                    )
-    roles = models.ManyToManyField(Role, blank=True, related_name='users', verbose_name="نقش‌ها")
+    roles = models.ManyToManyField(Role, blank=True,null=True ,related_name='users', verbose_name="نقش‌ها")
     # پروژه‌های قابل دسترسی برای هر کاربر
     accessible_projects = models.ManyToManyField(
         'project.Project',
