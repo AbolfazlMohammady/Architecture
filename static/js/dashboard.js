@@ -158,12 +158,13 @@ export class ProjectDashboard {
     drawAxes() {
         // بروزرسانی محور X
         const xLabels = [];
-        const step = (this.xMax - this.xMin) / 10;
-        for (let i = 0; i <= 10; i++) {
-            const value = this.xMin + step * i;
-            xLabels.push(`${value.toFixed(1)}km`);
+        const step = 0.5; // هر ۵۰۰ متر
+        const start = this.projectData.start_kilometer;
+        const end = this.projectData.end_kilometer;
+        for (let km = start; km <= end; km += step) {
+            xLabels.push(km);
         }
-        this.xAxis.update(xLabels);
+        this.xAxis.update(xLabels, start, end);
         
         // بروزرسانی محور Y
         const yLabels = [];
@@ -783,8 +784,13 @@ export class ProjectDashboard {
             }
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
-            tooltip.style.left = (x + 16) + 'px';
-            tooltip.style.top = (y - 12) + 'px';
+            // --- موقعیت‌دهی دقیق تولتیپ کنار موس نسبت به کل صفحه ---
+            const canvas = document.getElementById('mainCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const pageX = rect.left + x + window.scrollX;
+            const pageY = rect.top + y + window.scrollY;
+            tooltip.style.left = pageX + 'px';
+            tooltip.style.top = pageY + 'px';
             tooltip.style.background = 'rgba(255,255,255,0.7)';
             tooltip.style.backdropFilter = 'blur(8px)';
             tooltip.style.borderRadius = '8px';

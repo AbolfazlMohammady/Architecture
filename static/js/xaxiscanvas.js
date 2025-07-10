@@ -13,8 +13,10 @@ export class XAxisCanvas {
     this.data = [];
   }
 
-  update(data) {
+  update(data, start_km, end_km) {
     this.data = data;
+    this.start_km = start_km;
+    this.end_km = end_km;
     this.draw();
   }
 
@@ -22,33 +24,43 @@ export class XAxisCanvas {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = '#bbb';
     ctx.lineWidth = 1;
 
-    // خط افقی ثابت پایین یا بالا (اینجا پایین)
+    // خط افقی محور X
     ctx.beginPath();
     ctx.moveTo(0, this.height - 19 - this.margin);
     ctx.lineTo(this.width, this.height - 19 - this.margin);
     ctx.stroke();
 
-    ctx.fillStyle = 'black';
-    ctx.font = '12px monospace';
+    ctx.fillStyle = '#222';
+    ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
 
-    // فاصله بین لیبل‌ها
-    const stepX = this.xunit;
-
-    this.data.forEach((label, index) => {
-      const x = stepX * index;
-
-      // متن لیبل کمی از پایین فاصله بگیره (مارجین فقط عمودی)
-      ctx.fillText(label.toString(), x , this.height - this.margin - 4);
-
+    // نمایش همه لیبل‌ها با فاصله مساوی
+    const range = this.end_km - this.start_km;
+    this.data.forEach((km, index) => {
+      const x = ((km - this.start_km) / range) * this.width;
+      let kmInt = Math.floor(km);
+      let m = Math.round((km - kmInt) * 1000);
+      let kmLabel = kmInt + (m > 0 ? '+' + (m < 100 ? ('0' + m).slice(-3) : m) : '+000');
+      kmLabel = kmLabel.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      ctx.save();
+      ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
+      ctx.fillStyle = '#222';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(kmLabel, x, this.height - this.margin - 18);
+      ctx.restore();
       // خط کوچک عمودی کنار لیبل
       ctx.beginPath();
       ctx.moveTo(x, this.height - 19 - this.margin);
       ctx.lineTo(x, this.height - 14 - this.margin);
       ctx.stroke();
     });
+
+    // برچسب اصلی محور X
+    // حذف عنوان محور X
   }
 }

@@ -130,7 +130,7 @@
             </div>
             <!-- ستون راست: نمودار و محور X -->
             <div id="dashboard-container" style="flex: 1 1 auto; overflow-x: auto; overflow-y: hidden; min-width: 1200px; position: relative; white-space: nowrap;">
-              <div style="position: relative; width: 100%; min-width: 1200px;">
+              <div style="width: 100%; min-width: 1200px;">
                 <!-- Compact Legend Box -->
                 <div id="chart-legend" style="position: absolute; top: 12px; left: 18px; background: rgba(255,255,255,0.65); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; padding: 6px 8px; font-size: 11px; z-index: 100; min-width: 150px; max-width: 220px; backdrop-filter: blur(8px);">
                   <table style="width:100%; border-collapse:collapse;">
@@ -183,8 +183,8 @@
                   </table>
                 </div>
                 <!-- End Legend Box -->
-                <canvas id="mainCanvas" style="width: 100%; min-width: 1200px; height: 470px; background: white; cursor: crosshair; display: inline-block;"></canvas>
-                <canvas id="xAxisCanvas" style="width: 100%; min-width: 1200px; height: 30px; background: white; pointer-events: none; position: absolute; left: 0; bottom: 0; z-index: 10; display: inline-block;"></canvas>
+                <canvas id="mainCanvas" style="width: 100%; min-width: 1200px; height: 470px; background: white; cursor: crosshair; display: block;"></canvas>
+                <canvas id="xAxisCanvas" style="width: 100%; min-width: 1200px; height: 30px; background: white; pointer-events: none; display: block;"></canvas>
               </div>
             </div>
           </div>

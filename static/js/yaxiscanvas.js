@@ -28,7 +28,7 @@ export class YAxisCanvas {
   const ctx = this.ctx;
   ctx.clearRect(0, 0, this.width, this.height);
 
-  ctx.strokeStyle = 'black';
+  ctx.strokeStyle = '#bbb';
   ctx.lineWidth = 1;
 
   // خط عمودی ثابت سمت راست y-axis
@@ -37,25 +37,26 @@ export class YAxisCanvas {
   ctx.lineTo(this.width - 1 - this.margin, this.height);
   ctx.stroke();
 
-  ctx.fillStyle = 'black';
-  ctx.font = '12px monospace';
+  ctx.fillStyle = '#222';
+  ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
   ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
 
-//   const stepY = this.height / (this.data.length - 1 || 1);
+  const paddingY = 10;
+  const stepY = this.yunit;
 
-  const paddingY = 10; // فاصله عمودی دلخواه بالا و پایین
-const stepY = this.yunit;
+  // نمایش همه لیبل‌ها با فاصله مساوی
+  this.data.forEach((label, index) => {
+    const y = this.height - paddingY - stepY * index;
+    let labelStr = parseFloat(label).toFixed(1).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    ctx.fillText(this.fittext(labelStr), this.width - 12, y);
+    ctx.beginPath();
+    ctx.moveTo(this.width - 10 - this.margin, y);
+    ctx.lineTo(this.width - 1 - this.margin, y);
+    ctx.stroke();
+  });
 
-this.data.forEach((label, index) => {
-  const y = this.height - paddingY - stepY * index;
-
-  ctx.fillText(this.fittext(label.toString()), this.margin, y);
-
-  ctx.beginPath();
-  ctx.moveTo(this.width - 10 - this.margin, y);
-  ctx.lineTo(this.width - 1 - this.margin, y);
-  ctx.stroke();
-});
-
-}
+  // برچسب اصلی محور Y (ارتفاع)
+  // حذف عنوان محور Y
+  }
  }
