@@ -82,7 +82,14 @@
                                 <tr>
                                     <td>{{ request.order }}</td>
                                     <td>{{ request.project.name }}</td>
-                                    <td>{{ request.layer.name|default:"-" }}</td>
+                                    <td>
+                                      {% if request.layer %}
+                                        {{ request.layer.layer_type.name }}
+                                        ({{ request.layer.thickness_cm }} سانتی‌متر، ترتیب: {{ request.layer.order_from_top }})
+                                      {% else %}
+                                        -
+                                      {% endif %}
+                                    </td>
                                     <td>{{ request.experiment_type.name }}</td>
                                     <td>{{ request.request_date|date:"Y/m/d" }}</td>
                                     <td>
