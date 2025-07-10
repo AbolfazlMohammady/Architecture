@@ -40,7 +40,7 @@ class ProjectListView(generic.ListView):
             project_layers = project_models.ProjectLayer.objects.filter(project=project)
             completed_layers = project_layers.filter(status=project_models.ProjectLayer.COMPLETED)
             if project_layers.exists():
-                progress = (completed_layers.count() / project_layers.count()) * 100
+                progress = round((completed_layers.count() / project_layers.count()) * 100)
             else:
                 progress = 0
             project_progress_dict[project.id] = progress

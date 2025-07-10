@@ -20,8 +20,9 @@
             <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
           </div>
           <div class="card-body">
+            <label class="form-label fw-bold mb-1">پیشرفت پروژه</label>
             <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
-              <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:project.id }}%;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:project.id }}%;" aria-valuenow="{{ project_progress|get_item:project.id }}" aria-valuemin="0" aria-valuemax="100" title="{{ project_progress|get_item:project.id }} درصد">
                 {{ project_progress|get_item:project.id }}%
               </div>
             </div>
