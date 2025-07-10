@@ -47,7 +47,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="search">جستجو</label>
-                                    <input type="text" name="search" id="search" class="form-control" placeholder="جستجو در توضیحات..." value="{{ search_query }}">
+                                    <input type="text" name="search" id="search" class="form-control" placeholder="جستجو در توضیحات..." value="{{ search_query|default_if_none:'' }}">
                                 </div>
                             </div>
                             <div class="col-md-2">

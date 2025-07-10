@@ -105,7 +105,7 @@ def experiment_request_list(request):
     
     # فیلتر بر اساس جستجو
     search = request.GET.get('search')
-    if search:
+    if search and search != 'None':
         experiment_requests = experiment_requests.filter(description__icontains=search)
     
     return render(request, 'experiment/experiment_request_list.html', {
