@@ -45,10 +45,21 @@ export class ProjectDashboard {
     }
 
     setupCanvas() {
+        // Calculate dynamic width based on project length
+        const projectLength = this.projectData.end_kilometer - this.projectData.start_kilometer;
+        const pxPerKm = 300; // 300px per km for better scrollability
+        const minWidth = 1200;
+        const dynamicWidth = Math.max(minWidth, Math.ceil(projectLength * pxPerKm));
+        // Set the inner div width to match canvas for full scroll
+        const chartInner = document.getElementById('chart-canvas-inner');
+        if (chartInner) {
+            chartInner.style.width = dynamicWidth + 'px';
+        }
+
         // ایجاد canvas اصلی
         this.canvas = new Canvas({
             containerId: this.containerId,
-            width: this.width,
+            width: dynamicWidth,
             height: this.height,
             margin: this.margin,
             start_kilometer: this.projectData.start_kilometer,
@@ -67,7 +78,7 @@ export class ProjectDashboard {
         // ایجاد محور X
         this.xAxis = new XAxisCanvas({
             canvasId: 'xAxisCanvas',
-            width: this.width - 50, // کم کردن عرض محور Y
+            width: dynamicWidth - 50, // کم کردن عرض محور Y
             height: 30,
             margin: this.margin,
             xunit: 100
