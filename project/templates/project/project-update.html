@@ -308,5 +308,46 @@
         label.textContent = fileName;
     }
 </script>
+
+<script>
+// Utility function to format numbers with thousand separators and two decimals
+function formatNumberInput(input) {
+    let value = input.value.replace(/,/g, '').replace(/[^\d.]/g, '');
+    if (value) {
+        let parts = value.split('.');
+        let intPart = parts[0];
+        let decPart = parts[1] ? parts[1].slice(0,2) : '';
+        intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        input.value = decPart ? intPart + '.' + decPart : intPart;
+    }
+}
+
+// Attach formatting to relevant fields
+window.addEventListener('DOMContentLoaded', function() {
+    const fields = ['id_budget', 'id_distance', 'id_start_kilometer', 'id_end_kilometer'];
+    fields.forEach(function(fieldId) {
+        const el = document.getElementById(fieldId);
+        if (el) {
+            el.addEventListener('input', function(e) {
+                formatNumberInput(el);
+            });
+            el.addEventListener('blur', function(e) {
+                // Ensure two decimals on blur
+                let value = el.value.replace(/,/g, '');
+                if (value) {
+                    let num = parseFloat(value);
+                    if (!isNaN(num)) {
+                        el.value = num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                }
+            });
+            // Optional: show a modal or tooltip on focus
+            el.addEventListener('focus', function(e) {
+                el.select();
+            });
+        }
+    });
+});
+</script>
 {% endblock %}
 {% endblock main %}
