@@ -8,32 +8,36 @@
 
 
 {% block main %}
-<div class="container mt-4 bg-white p-3 rounded rounded-2">
-    <h3 class="mb-4">جزئیات لایه پروژه</h3>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-
-            <p class="card-text">
-                <strong>نام پروژه:</strong> {{ project_layer.project.name }}
-            </p>
-            <p class="card-text">
-                <strong>نوع لایه:</strong> {{ project_layer.layer_type.name }}
-            </p>
-            <p class="card-text">
-                <strong>ضخامت (سانتی‌متر):</strong> {{ project_layer.thickness_cm }}
-            </p>
-            <p class="card-text">
-                <strong>ترتیب از بالا:</strong> {{ project_layer.order_from_top }}
-            </p>
-            <p class="card-text">
-                <strong>وضعیت:</strong> {{ project_layer.get_status_display }}
-            </p>
-            <a href="{% url 'project-layer-list' pk=project_layer.project.id %}" class="btn btn-primary mt-3">لایه های پروژه</a>
-            <a href="{% url 'project-detail' pk=project_layer.project.id %}" class="btn btn-secondary mt-3">بازگشت به
-                پروژه</a>
-
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-gradient text-white">
+          <h4 class="fw-bold mb-0">جزئیات لایه پروژه</h4>
         </div>
+        <div class="card-body">
+          <div class="mb-3"><span class="badge bg-outline-primary border text-dark">پروژه: {{ project_layer.project.name }}</span></div>
+          <div class="mb-3"><span class="badge bg-outline-secondary border text-dark">نوع لایه: {{ project_layer.layer_type.name }}</span></div>
+          <div class="mb-3"><span class="badge bg-outline-success border text-dark">ضخامت: {{ project_layer.thickness_cm }} سانتی‌متر</span></div>
+          <div class="mb-3"><span class="badge bg-outline-info border text-dark">ترتیب از بالا: {{ project_layer.order_from_top }}</span></div>
+          <div class="mb-3"><span class="badge bg-outline-warning border text-dark">وضعیت: {{ project_layer.get_status_display }}</span></div>
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <a href="{% url 'project-layer-list' pk=project_layer.project.id %}" class="btn btn-outline-info rounded-pill px-4">لیست لایه‌های پروژه</a>
+            <a href="{% url 'project-detail' pk=project_layer.project.id %}" class="btn btn-outline-secondary rounded-pill px-4">بازگشت به پروژه</a>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+  <div class="text-center my-4">
+    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
+        <i class="fas fa-arrow-right"></i> بازگشت
+    </button>
+  </div>
 </div>
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+</style>
 {% endblock main %}
