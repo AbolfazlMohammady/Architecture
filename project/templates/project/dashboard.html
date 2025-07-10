@@ -71,6 +71,32 @@
                   <i class="fas fa-flask"></i> آزمایش‌ها
                 </button>
               </div>
+              
+              <!-- فیلتر زمانی -->
+              <div class="date-filter-section mt-2">
+                <div class="row">
+                  <div class="col-md-3">
+                    <label for="startDate" class="form-label">از تاریخ:</label>
+                    <input type="date" id="startDate" class="form-control form-control-sm" placeholder="از تاریخ">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="endDate" class="form-label">تا تاریخ:</label>
+                    <input type="date" id="endDate" class="form-control form-control-sm" placeholder="تا تاریخ">
+                  </div>
+                  <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-primary btn-sm w-100" id="applyDateFilter">
+                      <i class="fas fa-filter"></i> اعمال فیلتر
+                    </button>
+                  </div>
+                  <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="clearDateFilter">
+                      <i class="fas fa-times"></i> پاک کردن
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -237,6 +263,10 @@
     document.getElementById('zoomIn').addEventListener('click', () => dashboard.zoomIn());
     document.getElementById('zoomOut').addEventListener('click', () => dashboard.zoomOut());
     document.getElementById('resetZoom').addEventListener('click', () => dashboard.resetZoom());
+    
+    // کنترل‌های فیلتر زمانی
+    document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());
+    document.getElementById('clearDateFilter').addEventListener('click', () => dashboard.clearDateFilter());
     
     // نمایش اطلاعات لایه‌ها
     displayLayersInfo(projectData.layers);

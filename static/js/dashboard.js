@@ -9,7 +9,6 @@ export class ProjectDashboard {
         this.width = width;
         this.height = height;
         this.margin = margin;
-        this.container = document.getElementById(containerId);
         
         // تنظیمات نمایش
         this.showRoadLine = true;
@@ -18,19 +17,23 @@ export class ProjectDashboard {
         this.showStructures = true;
         this.showExperiments = true;
         
+        // فیلترهای زمانی
+        this.dateFilterStart = null;
+        this.dateFilterEnd = null;
+        
         // تنظیمات زوم و پن
         this.zoomLevel = 1;
         this.panX = 0;
         this.panY = 0;
         
-        // تنظیمات نمودار
-        this.xScale = 1;
-        this.yScale = 1;
-        this.xOffset = 0;
-        this.yOffset = 0;
-        
+        // موقعیت موس
         this.mouseX = null;
         this.mouseY = null;
+        
+        // داده‌های تولتیپ
+        this.profileTooltipData = [];
+        this.tooltipData = [];
+        this._hoveredExperiment = null;
         
         this.init();
     }
@@ -595,10 +598,12 @@ export class ProjectDashboard {
     drawExperiments() {
         this.projectData.layers.forEach(layer => {
             layer.experiments.forEach(experiment => {
-                const x = this.transformX(experiment.kilometer_start);
-                const y = this.transformY(layer.order_from_top * 10);
-                
-                this.drawExperimentPixel(experiment, x, y, layer);
+                if (this.isExperimentInDateRange(experiment)) {
+                    const x = this.transformX(experiment.kilometer_start);
+                    const y = this.transformY(layer.order_from_top * 10);
+                    
+                    this.drawExperimentPixel(experiment, x, y, layer);
+                }
             });
         });
     }
@@ -965,5 +970,70 @@ export class ProjectDashboard {
             ctx.restore();
         }
         ctx.restore();
+    }
+
+    applyDateFilter() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        this.dateFilterStart = startDate ? new Date(startDate) : null;
+        this.dateFilterEnd = endDate ? new Date(endDate) : null;
+        
+        // اعتبارسنجی تاریخ‌ها
+        if (this.dateFilterStart && this.dateFilterEnd && this.dateFilterStart > this.dateFilterEnd) {
+            alert('تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد!');
+            return;
+        }
+        
+        this.render();
+        this.updateFilterStatus();
+    }
+    
+    clearDateFilter() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        this.dateFilterStart = null;
+        this.dateFilterEnd = null;
+        this.render();
+        this.updateFilterStatus();
+    }
+    
+    updateFilterStatus() {
+        const applyBtn = document.getElementById('applyDateFilter');
+        const clearBtn = document.getElementById('clearDateFilter');
+        
+        if (this.dateFilterStart || this.dateFilterEnd) {
+            applyBtn.classList.remove('btn-primary');
+            applyBtn.classList.add('btn-success');
+            applyBtn.innerHTML = '<i class="fas fa-check"></i> فیلتر فعال';
+            clearBtn.style.display = 'inline-block';
+        } else {
+            applyBtn.classList.remove('btn-success');
+            applyBtn.classList.add('btn-primary');
+            applyBtn.innerHTML = '<i class="fas fa-filter"></i> اعمال فیلتر';
+            clearBtn.style.display = 'inline-block';
+        }
+    }
+    
+    isExperimentInDateRange(experiment) {
+        if (!this.dateFilterStart && !this.dateFilterEnd) {
+            return true; // بدون فیلتر
+        }
+        
+        if (!experiment.request_date) {
+            return false; // آزمایش بدون تاریخ
+        }
+        
+        const experimentDate = new Date(experiment.request_date);
+        
+        if (this.dateFilterStart && experimentDate < this.dateFilterStart) {
+            return false;
+        }
+        
+        if (this.dateFilterEnd && experimentDate > this.dateFilterEnd) {
+            return false;
+        }
+        
+        return true;
     }
 } 
