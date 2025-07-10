@@ -41,7 +41,7 @@ class ProjectForm(forms.ModelForm):
         # self.fields["end_date"].widget.attrs["class"] = "form-control"
         
         self.fields["budget"].widget.attrs["class"] = "form-control form-control-sm"
-        self.fields["distance"].widget.attrs["class"] = "form-control form-control-sm"
+        self.fields["masafat"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["width"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["start_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["end_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
@@ -60,7 +60,7 @@ class ProjectForm(forms.ModelForm):
                   'quality_control_manager',
                   "project_experts",
                   "budget",
-                  "distance",
+                  "masafat",
                   "width", 
                   "start_kilometer",
                   "end_kilometer", 

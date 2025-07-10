@@ -52,10 +52,10 @@ class Project(models.Model):
         help_text="کارشناسان پروژه را انتخاب کنید"
     )
     
-    distance = models.DecimalField(verbose_name="فاصله (کیلومتر)", help_text="فاصله پروژه به کیلومتر",max_digits=20,decimal_places=3)
-    width = models.DecimalField(verbose_name="عرض (متر)", help_text="عرض پروژه به متر",max_digits=20,decimal_places=3)
-    start_kilometer = models.DecimalField(verbose_name="کیلومتر شروع", help_text="کیلومتر شروع پروژه",max_digits=20,decimal_places=3)
-    end_kilometer = models.DecimalField(verbose_name="کیلومتر پایان", help_text="کیلومتر پایان پروژه",max_digits=20,decimal_places=3)
+    masafat = models.DecimalField(verbose_name="مسافت (کیلومتر)", help_text="مسافت پروژه به کیلومتر",max_digits=20,decimal_places=2, null=True)
+    width = models.DecimalField(verbose_name="عرض (متر)", help_text="عرض پروژه به متر",max_digits=20,decimal_places=2)
+    start_kilometer = models.DecimalField(verbose_name="کیلومتر شروع", help_text="کیلومتر شروع پروژه",max_digits=20,decimal_places=2)
+    end_kilometer = models.DecimalField(verbose_name="کیلومتر پایان", help_text="کیلومتر پایان پروژه",max_digits=20,decimal_places=2)
     profile_file = models.FileField(verbose_name="پروفیل",
                                     upload_to='project_profiles/',
                                     null=True, blank=True,

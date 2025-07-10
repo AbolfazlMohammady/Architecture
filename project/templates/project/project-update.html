@@ -349,7 +349,7 @@ function formatNumberInput(input) {
 
 // Attach formatting to relevant fields
 window.addEventListener('DOMContentLoaded', function() {
-    const fields = ['id_budget', 'id_distance', 'id_start_kilometer', 'id_end_kilometer'];
+    const fields = ['id_budget', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer'];
     fields.forEach(function(fieldId) {
         const el = document.getElementById(fieldId);
         if (el) {
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalPreview = document.getElementById('modalNumericInputPreview');
 
     // Attach click to relevant fields
-    ['id_budget', 'id_distance', 'id_start_kilometer', 'id_end_kilometer', 'id_width'].forEach(function(fieldId) {
+    ['id_budget', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer', 'id_width'].forEach(function(fieldId) {
         const el = document.getElementById(fieldId);
         if (el) {
             el.readOnly = true;
