@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from . import models, forms
 from project.models import ProjectLayer
 from django.contrib import messages
+from django.db.models import Q
 
 # Create your views here.
 
@@ -105,8 +106,10 @@ def experiment_request_list(request):
     
     # فیلتر بر اساس جستجو
     search = request.GET.get('search')
-    if search and search != 'None':
-        experiment_requests = experiment_requests.filter(description__icontains=search)
+    if search and search.strip() and search != 'None':
+        experiment_requests = experiment_requests.filter(
+            Q(description__icontains=search) | Q(project__name__icontains=search)
+        )
     
     return render(request, 'experiment/experiment_request_list.html', {
         'experiment_requests': experiment_requests,

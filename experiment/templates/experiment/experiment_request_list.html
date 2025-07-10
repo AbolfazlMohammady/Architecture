@@ -47,15 +47,18 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="search">جستجو</label>
-                                    <input type="text" name="search" id="search" class="form-control" placeholder="جستجو در توضیحات..." value="{{ search_query|default_if_none:'' }}">
+                                    <input type="text" name="search" id="search" class="form-control" placeholder="جستجو در توضیحات یا نام پروژه..." value="{{ search_query|default_if_none:'' }}">
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <div class="form-group">
+                                <div class="form-group d-flex flex-column align-items-stretch">
                                     <label>&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary w-100">
+                                    <button type="submit" class="btn btn-primary w-100 mb-2">
                                         <i class="fas fa-search"></i> جستجو
                                     </button>
+                                    <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-outline-secondary w-100">
+                                        پاک کردن فیلترها
+                                    </a>
                                 </div>
                             </div>
                         </div>
