@@ -17,6 +17,7 @@ export class XAxisCanvas {
     this.data = data;
     this.start_km = start_km;
     this.end_km = end_km;
+    console.log('XAxisCanvas.update:', { data, start_km, end_km });
     this.draw();
   }
 
@@ -38,22 +39,31 @@ export class XAxisCanvas {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
 
-    // نمایش همه لیبل‌ها با فاصله مساوی
+    // نمایش لیبل‌ها هر ۰.۵ کیلومتر
     const range = this.end_km - this.start_km;
     this.data.forEach((km, index) => {
       const x = ((km - this.start_km) / range) * this.width;
-      let kmInt = Math.floor(km);
-      let m = Math.round((km - kmInt) * 1000);
-      let kmLabel = kmInt + (m > 0 ? '+' + (m < 100 ? ('0' + m).slice(-3) : m) : '+000');
-      kmLabel = kmLabel.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      // Format label: show decimals only if needed, negative with '-', positive without sign, Persian digits
+      let kmLabelNum = (km % 1 === 0) ? Math.floor(km) : parseFloat(km.toFixed(1));
+      let kmLabel = '';
+      if (kmLabelNum < 0) {
+        kmLabel = '-' + Math.abs(kmLabelNum);
+      } else {
+        kmLabel = kmLabelNum.toString();
+      }
+      // Replace dot with Persian decimal, and digits with Persian digits
+      kmLabel = kmLabel.replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
       ctx.save();
-      ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
-      ctx.fillStyle = '#222';
+      ctx.font = '11px Vazirmatn, Tahoma, Arial, sans-serif'; // even smaller font
+      ctx.fillStyle = '#444';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(kmLabel, x, this.height - this.margin - 18);
+      ctx.shadowColor = '#fff';
+      ctx.shadowBlur = 2;
+      ctx.fillText(kmLabel, x, this.height - 28); // adjust position for smaller font
+      ctx.shadowBlur = 0;
       ctx.restore();
-      // خط کوچک عمودی کنار لیبل
+      // Draw small vertical tick under label
       ctx.beginPath();
       ctx.moveTo(x, this.height - 19 - this.margin);
       ctx.lineTo(x, this.height - 14 - this.margin);
