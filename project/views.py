@@ -205,7 +205,7 @@ class ProjectDashboardView(generic.DetailView):
         context['project_data'] = {
             'id': project.id,
             'name': project.name,
-            'distance': float(project.distance),
+            'masafat': float(project.masafat),
             'width': float(project.width),
             'start_kilometer': float(project.start_kilometer),
             'end_kilometer': float(project.end_kilometer),

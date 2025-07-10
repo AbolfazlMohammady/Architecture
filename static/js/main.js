@@ -73,7 +73,7 @@ export class RoadCanvasApp {
                 }
             )
             // اصلاح: از || به جای | برای مقایسه منطقی
-            if (xarray.length > 10 || this.project.distance < (this.project.end_kilometer - this.project.start_kilometer)) {
+            if (xarray.length > 10 || this.project.masafat < (this.project.end_kilometer - this.project.start_kilometer)) {
                 break;
             }
             i++
