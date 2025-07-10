@@ -254,10 +254,34 @@
             </div>
         </div>
 
+        <!-- Modals for Numeric Inputs -->
+        <div class="modal fade" id="numericInputModal" tabindex="-1" aria-labelledby="numericInputModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="numericInputModalLabel">ورود مقدار</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+              </div>
+              <div class="modal-body">
+                <input type="text" id="modalNumericInput" class="form-control form-control-lg text-center" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+                <div class="form-text mt-2" id="modalNumericInputHelp"></div>
+                <div class="form-text text-primary mt-1" id="modalNumericInputPreview"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" id="modalNumericInputConfirm">تایید</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="col-12 text-center mt-4">
             <button type="submit" class="btn btn-primary submit-btn">
                 <i class="fas fa-save me-2"></i>
                 بروزرسانی پروژه
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg ms-2" onclick="window.history.back();">
+                <i class="fas fa-arrow-right"></i> بازگشت
             </button>
         </div>
 </form>
@@ -267,6 +291,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     $(document).ready(function() {
         // Select2 initialization
@@ -345,6 +370,70 @@ window.addEventListener('DOMContentLoaded', function() {
             el.addEventListener('focus', function(e) {
                 el.select();
             });
+        }
+    });
+});
+</script>
+
+<script>
+// Utility: format integer with thousand separators
+function formatIntWithCommas(val) {
+    val = val.replace(/[^\d]/g, '');
+    return val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Modal logic for numeric fields
+let currentTargetInput = null;
+let modal = null;
+document.addEventListener('DOMContentLoaded', function() {
+    modal = new bootstrap.Modal(document.getElementById('numericInputModal'));
+    const modalInput = document.getElementById('modalNumericInput');
+    const modalHelp = document.getElementById('modalNumericInputHelp');
+    const confirmBtn = document.getElementById('modalNumericInputConfirm');
+    const modalPreview = document.getElementById('modalNumericInputPreview');
+
+    // Attach click to relevant fields
+    ['id_budget', 'id_distance', 'id_start_kilometer', 'id_end_kilometer', 'id_width'].forEach(function(fieldId) {
+        const el = document.getElementById(fieldId);
+        if (el) {
+            el.readOnly = true;
+            el.style.background = '#f8f9fa';
+            el.addEventListener('click', function(e) {
+                currentTargetInput = el;
+                modalInput.value = el.value.replace(/,/g, '');
+                modalInput.focus();
+                if(fieldId === 'id_budget') {
+                  modalHelp.innerText = 'مقدار را به ریال وارد کنید.';
+                } else if(fieldId === 'id_width') {
+                  modalHelp.innerText = 'مقدار را به متر وارد کنید.';
+                } else {
+                  modalHelp.innerText = 'مقدار را به کیلومتر وارد کنید.';
+                }
+                modalPreview.innerText = formatIntWithCommas(modalInput.value) ? 'نمایش: ' + formatIntWithCommas(modalInput.value) : '';
+                modal.show();
+            });
+        }
+    });
+
+    // Format input as user types and show preview
+    modalInput.addEventListener('input', function() {
+        // Only allow digits
+        modalInput.value = modalInput.value.replace(/[^\d]/g, '');
+        modalPreview.innerText = formatIntWithCommas(modalInput.value) ? 'نمایش: ' + formatIntWithCommas(modalInput.value) : '';
+    });
+
+    // Confirm button sets value
+    confirmBtn.addEventListener('click', function() {
+        if(currentTargetInput) {
+            currentTargetInput.value = modalInput.value.replace(/[^\d]/g, '');
+        }
+        modal.hide();
+    });
+
+    // Optional: Enter key confirms
+    modalInput.addEventListener('keydown', function(e) {
+        if(e.key === 'Enter') {
+            confirmBtn.click();
         }
     });
 });
