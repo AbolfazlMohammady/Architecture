@@ -451,11 +451,76 @@ export class ProjectDashboard {
     }
 
     drawStructures() {
+        const profileData = this.projectData.profile_data;
         this.projectData.structures.forEach(structure => {
-            const x = this.transformX(structure.kilometer_location);
-            const y = this.height / 2; // وسط نمودار
-            
-            this.drawStructureSymbol(structure, x, y);
+            if (structure.name.includes('پل')) {
+                // پل را به صورت داینامیک بین start_kilometer و end_kilometer رسم کن
+                const x1 = this.transformX(structure.start_kilometer);
+                const x2 = this.transformX(structure.end_kilometer);
+                // پیدا کردن y روی پروفیل جاده (میانگین y دو سر پل)
+                let y1 = null, y2 = null;
+                if (profileData.road_points && profileData.road_points.length > 0) {
+                    for (let p = 0; p < profileData.road_points.length; p++) {
+                        if (Math.abs(profileData.road_points[p].x - structure.start_kilometer) < 0.001) y1 = this.transformY(profileData.road_points[p].y);
+                        if (Math.abs(profileData.road_points[p].x - structure.end_kilometer) < 0.001) y2 = this.transformY(profileData.road_points[p].y);
+                    }
+                }
+                if (y1 === null) y1 = this.height / 2;
+                if (y2 === null) y2 = this.height / 2;
+                const yBridge = Math.min(y1, y2) - 30; // پل کمی بالاتر از پروفیل جاده
+                const bridgeHeight = 18;
+                const archHeight = 14;
+                const pierWidth = 7;
+                const ctx = this.canvas.ctx;
+                ctx.save();
+                // سایه و افکت وضعیت
+                if (structure.status === 2) { ctx.shadowColor = '#7ed957'; ctx.shadowBlur = 16; }
+                else if (structure.status === 1) { ctx.shadowColor = '#ffc107'; ctx.shadowBlur = 10; }
+                else { ctx.shadowBlur = 0; }
+                // بدنه پل (مستطیل)
+                ctx.beginPath();
+                ctx.rect(x1, yBridge, x2 - x1, bridgeHeight);
+                ctx.fillStyle = '#90a4ae';
+                ctx.globalAlpha = 0.92;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.lineWidth = 2.2;
+                ctx.strokeStyle = '#37474f';
+                ctx.stroke();
+                // قوس پل
+                ctx.beginPath();
+                ctx.moveTo(x1, yBridge + bridgeHeight);
+                ctx.quadraticCurveTo((x1 + x2) / 2, yBridge + bridgeHeight + archHeight, x2, yBridge + bridgeHeight);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#607d8b';
+                ctx.stroke();
+                // پایه‌های پل
+                ctx.beginPath();
+                ctx.rect(x1 - pierWidth / 2, yBridge + bridgeHeight, pierWidth, 22);
+                ctx.rect(x2 - pierWidth / 2, yBridge + bridgeHeight, pierWidth, 22);
+                ctx.fillStyle = '#78909c';
+                ctx.globalAlpha = 0.85;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = '#37474f';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                // نام پل بالای قوس
+                ctx.font = 'bold 13px Tahoma';
+                ctx.fillStyle = '#263238';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.shadowColor = '#fff';
+                ctx.shadowBlur = 6;
+                ctx.fillText(structure.name, (x1 + x2) / 2, yBridge - 4);
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            } else {
+                // سایر ابنیه‌ها (آبرو، تونل و ...)
+                const x = this.transformX(structure.kilometer_location);
+                const y = this.height / 2;
+                this.drawStructureSymbol(structure, x, y);
+            }
         });
     }
 
