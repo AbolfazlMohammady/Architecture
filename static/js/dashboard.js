@@ -300,6 +300,7 @@ export class ProjectDashboard {
         const profileData = this.projectData.profile_data;
         if (!profileData.road_points || profileData.road_points.length === 0) return;
         const layers = [...this.projectData.layers].sort((a, b) => a.order_from_top - b.order_from_top);
+        if (!this.tooltipData) this.tooltipData = [];
         for (let i = 0; i < profileData.road_points.length - 1; i++) {
             const x1 = this.transformX(profileData.road_points[i].x);
             const x2 = this.transformX(profileData.road_points[i + 1].x);
@@ -401,6 +402,16 @@ export class ProjectDashboard {
                     ctx.restore();
                 }
                 ctx.restore();
+                // Add tooltipData for layer (center of segment)
+                if (i % 10 === 0) {
+                    this.tooltipData.push({
+                        x: (x1 + x2) / 2,
+                        y: (yBase1 + yBottom1) / 2,
+                        width: Math.abs(x2 - x1),
+                        height: Math.abs(yBottom1 - yBase1),
+                        data: { type: 'layer', layer }
+                    });
+                }
                 yBase1 = yBottom1;
                 yBase2 = yBottom2;
             }
@@ -515,11 +526,20 @@ export class ProjectDashboard {
                 ctx.fillText(structure.name, (x1 + x2) / 2, yBridge - 4);
                 ctx.shadowBlur = 0;
                 ctx.restore();
+                // Add tooltipData for bridge (center)
+                if (!this.tooltipData) this.tooltipData = [];
+                this.tooltipData.push({
+                    x: (x1 + x2) / 2,
+                    y: yBridge + bridgeHeight / 2,
+                    width: Math.abs(x2 - x1),
+                    height: bridgeHeight + archHeight,
+                    data: { type: 'bridge', structure }
+                });
             } else {
                 // سایر ابنیه‌ها (آبرو، تونل و ...)
-                const x = this.transformX(structure.kilometer_location);
+            const x = this.transformX(structure.kilometer_location);
                 const y = this.height / 2;
-                this.drawStructureSymbol(structure, x, y);
+            this.drawStructureSymbol(structure, x, y);
             }
         });
     }
@@ -711,36 +731,55 @@ export class ProjectDashboard {
             y <= item.y + item.height/2
         );
         if (hoveredItem) {
-            this._hoveredExperiment = {x: hoveredItem.x, y: hoveredItem.y};
-            const data = hoveredItem.data;
-            const experiment = data.experiment;
-            const layer = data.layer;
-            // رنگ border بر اساس وضعیت
-            const statusColors = {
-                0: '#ffc107', 1: '#17a2b8', 2: '#28a745', 3: '#dc3545'
-            };
-            const statusColor = statusColors[experiment.status] || '#888';
-            tooltip.innerHTML = `
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span style="font-size:18px;">🧪</span>
-                  <span style="font-weight:bold;color:${statusColor};font-size:15px;">آزمایش ${experiment.experiment_type}</span>
-                </div>
-                <div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>
-                <div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} - ${experiment.kilometer_end}</b></div>
-                <div style="font-size:13px;color:#555;">تاریخ: <b>${experiment.request_date || 'نامشخص'}</b></div>
-                <div style="font-size:13px;color:#555;">وضعیت: <b>${this.getStatusText(experiment.status)}</b></div>
-                ${experiment.description ? `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>` : ''}
-                <div style='width:0;height:0;border:8px solid transparent;border-top:10px solid ${statusColor};margin:0 auto;'></div>
-            `;
+            let html = '';
+            const d = hoveredItem.data;
+            if (d.type === 'layer') {
+                const layer = d.layer;
+                const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
+                const stateMap = {0:'متغیر',1:'ثابت'};
+                let statusColor = layer.status === 2 ? '#7ed957' : layer.status === 1 ? '#ffc107' : '#bdbdbd';
+                let icon = layer.status === 2 ? '✔' : layer.status === 1 ? '⏳' : '⏺';
+                html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">${icon}</span> <span>${layer.name}</span></div>`;
+                html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[layer.status]}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">نوع: <b>${stateMap[layer.state]}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">ضخامت: <b>${layer.thickness_cm}cm</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">تعداد آزمایش: <b>${layer.experiments?.length||0}</b></div>`;
+            } else if (d.type === 'bridge') {
+                const s = d.structure;
+                const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
+                let statusColor = s.status === 2 ? '#7ed957' : s.status === 1 ? '#ffc107' : '#bdbdbd';
+                html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">🌉</span> <span>${s.name}</span></div>`;
+                html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[s.status]}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">طول پل: <b>${(s.end_kilometer-s.start_kilometer).toFixed(2)} km</b></div>`;
+            } else if (d.experiment && d.layer) {
+                // آزمایش
+                const experiment = d.experiment;
+                const layer = d.layer;
+                const statusColors = {0:'#ffc107',1:'#17a2b8',2:'#28a745',3:'#dc3545'};
+                const statusMap = {0:'در انتظار',1:'در حال انجام',2:'تکمیل شده',3:'رد شده'};
+                html = `<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:18px;">🧪</span><span style="font-weight:bold;color:${statusColors[experiment.status]}">آزمایش ${experiment.experiment_type}</span></div>`;
+                html += `<div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>`;
+                html += `<div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} - ${experiment.kilometer_end}</b></div>`;
+                html += `<div style="font-size:13px;color:#555;">تاریخ: <b>${experiment.request_date || 'نامشخص'}</b></div>`;
+                html += `<div style="font-size:13px;color:#555;">وضعیت: <b>${statusMap[experiment.status]}</b></div>`;
+                if (experiment.description) html += `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>`;
+            }
+            tooltip.innerHTML = html;
             tooltip.style.display = 'block';
-            tooltip.style.left = (x + 18) + 'px';
-            tooltip.style.top = (y - 24) + 'px';
-            tooltip.style.border = `2.5px solid ${statusColor}`;
-            tooltip.style.borderRadius = '12px';
-            tooltip.style.boxShadow = '0 6px 24px rgba(0,0,0,0.18)';
-            tooltip.style.animation = 'fadeInTooltip 0.22s';
+            tooltip.style.left = (x + 16) + 'px';
+            tooltip.style.top = (y - 12) + 'px';
+            tooltip.style.background = 'rgba(255,255,255,0.7)';
+            tooltip.style.backdropFilter = 'blur(8px)';
+            tooltip.style.borderRadius = '8px';
+            tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+            tooltip.style.color = '#222';
+            tooltip.style.padding = '10px 14px';
+            tooltip.style.fontSize = '13px';
+            tooltip.style.pointerEvents = 'none';
+            tooltip.style.zIndex = 2000;
         } else {
-            this._hoveredExperiment = null;
             tooltip.style.display = 'none';
         }
     }
