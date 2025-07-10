@@ -198,10 +198,9 @@
                         ثبت درخواست
                         {% endif %}
                     </button>
-                    <a href="{% url 'experiment:experiment_request_list' %}" class="btn btn-secondary btn-lg me-2">
-                        <i class="bi bi-x-circle me-2"></i>
-                        انصراف
-                    </a>
+                    <button type="button" class="btn btn-secondary btn-lg ms-2" onclick="window.history.back();">
+                        <i class="fas fa-arrow-right"></i> بازگشت
+                    </button>
                 </div>
             </form>
         </div>
