@@ -5,13 +5,32 @@
 {% endblock title %}
 
 {% block main %}
-  <div class="container bg-white rounded rounded-2 p-3">
-    
-    <form class="form" method="post">
-        {% csrf_token %}
-        {{form.as_p}}
-        
-        <button class="btn btn-primary mt-3" type="submit">ذخیره</button>
-    </form>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+          <div class="card-header bg-gradient text-white">
+            <h4 class="fw-bold mb-0">ویرایش ابنیه</h4>
+          </div>
+          <div class="card-body">
+            <form class="form" method="post">
+                {% csrf_token %}
+                {{form.as_p}}
+                <button class="btn btn-primary mt-3" type="submit">ذخیره</button>
+            </form>
+            <div class="text-center mt-4">
+              <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
+                  <i class="fas fa-arrow-right"></i> بازگشت
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+  <style>
+  .bg-gradient {
+    background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+  }
+  </style>
 {% endblock %}
