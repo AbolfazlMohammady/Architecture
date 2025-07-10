@@ -143,7 +143,6 @@ class ProjectLayer(models.Model):
     class Meta:
         verbose_name = "لایه پروژه"
         verbose_name_plural = "لایه‌های پروژه"
-        unique_together = ('project', 'layer_type')
         ordering = ['order_from_top']
 
 class StructureType(models.Model):
@@ -192,7 +191,6 @@ class ProjectStructure(models.Model):
     class Meta:
         verbose_name = "اَبنیه پروژه"
         verbose_name_plural = "اَبنیه های پروژه"
-        unique_together = ('project', 'structure_type')
         ordering = ['kilometer_location']
 
 
