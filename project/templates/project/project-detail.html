@@ -2,89 +2,107 @@
 {% load static %}
 {% block title %}{{ project.name }}{% endblock %}
 {% block main %}
-<div class="container mt-4 text-end">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">{{ project.name }}</h4>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-gradient text-white d-flex flex-column flex-md-row align-items-center justify-content-between">
+          <h4 class="fw-bold mb-0">{{ project.name }}</h4>
+          <span class="badge bg-light text-dark fw-bold fs-6 mt-2 mt-md-0">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
         </div>
         <div class="card-body">
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p><strong>نام پروژه:</strong> {{ project.name }}</p>
-                    <p><strong>تاریخ ایجاد:</strong> {{ project.created_at|date:"Y/m/d - H:i" }}</p>
-                    <p><strong>تاریخ به‌روزرسانی:</strong> {{ project.updated_at|date:"Y/m/d - H:i" }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>بودجه:</strong> {{ project.budget|default:"تنظیم نشده" }}</p>
-                    <p><strong>تاریخ شروع:</strong> {% if project.start_date %}{{ project.start_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</p>
-                    <p><strong>تاریخ پایان:</strong> {% if project.end_date %}{{ project.end_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</p>
-                </div>
+          <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <div class="d-flex flex-column gap-2">
+                <span><strong>تاریخ ایجاد:</strong> {{ project.created_at|date:"Y/m/d - H:i" }}</span>
+                <span><strong>تاریخ به‌روزرسانی:</strong> {{ project.updated_at|date:"Y/m/d - H:i" }}</span>
+                <span><strong>بودجه:</strong> {{ project.budget|default:"تنظیم نشده" }}</span>
+                <span><strong>تاریخ شروع:</strong> {% if project.start_date %}{{ project.start_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
+                <span><strong>تاریخ پایان:</strong> {% if project.end_date %}{{ project.end_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
+              </div>
             </div>
-
-            <hr>
-
-            <div class="row mb-3">
-                <div class="col-md-4"><strong>مدیر پروژه:</strong> {{ project.project_manager.username }}</div>
-                <div class="col-md-4"><strong>مدیر فنی:</strong> {{ project.technical_manager.username }}</div>
-                <div class="col-md-4"><strong>مدیر کنترل کیفیت:</strong> {{ project.quality_control_manager.username }}</div>
+            <div class="col-md-6">
+              <div class="d-flex flex-column gap-2">
+                <span><strong>مدیر پروژه:</strong> <span class="badge bg-outline-primary border text-dark fw-light">{{ project.project_manager.username }}</span></span>
+                <span><strong>مدیر فنی:</strong> <span class="badge bg-outline-secondary border text-dark fw-light">{{ project.technical_manager.username }}</span></span>
+                <span><strong>مدیر کنترل کیفیت:</strong> <span class="badge bg-outline-success border text-dark fw-light">{{ project.quality_control_manager.username }}</span></span>
+              </div>
             </div>
-
-            <div class="card my-3">
+          </div>
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card mb-3 border-0 shadow-sm rounded-3">
                 <div class="card-header bg-light">
-                    <strong>کارشناسان پروژه</strong>
+                  <strong>کارشناسان پروژه</strong>
                 </div>
                 <div class="card-body p-2">
-                    {% if project.project_experts.all %}
-                        <ul class="list-group list-group-flush">
-                            {% for member in project.project_experts.all %}
-                                <li class="list-group-item">{{ member.username }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted">کارشناسی ثبت نشده است.</p>
-                    {% endif %}
+                  {% if project.project_experts.all %}
+                    <ul class="list-group list-group-flush">
+                      {% for member in project.project_experts.all %}
+                        <li class="list-group-item">{{ member.username }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <p class="text-muted">کارشناسی ثبت نشده است.</p>
+                  {% endif %}
                 </div>
+              </div>
             </div>
-
-            <table class="table table-bordered text-center">
-                <tbody>
-                    <tr>
-                        <th>فاصله (کیلومتر)</th>
-                        <td>{{ project.distance }}</td>
-                        <th>عرض (متر)</th>
-                        <td>{{ project.width }}</td>
-                    </tr>
-                    <tr>
-                        <th>کیلومتر شروع</th>
-                        <td>{{ project.start_kilometer }}</td>
-                        <th>کیلومتر پایان</th>
-                        <td>{{ project.end_kilometer }}</td>
-                    </tr>
-                    <tr>
-                        <th>فایل پروفیل</th>
-                        <td colspan="3">
-                            {% if project.profile_file %}
-                                <a href="{{ project.profile_file.url }}" target="_blank" class="btn d-block btn-outline-primary">دانلود فایل</a>
-                            {% else %}
-                                <span class="text-muted">فایل موجود نیست</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="mt-4">
-                <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-outline-info me-2">داشبورد</a>
-                <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">لایه‌های پروژه</a>
-                <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">ابینه های پروژه</a>
-                {% if project.project_manager == request.user %}
-                
-                    <a href="{% url 'project-update' pk=project.pk %}" class="btn btn-outline-secondary me-2">بروزرسانی</a>
-                
-                {% endif %}
+            <div class="col-md-6">
+              <div class="card mb-3 border-0 shadow-sm rounded-3">
+                <div class="card-header bg-light">
+                  <strong>مشخصات پروژه</strong>
+                </div>
+                <div class="card-body p-2">
+                  <div class="row mb-2">
+                    <div class="col-6"><strong>فاصله (کیلومتر):</strong> {{ project.distance }}</div>
+                    <div class="col-6"><strong>عرض (متر):</strong> {{ project.width }}</div>
+                  </div>
+                  <div class="row mb-2">
+                    <div class="col-6"><strong>کیلومتر شروع:</strong> {{ project.start_kilometer }}</div>
+                    <div class="col-6"><strong>کیلومتر پایان:</strong> {{ project.end_kilometer }}</div>
+                  </div>
+                  <div class="row mb-2">
+                    <div class="col-12"><strong>فایل پروفیل:</strong>
+                      {% if project.profile_file %}
+                        <a href="{{ project.profile_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">دانلود فایل</a>
+                      {% else %}
+                        <span class="text-muted">فایل موجود نیست</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-4">
+            <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-outline-info rounded-pill px-4">داشبورد</a>
+            <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-outline-secondary rounded-pill px-4">لایه‌های پروژه</a>
+            <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-outline-secondary rounded-pill px-4">ابنیه‌های پروژه</a>
+            {% if project.project_manager == request.user %}
+              <a href="{% url 'project-update' pk=project.pk %}" class="btn btn-outline-primary rounded-pill px-4">بروزرسانی</a>
+            {% endif %}
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+  <div class="text-center my-4">
+    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
+        <i class="fas fa-arrow-right"></i> بازگشت
+    </button>
+  </div>
 </div>
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+.project-card {
+  transition: all 0.3s ease;
+}
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+</style>
 {% endblock main %}
