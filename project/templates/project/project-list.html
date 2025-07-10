@@ -8,54 +8,58 @@
 {% endblock %}
 
 {% block main %}
-<div class="container">
-  <div class="card shadow rounded-2">
-    <div class="card-header">
-      <div class="d-flex justify-content-between">
-        پروژه های فعال
-        {% comment %} <a href="{% url 'project-list'  %}" class="btn btn-primary">لیست پروژه ها</a> {% endcomment %}
+<div class="container py-5">
+  <section class="project-list mb-5">
+    <h5 class="mb-4 fw-bold">لیست پروژه‌ها</h5>
+    <div class="row g-4">
+      {% for project in projects %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">{{ project.name }}</h6>
+            <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+          </div>
+          <div class="card-body">
+            <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:project.id }}%;">
+                {{ project_progress|get_item:project.id }}%
+              </div>
+            </div>
+            <div class="mb-3">
+              <span class="badge bg-outline-primary border text-dark fw-light">مدیر: {{ project.project_manager }}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{% url 'project-detail' pk=project.pk %}">جزئیات</a>
+              <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">لایه‌های پروژه</a>
+              <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">ابنیه‌های پروژه</a>
+              <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3">داشبورد</a>
+            </div>
+          </div>
+        </div>
       </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="alert alert-warning text-center">پروژه‌ای برای شما تعریف نشده است.</div>
+      </div>
+      {% endfor %}
     </div>
-    <div class="card-body">
-      <table class="table text-center">
-        <thead>
-          <tr>
-            <th scope="col">شناسه پروژه</th>
-            <th scope="col">نام پروژه</th>
-            <th scope="col">مدیر پروژه</th>
-            <th scope="col">پیشرفت</th>
-            <th scope="col">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for project in projects %}
-          <tr>
-            <td>{{ project.pk }}</td>
-            <td>{{ project.name }}</td>
-            <td>{{ project.project_manager }}</td>
-            <td>{{ project_progress|get_item:project.id }}%</td>
-            <td>
-              <a class="btn btn-outline-primary" href="{% url 'project-detail' pk=project.pk %}">جزیات</a>
-              <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">لایه‌های پروژه</a>
-              <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-outline-secondary me-2">ابینه های پروژه</a>
-              <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-outline-info me-2">داشبورد</a>
-            </td>
-          </tr>
-          {% empty %}
-            {% for i in "1234567" %}
-            <tr>
-              <td colspan="4">تعریف نشده</td>
-            </tr>
-            {% endfor %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="text-center my-4">
-        <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
-            <i class="fas fa-arrow-right"></i> بازگشت
-        </button>
-    </div>
+  </section>
+  <div class="text-center my-4">
+      <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
+          <i class="fas fa-arrow-right"></i> بازگشت
+      </button>
   </div>
 </div>
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+.project-card {
+  transition: all 0.3s ease;
+}
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+</style>
 {% endblock %}
