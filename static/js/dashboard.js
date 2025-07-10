@@ -692,11 +692,21 @@ export class ProjectDashboard {
         const rect = e.target.getBoundingClientRect();
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
+        
+        // اطمینان از اینکه موس در محدوده canvas است
+        if (this.mouseX < 0 || this.mouseX > this.width || this.mouseY < 0 || this.mouseY > this.height) {
+            this.mouseX = null;
+            this.mouseY = null;
+            this.render();
+            return;
+        }
+        
         // بروزرسانی نمایش مختصات
         const realX = this.xMin + (this.mouseX - this.margin - 50) / (this.xScale * this.zoomLevel);
         const realY = this.yMax - (this.mouseY - this.margin) / (this.yScale * this.zoomLevel);
         document.getElementById('xinput').value = realX.toFixed(3);
         document.getElementById('yinput').value = realY.toFixed(3);
+        
         // فقط render را صدا بزن تا crosshair و بقیه اجزا دوباره کشیده شوند
         this.render();
     }
@@ -879,14 +889,27 @@ export class ProjectDashboard {
     drawCrosshair(x, y) {
         const ctx = this.canvas.ctx;
         ctx.save();
-        ctx.strokeStyle = 'rgba(44,62,80,0.18)';
-        ctx.lineWidth = 1.2;
+        
+        // خطوط عمودی و افقی
+        ctx.strokeStyle = 'rgba(44,62,80,0.25)';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, this.height);
         ctx.moveTo(0, y);
         ctx.lineTo(this.width, y);
         ctx.stroke();
+        
+        // علامت + در مرکز موس
+        ctx.strokeStyle = 'rgba(44,62,80,0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y);
+        ctx.lineTo(x + 8, y);
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x, y + 8);
+        ctx.stroke();
+        
         ctx.restore();
     }
 

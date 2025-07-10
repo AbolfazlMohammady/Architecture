@@ -89,13 +89,13 @@ html, body {
   content: '';
   position: absolute;
   top: 50%;
-  left: -8px;
+  right: -8px;
   transform: translateY(-50%);
   width: 0;
   height: 0;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
-  border-right: 8px solid rgba(255,255,255,0.7);
+  border-left: 8px solid rgba(255,255,255,0.7);
   filter: blur(1px);
   opacity: 0.7;
 }
