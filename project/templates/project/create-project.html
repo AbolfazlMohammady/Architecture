@@ -15,12 +15,6 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        .form-section-title {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-        }
         .date-input-group {
             position: relative;
         }
@@ -109,7 +103,7 @@
 <div class="container bg-white p-4 rounded rounded-3 shadow-sm" style="max-width: 1200px;">
     <div class="text-center mb-4">
         <h1 class="display-5 mb-3">ایجاد پروژه جدید</h1>
-        <p class="lead text-muted">لطفاً اطلاعات پروژه را با دقت وارد کنید. فیلدهای ستاره‌دار اجباری هستند.</p>
+        <p class="lead text-muted">لطفاً اطلاعات پروژه را با دقت وارد کنید..</p>
     </div>
 
     <form method="post" class="row g-4" enctype="multipart/form-data">
@@ -139,10 +133,6 @@
         <!-- اطلاعات اصلی -->
         <div class="col-12">
             <div class="form-section">
-                <h3 class="form-section-title">
-                    <i class="fas fa-info-circle me-2"></i>
-                    اطلاعات اصلی
-                </h3>
                 <div class="row g-3">
             {% for field in form %}
                         {% if forloop.counter <= 3 %}
@@ -184,10 +174,6 @@
         <!-- اطلاعات مالی -->
         <div class="col-12">
             <div class="form-section">
-                <h3 class="form-section-title">
-                    <i class="fas fa-money-bill-wave me-2"></i>
-                    اطلاعات مالی
-                </h3>
                 <div class="row g-3">
                     {% for field in form %}
                         {% if forloop.counter > 3 and forloop.counter <= 6 %}
@@ -217,10 +203,6 @@
         <!-- اطلاعات فنی -->
         <div class="col-12">
             <div class="form-section">
-                <h3 class="form-section-title">
-                    <i class="fas fa-cogs me-2"></i>
-                    اطلاعات فنی
-                </h3>
                 <div class="row g-3">
                     {% for field in form %}
                         {% if forloop.counter > 6 %}
