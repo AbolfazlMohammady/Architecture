@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}
 داشبورد پروژه - {{ project.name }}
@@ -18,19 +19,19 @@
       <div class="row">
         <div class="col-md-3">
           <small class="text-muted">مسافت پروژه:</small>
-          <strong>{{ project.masafat|floatformat:3 }} کیلومتر</strong>
+          <strong>{{ project.masafat|intcomma_float }} کیلومتر</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">کیلومتر شروع:</small>
-          <strong>{{ project.start_kilometer|floatformat:3 }}</strong>
+          <strong>{{ project.start_kilometer|intcomma_float }}</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">کیلومتر پایان:</small>
-          <strong>{{ project.end_kilometer|floatformat:3 }}</strong>
+          <strong>{{ project.end_kilometer|intcomma_float }}</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">عرض پروژه:</small>
-          <strong>{{ project.width|floatformat:3 }} متر</strong>
+          <strong>{{ project.width|intcomma_float }} متر</strong>
         </div>
       </div>
     </div>
