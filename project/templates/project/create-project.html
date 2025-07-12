@@ -368,5 +368,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+// Format numeric fields to 3 decimal places on blur
+function formatToThreeDecimals(val) {
+    if (val === "") return "";
+    let num = parseFloat(val.replace(/,/g, ''));
+    if (isNaN(num)) return "";
+    return num.toFixed(3);
+}
+
+['id_budget', 'id_masafat', 'id_width', 'id_start_kilometer', 'id_end_kilometer'].forEach(function(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (el) {
+        el.addEventListener('blur', function() {
+            el.value = formatToThreeDecimals(el.value);
+        });
+    }
+});
+</script>
 {% endblock %}
 {% endblock main %}

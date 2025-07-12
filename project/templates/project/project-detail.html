@@ -16,7 +16,7 @@
               <div class="d-flex flex-column gap-2">
                 <span><strong>تاریخ ایجاد:</strong> {{ project.created_at|date:"Y/m/d - H:i" }}</span>
                 <span><strong>تاریخ به‌روزرسانی:</strong> {{ project.updated_at|date:"Y/m/d - H:i" }}</span>
-                <span><strong>بودجه:</strong> <span id="budget-value">{{ project.budget|default:"تنظیم نشده" }}</span></span>
+                <span><strong>بودجه:</strong> <span id="budget-value">{{ project.budget|floatformat:'-3'|default:"تنظیم نشده" }}</span></span>
                 <span><strong>تاریخ شروع:</strong> {% if project.start_date %}{{ project.start_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
                 <span><strong>تاریخ پایان:</strong> {% if project.end_date %}{{ project.end_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
               </div>
@@ -55,12 +55,12 @@
                 </div>
                 <div class="card-body p-2">
                   <div class="row mb-2">
-                    <div class="col-6"><strong>مسافت (کیلومتر):</strong> <span id="masafat-value">{{ project.masafat }}</span></div>
-                    <div class="col-6"><strong>عرض (متر):</strong> <span id="width-value">{{ project.width }}</span></div>
+                    <div class="col-6"><strong>مسافت (کیلومتر):</strong> <span id="masafat-value">{{ project.masafat|floatformat:'-3' }}</span></div>
+                    <div class="col-6"><strong>عرض (متر):</strong> <span id="width-value">{{ project.width|floatformat:'-3' }}</span></div>
                   </div>
                   <div class="row mb-2">
-                    <div class="col-6"><strong>کیلومتر شروع:</strong> <span id="start-kilometer-value">{{ project.start_kilometer }}</span></div>
-                    <div class="col-6"><strong>کیلومتر پایان:</strong> <span id="end-kilometer-value">{{ project.end_kilometer }}</span></div>
+                    <div class="col-6"><strong>کیلومتر شروع:</strong> <span id="start-kilometer-value">{{ project.start_kilometer|floatformat:'-3' }}</span></div>
+                    <div class="col-6"><strong>کیلومتر پایان:</strong> <span id="end-kilometer-value">{{ project.end_kilometer|floatformat:'-3' }}</span></div>
                   </div>
                   <div class="row mb-2">
                     <div class="col-12"><strong>فایل پروفیل:</strong>
@@ -114,10 +114,7 @@ function formatWithCommasAndDecimals(val) {
     val = val.toString().replace(/,/g, '').trim();
     if (isNaN(val)) return val;
     var num = parseFloat(val);
-    var parts = num.toFixed(2).split('.');
-    var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    var decPart = parts[1];
-    return intPart + '.' + decPart;
+    return num.toLocaleString('en-US', {maximumFractionDigits: 3});
 }
 window.addEventListener('DOMContentLoaded', function() {
     function updateField(id, unit) {

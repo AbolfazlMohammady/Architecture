@@ -18,19 +18,19 @@
       <div class="row">
         <div class="col-md-3">
           <small class="text-muted">مسافت پروژه:</small>
-          <strong>{{ project.masafat }} کیلومتر</strong>
+          <strong>{{ project.masafat|floatformat:3 }} کیلومتر</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">کیلومتر شروع:</small>
-          <strong>{{ project.start_kilometer }}</strong>
+          <strong>{{ project.start_kilometer|floatformat:3 }}</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">کیلومتر پایان:</small>
-          <strong>{{ project.end_kilometer }}</strong>
+          <strong>{{ project.end_kilometer|floatformat:3 }}</strong>
         </div>
         <div class="col-md-3">
           <small class="text-muted">عرض پروژه:</small>
-          <strong>{{ project.width }} متر</strong>
+          <strong>{{ project.width|floatformat:3 }} متر</strong>
         </div>
       </div>
     </div>
