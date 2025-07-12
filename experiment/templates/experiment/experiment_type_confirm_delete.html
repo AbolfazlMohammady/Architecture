@@ -5,14 +5,14 @@
 
 {% block main %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">حذف نوع آزمایش</h3>
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">حذف نوع آزمایش</h3>
                 </div>
                 <div class="card-body">
-                    <p>آیا از حذف نوع آزمایش "{{ object.name }}" اطمینان دارید؟</p>
+                    <p>آیا از حذف نوع آزمایش <b>"{{ object.name }}"</b> اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
                     <form method="post">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">بله، حذف شود</button>

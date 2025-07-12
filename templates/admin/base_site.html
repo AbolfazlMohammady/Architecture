@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script>
+    function faAdminButtons() {
+      document.querySelectorAll('button, input, a').forEach(function(el) {
+        // لغو
+        if (
+          (el.value && el.value.trim().toLowerCase() === 'cancel') ||
+          (el.textContent && el.textContent.trim().toLowerCase() === 'cancel')
+        ) {
+          if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+            el.value = 'لغو';
+            el.textContent = 'لغو';
+          } else {
+            el.textContent = 'لغو';
+          }
+        }
+        // حذف (کلاس یا مقدار یا متن)
+        if (
+          (el.value && el.value.trim().toLowerCase() === 'delete') ||
+          (el.textContent && el.textContent.trim().toLowerCase() === 'delete') ||
+          (el.innerText && el.innerText.trim().toLowerCase() === 'delete') ||
+          (el.value && el.value.trim().toLowerCase() === "yes, i'm sure") ||
+          (el.textContent && el.textContent.trim().toLowerCase() === "yes, i'm sure") ||
+          (el.className && el.className.toLowerCase().includes('delete'))
+        ) {
+          if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+            el.value = 'حذف';
+            el.textContent = 'حذف';
+          } else {
+            el.textContent = 'حذف';
+          }
+        }
+      });
+    }
+    window.addEventListener('DOMContentLoaded', faAdminButtons);
+    new MutationObserver(faAdminButtons).observe(document.body, {childList:true, subtree:true});
+    </script>
+{% endblock %} 

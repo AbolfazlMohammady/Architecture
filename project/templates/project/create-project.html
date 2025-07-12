@@ -175,10 +175,10 @@
                     اطلاعات اصلی
                 </h3>
                 <div class="row g-3">
-                    {% for field in form %}
+            {% for field in form %}
                         {% if field.name == 'name' or field.name == 'project_manager' or field.name == 'technical_manager' or field.name == 'quality_control_manager' or field.name == 'project_experts' %}
                             <div class="col-md-4">
-                                <label class="form-label">{{ field.label }}</label>
+                <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
                                     <div class="custom-file">
                                         {% render_field field class="form-control custom-file-input" onchange="updateFileName(this)" %}
@@ -196,7 +196,7 @@
                                 {% else %}
                                     {% render_field field class="form-control" %}
                                 {% endif %}
-                                {% if field.errors %}
+                {% if field.errors %}
                                     <div class="field-error">
                                         <i class="fas fa-exclamation-circle me-1"></i>
                     {{ field.errors|striptags }}
@@ -228,8 +228,8 @@
                                         {{ field.errors|striptags }}
                                     </div>
                                 {% endif %}
-                            </div>
-                        {% endif %}
+                </div>
+                {% endif %}
                     {% endfor %}
                 </div>
             </div>

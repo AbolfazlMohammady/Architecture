@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <div class="container" style="max-width: 600px;">
+    <h1 class="text-danger">تأیید حذف</h1>
+    <p>آیا مطمئن هستید که می‌خواهید <strong>{{ object_name }}</strong> را حذف کنید؟ این عملیات غیرقابل بازگشت است.</p>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="post" value="yes">
+      <button type="submit" class="btn btn-danger">بله، حذف شود</button>
+      <a href="{{ admin_url }}" class="btn btn-secondary">خیر، بازگشت</a>
+    </form>
+  </div>
+{% endblock %} 
