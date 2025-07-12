@@ -147,18 +147,15 @@
                                     </div>
                                 {% elif 'date' in field.name %}
                                     <div class="date-input-group">
-                                        {% render_field field class="form-control jalali_date-input" placeholder="تاریخ را انتخاب کنید" %}
+                                        {% render_field field class="form-control jalali_date-input" %}
                                         <i class="fas fa-calendar-alt"></i>
                                     </div>
                                 {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
                                     {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
                                 {% else %}
-                                    {% render_field field class="form-control" placeholder=field.help_text %}
+                                    {% render_field field class="form-control" %}
                                 {% endif %}
-                                {% if field.help_text %}
-                                    <div class="help-text">{{ field.help_text }}</div>
-                                {% endif %}
-                {% if field.errors %}
+                                {% if field.errors %}
                                     <div class="field-error">
                                         <i class="fas fa-exclamation-circle me-1"></i>
                     {{ field.errors|striptags }}
@@ -182,10 +179,7 @@
                                 {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
                                     {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
                                 {% else %}
-                                    {% render_field field class="form-control" placeholder=field.help_text %}
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <div class="help-text">{{ field.help_text }}</div>
+                                    {% render_field field class="form-control" %}
                                 {% endif %}
                                 {% if field.errors %}
                                     <div class="field-error">
@@ -218,10 +212,7 @@
                                 {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
                                     {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
                                 {% else %}
-                                    {% render_field field class="form-control" placeholder=field.help_text %}
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <div class="help-text">{{ field.help_text }}</div>
+                                    {% render_field field class="form-control" %}
                                 {% endif %}
                                 {% if field.errors %}
                                     <div class="field-error">
