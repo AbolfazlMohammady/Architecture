@@ -10,51 +10,88 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <style>
         .form-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 18px;
+            padding: 24px 24px 12px 24px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            border: 1.5px solid #e3e6ea;
         }
-        .date-input-group {
-            position: relative;
+        .form-section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding: 16px 24px;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #1976d2 0%, #43a047 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
         }
-        .date-input-group i {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #3498db;
+        .form-section-title .fa-info-circle {
+            color: #1976d2;
+            background: #fff;
+            border-radius: 50%;
+            padding: 6px;
+            font-size: 1.3em;
         }
-        .custom-file-label {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        .form-section-title .fa-money-bill-wave {
+            color: #fbc02d;
+            background: #fff;
+            border-radius: 50%;
+            padding: 6px;
+            font-size: 1.3em;
+        }
+        .form-section-title .fa-cogs {
+            color: #43a047;
+            background: #fff;
+            border-radius: 50%;
+            padding: 6px;
+            font-size: 1.3em;
         }
         .form-label {
-            font-weight: 500;
-            color: #2c3e50;
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 6px;
         }
-        .help-text {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 5px;
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1.5px solid #e3e6ea;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
         }
         .submit-btn {
-            padding: 12px 30px;
-            font-size: 1.1rem;
-            font-weight: 500;
+            padding: 14px 40px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #1976d2 0%, #43a047 100%);
+            border: none;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
+            transition: background 0.2s, box-shadow 0.2s;
         }
-        .alert {
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .submit-btn:hover {
+            background: linear-gradient(90deg, #43a047 0%, #1976d2 100%);
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.16);
         }
         .field-error {
             color: #dc3545;
-            font-size: 0.85rem;
+            font-size: 0.92rem;
             margin-top: 5px;
         }
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
         .select2-container--bootstrap4 .select2-selection {
-            border-radius: 5px;
+            border-radius: 8px;
             min-height: 38px;
         }
         .select2-container--bootstrap4 .select2-selection--single {
@@ -65,7 +102,7 @@
             min-height: 38px;
         }
         .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
-            background-color: #3498db;
+            background-color: #1976d2;
             border: none;
             color: white;
             padding: 2px 8px;
@@ -80,7 +117,7 @@
             background: rgba(255,255,255,0.2);
         }
         .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
-            background-color: #3498db;
+            background-color: #1976d2;
         }
         .select2-container {
             width: 100% !important;
@@ -133,11 +170,15 @@
         <!-- اطلاعات اصلی -->
         <div class="col-12">
             <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    اطلاعات اصلی
+                </h3>
                 <div class="row g-3">
-            {% for field in form %}
-                        {% if forloop.counter <= 3 %}
+                    {% for field in form %}
+                        {% if field.name == 'name' or field.name == 'project_manager' or field.name == 'technical_manager' or field.name == 'quality_control_manager' or field.name == 'project_experts' %}
                             <div class="col-md-4">
-                <label class="form-label">{{ field.label }}</label>
+                                <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
                                     <div class="custom-file">
                                         {% render_field field class="form-control custom-file-input" onchange="updateFileName(this)" %}
@@ -171,24 +212,24 @@
         <!-- اطلاعات مالی -->
         <div class="col-12">
             <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    اطلاعات مالی
+                </h3>
                 <div class="row g-3">
                     {% for field in form %}
-                        {% if forloop.counter > 3 and forloop.counter <= 6 %}
+                        {% if field.name == 'budget' %}
                             <div class="col-md-4">
                                 <label class="form-label">{{ field.label }}</label>
-                                {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
-                                    {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
-                                {% else %}
-                                    {% render_field field class="form-control" %}
-                                {% endif %}
+                                {% render_field field class="form-control" %}
                                 {% if field.errors %}
                                     <div class="field-error">
                                         <i class="fas fa-exclamation-circle me-1"></i>
                                         {{ field.errors|striptags }}
                                     </div>
                                 {% endif %}
-                </div>
-                {% endif %}
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -197,9 +238,13 @@
         <!-- اطلاعات فنی -->
         <div class="col-12">
             <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-cogs me-2"></i>
+                    اطلاعات فنی
+                </h3>
                 <div class="row g-3">
                     {% for field in form %}
-                        {% if forloop.counter > 6 %}
+                        {% if field.name == 'masafat' or field.name == 'width' or field.name == 'start_kilometer' or field.name == 'end_kilometer' or field.name == 'profile_file' or field.name == 'start_date' or field.name == 'end_date' %}
                             <div class="col-md-4">
                                 <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
@@ -208,6 +253,11 @@
                                         <label class="form-control custom-file-label" for="{{ field.id_for_label }}">
                                             انتخاب فایل
                                         </label>
+                                    </div>
+                                {% elif 'date' in field.name %}
+                                    <div class="date-input-group">
+                                        {% render_field field class="form-control jalali_date-input" %}
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
                                 {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
                                     {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
