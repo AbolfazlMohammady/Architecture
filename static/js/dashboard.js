@@ -278,7 +278,7 @@ export class ProjectDashboard {
         if (!profileData.road_points || profileData.road_points.length === 0) return;
         const points = profileData.road_points.map(point => ({
             x: this.transformX(point.x),
-            y: this.transformY(point.y)
+            y: this.transformY(0) // همه نقاط جاده روی ارتفاع صفر
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
