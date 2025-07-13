@@ -34,43 +34,39 @@ export class XAxisCanvas {
     ctx.lineTo(this.width, this.height - 19 - this.margin);
     ctx.stroke();
 
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = '#000';
     ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
 
-    // نمایش لیبل‌ها هر ۰.۵ کیلومتر
+    // لیبل‌گذاری پویا بر اساس طول بازه
     const range = this.end_km - this.start_km;
-    this.data.forEach((km, index) => {
+    let step = range < 10 ? 0.5 : 1;
+    let labels = [];
+    for (let km = this.start_km; km <= this.end_km + 0.0001; km += step) {
+      // گرد کردن به یک رقم اعشار برای جلوگیری از اعشار اضافی
+      let label = Math.round(km * 10) / 10;
+      labels.push(label);
+    }
+    labels.forEach((km) => {
       const x = ((km - this.start_km) / range) * this.width;
-      // Format label: show decimals only if needed, negative with '-', positive without sign, Persian digits
-      let kmLabelNum = (km % 1 === 0) ? Math.floor(km) : parseFloat(km.toFixed(1));
-      let kmLabel = '';
-      if (kmLabelNum < 0) {
-        kmLabel = '-' + Math.abs(kmLabelNum);
-      } else {
-        kmLabel = kmLabelNum.toString();
-      }
-      // Replace dot with Persian decimal, and digits with Persian digits
-      kmLabel = kmLabel.replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      // تبدیل عدد به فارسی
+      let kmLabel = km.toString().replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
       ctx.save();
-      ctx.font = '11px Vazirmatn, Tahoma, Arial, sans-serif'; // even smaller font
-      ctx.fillStyle = '#444';
+      ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
+      ctx.fillStyle = '#000';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 2;
-      ctx.fillText(kmLabel, x, this.height - 28); // adjust position for smaller font
+      ctx.fillText(kmLabel, x, this.height - 18);
       ctx.shadowBlur = 0;
       ctx.restore();
-      // Draw small vertical tick under label
+      // خط کوچک زیر لیبل
       ctx.beginPath();
       ctx.moveTo(x, this.height - 19 - this.margin);
       ctx.lineTo(x, this.height - 14 - this.margin);
       ctx.stroke();
     });
-
-    // برچسب اصلی محور X
-    // حذف عنوان محور X
   }
 }
