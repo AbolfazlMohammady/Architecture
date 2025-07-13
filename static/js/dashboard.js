@@ -352,8 +352,22 @@ export class ProjectDashboard {
                     ctx.lineTo(x2, yBottom2);
                     ctx.lineTo(x1, yBottom1);
                     ctx.closePath();
-                    ctx.fillStyle = fillColor;
-                    ctx.fill();
+                    if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
+                        // نمایش پیکسلی و تکه‌تکه فقط برای بازه‌های اجرا شده
+                        for (const range of layer.executed_ranges) {
+                            const xr1 = this.transformX(range.start);
+                            const xr2 = this.transformX(range.end);
+                            // ارتفاع مستطیل
+                            const yTop = (yBase1 + yBase2) / 2;
+                            const height = ((yBottom1 + yBottom2) / 2) - yTop;
+                            ctx.fillStyle = fillColor;
+                            ctx.fillRect(xr1, yTop, xr2 - xr1, height);
+                        }
+                    } else {
+                        // اگر executed_ranges نبود، کل لایه را fill کن
+                        ctx.fillStyle = fillColor;
+                        ctx.fill();
+                    }
                     ctx.globalAlpha = 1;
                     ctx.lineWidth = 1.2;
                     ctx.strokeStyle = borderColor;
