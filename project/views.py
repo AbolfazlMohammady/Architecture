@@ -126,6 +126,19 @@ class ProjectLayerListView(generic.ListView):
         context = super().get_context_data(**kwargs)
         project_id = self.kwargs['pk']
         context["project"] = project_models.Project.objects.get(id=project_id)
+        # ساخت جدول خلاصه: چند بار هر نوع لایه استفاده شده و ترتیب‌ها
+        layers = self.get_queryset()
+        summary = {}
+        for layer in layers:
+            lt = layer.layer_type.name
+            if lt not in summary:
+                summary[lt] = {"count": 0, "orders": []}
+            summary[lt]["count"] += 1
+            summary[lt]["orders"].append(layer.order_from_top)
+        # مرتب‌سازی ترتیب‌ها
+        for lt in summary:
+            summary[lt]["orders"].sort()
+        context["layer_type_summary"] = summary
         return context
     
     def get_queryset(self):
