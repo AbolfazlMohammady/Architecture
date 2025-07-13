@@ -62,6 +62,53 @@
                 <div class="card-body p-4">
                     <h4 class="card-title mb-4 text-center">ایجاد لایه پروژه</h4>
 
+                    {# نمایش پیام خطا در صورت وجود non_field_errors #}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ form.non_field_errors|striptags }}
+                    </div>
+                    {% endif %}
+
+                    {# --- بخش انتخاب از لایه‌های قبلی --- #}
+                    {% if previous_layers and previous_layers|length > 0 %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">استفاده از لایه‌های قبلی:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>نام لایه</th>
+                                        <th>ضخامت (سانتی‌متر)</th>
+                                        <th>حالت</th>
+                                        <th>وضعیت</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for layer in previous_layers %}
+                                    <tr>
+                                        <td>{{ layer.layer_type }}</td>
+                                        <td>{{ layer.thickness_cm }}</td>
+                                        <td>{{ layer.get_state_display }}</td>
+                                        <td>{{ layer.get_status_display }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-outline-success btn-sm copy-layer-btn"
+                                                data-layer_type="{{ layer.layer_type.id }}"
+                                                data-thickness_cm="{{ layer.thickness_cm }}"
+                                                data-state="{{ layer.state }}"
+                                                data-status="{{ layer.status }}">
+                                                استفاده از این لایه
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <form method="post" novalidate>
                         {% csrf_token %}
 
@@ -158,6 +205,19 @@
     document.addEventListener("DOMContentLoaded", function () {
         const inputs = document.querySelectorAll("form input, form select, form textarea");
         inputs.forEach(input => input.classList.add("form-control"));
+
+        // کپی اطلاعات لایه قبلی به فرم
+        document.querySelectorAll('.copy-layer-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                // مقداردهی فیلدها
+                document.getElementById('id_layer_type').value = btn.getAttribute('data-layer_type');
+                document.getElementById('id_thickness_cm').value = btn.getAttribute('data-thickness_cm');
+                document.getElementById('id_state').value = btn.getAttribute('data-state');
+                document.getElementById('id_status').value = btn.getAttribute('data-status');
+                // ترتیب را خالی بگذار تا کاربر وارد کند
+                document.getElementById('id_order_from_top').value = '';
+            });
+        });
     });
 </script>
 {% endblock main %}

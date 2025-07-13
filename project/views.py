@@ -84,6 +84,8 @@ class CreateProjectLayerView(generic.CreateView):
         project = project_models.Project.objects.get(pk=self.kwargs['pk'])
         context['layers'] = project.projectlayer_set.all()  # یا: ProjectLayer.objects.filter(project=project)
         context['project'] = project
+        # لایه‌های قبلی برای استفاده مجدد
+        context['previous_layers'] = project.projectlayer_set.all().order_by('order_from_top')
         return context
 
     
@@ -95,6 +97,18 @@ class CreateProjectLayerView(generic.CreateView):
     def form_valid(self, form):
         # Ensure it's saved even if the field is disabled in the form
         form.instance.project = project_models.Project.objects.get(pk=self.kwargs['pk'])
+        # Additional validation to ensure no duplicates
+        if form.is_valid():
+            existing_layer = project_models.ProjectLayer.objects.filter(
+                project=form.instance.project,
+                layer_type=form.instance.layer_type,
+                thickness_cm=form.instance.thickness_cm,
+                state=form.instance.state,
+                status=form.instance.status
+            ).exclude(pk=form.instance.pk if form.instance.pk else None)
+            if existing_layer.exists():
+                form.add_error(None, "لایه‌ای با این مشخصات قبلاً وجود دارد. لطفاً مشخصات را تغییر دهید یا ترتیب را تغییر دهید.")
+                return self.form_invalid(form)
         return super().form_valid(form)
 
 class ProjectLayerDetailView(generic.DetailView):

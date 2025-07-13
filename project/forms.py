@@ -52,6 +52,42 @@ class ProjectForm(forms.ModelForm):
         
     
     
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        project_manager = cleaned_data.get('project_manager')
+        technical_manager = cleaned_data.get('technical_manager')
+        quality_control_manager = cleaned_data.get('quality_control_manager')
+        budget = cleaned_data.get('budget')
+        masafat = cleaned_data.get('masafat')
+        width = cleaned_data.get('width')
+        start_kilometer = cleaned_data.get('start_kilometer')
+        end_kilometer = cleaned_data.get('end_kilometer')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        if name and project_manager and technical_manager and quality_control_manager and budget and masafat and width and start_kilometer and end_kilometer and start_date:
+            # بررسی وجود پروژه مشابه با همان مشخصات
+            existing_project = project_models.Project.objects.filter(
+                name=name,
+                project_manager=project_manager,
+                technical_manager=technical_manager,
+                quality_control_manager=quality_control_manager,
+                budget=budget,
+                masafat=masafat,
+                width=width,
+                start_kilometer=start_kilometer,
+                end_kilometer=end_kilometer,
+                start_date=start_date
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+            
+            if existing_project.exists():
+                raise forms.ValidationError(
+                    "پروژه‌ای با این مشخصات قبلاً وجود دارد. لطفاً مشخصات را تغییر دهید."
+                )
+        
+        return cleaned_data
+    
     class Meta:
         model = project_models.Project
         fields = ['name',
@@ -97,7 +133,23 @@ class ProjectLayerForm(forms.ModelForm):
             if project:
                 last_order = project_models.ProjectLayer.objects.filter(project=project).order_by('-order_from_top').first()
                 self.initial['order_from_top'] = (last_order.order_from_top + 1) if last_order else 1
-    
+
+    def clean(self):
+        cleaned_data = super().clean()
+        project = cleaned_data.get('project')
+        order_from_top = cleaned_data.get('order_from_top')
+        if project and order_from_top is not None:
+            # فقط ترتیب باید یکتا باشد
+            existing_layer = project_models.ProjectLayer.objects.filter(
+                project=project,
+                order_from_top=order_from_top
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+            if existing_layer.exists():
+                raise forms.ValidationError(
+                    "در هر پروژه، ترتیب لایه‌ها نباید تکراری باشد. لطفاً ترتیب دیگری انتخاب کنید."
+                )
+        return cleaned_data
+
     class Meta:
         model = project_models.ProjectLayer
         fields = ['project', 'layer_type', 'thickness_cm', 'order_from_top', 'state', 'status']
@@ -119,6 +171,31 @@ class ProjectStructureForm(forms.ModelForm):
     
         self.fields["start_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["end_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        project = cleaned_data.get('project')
+        structure_type = cleaned_data.get('structure_type')
+        start_kilometer = cleaned_data.get('start_kilometer')
+        end_kilometer = cleaned_data.get('end_kilometer')
+        status = cleaned_data.get('status')
+        
+        if project and structure_type and start_kilometer is not None and end_kilometer is not None and status is not None:
+            # بررسی وجود ابنیه مشابه با همان مشخصات (به جز موقعیت کیلومتری)
+            existing_structure = project_models.ProjectStructure.objects.filter(
+                project=project,
+                structure_type=structure_type,
+                start_kilometer=start_kilometer,
+                end_kilometer=end_kilometer,
+                status=status
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+            
+            if existing_structure.exists():
+                raise forms.ValidationError(
+                    "ابنیه‌ای با این مشخصات قبلاً وجود دارد. لطفاً مشخصات را تغییر دهید یا موقعیت کیلومتری را تغییر دهید."
+                )
+        
+        return cleaned_data
         
     class Meta:
         model = project_models.ProjectStructure
