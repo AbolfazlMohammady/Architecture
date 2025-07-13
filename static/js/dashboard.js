@@ -91,7 +91,7 @@ export class ProjectDashboard {
         // رویدادهای موس
         mainCanvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         mainCanvas.addEventListener('click', (e) => this.handleClick(e));
-        mainCanvas.addEventListener('wheel', (e) => this.handleWheel(e));
+        // mainCanvas.addEventListener('wheel', (e) => this.handleWheel(e)); // حذف زوم
         
         // رویدادهای لمسی
         mainCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
@@ -698,17 +698,19 @@ export class ProjectDashboard {
     }
 
     transformX(x) {
-        return this.margin + 50 + (x - this.xMin) * this.xScale * this.zoomLevel + this.panX;
+        // فقط مقیاس ثابت بدون زوم
+        return this.margin + 50 + (x - this.xMin) * this.xScale;
     }
 
     transformY(y) {
-        return this.margin + (this.yMax - y) * this.yScale * this.zoomLevel + this.panY;
+        return this.margin + (this.yMax - y) * this.yScale;
     }
 
     handleMouseMove(e) {
-        // استفاده از offsetX و offsetY برای موقعیت دقیق موس نسبت به خود canvas
-        this.mouseX = e.offsetX;
-        this.mouseY = e.offsetY;
+        const rect = e.target.getBoundingClientRect();
+        this.mouseX = e.clientX - rect.left;
+        this.mouseY = e.clientY - rect.top;
+        
         // اطمینان از اینکه موس در محدوده canvas است
         if (this.mouseX < 0 || this.mouseX > this.width || this.mouseY < 0 || this.mouseY > this.height) {
             this.mouseX = null;
@@ -716,11 +718,14 @@ export class ProjectDashboard {
             this.render();
             return;
         }
+        
         // بروزرسانی نمایش مختصات
         const realX = this.xMin + (this.mouseX - this.margin - 50) / (this.xScale * this.zoomLevel);
         const realY = this.yMax - (this.mouseY - this.margin) / (this.yScale * this.zoomLevel);
         document.getElementById('xinput').value = realX.toFixed(3);
         document.getElementById('yinput').value = realY.toFixed(3);
+        
+        // فقط render را صدا بزن تا crosshair و بقیه اجزا دوباره کشیده شوند
         this.render();
     }
 
@@ -827,13 +832,8 @@ export class ProjectDashboard {
     }
 
     handleWheel(e) {
-        e.preventDefault();
-        
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        this.zoomLevel *= delta;
-        this.zoomLevel = Math.max(0.1, Math.min(5, this.zoomLevel));
-        
-        this.render();
+        // غیرفعال
+        return;
     }
 
     handleTouchStart(e) {
@@ -886,27 +886,24 @@ export class ProjectDashboard {
 
     // متدهای زوم
     zoomIn() {
-        this.zoomLevel *= 1.2;
-        this.zoomLevel = Math.min(5, this.zoomLevel);
-        this.render();
+        // غیرفعال
+        return;
     }
 
     zoomOut() {
-        this.zoomLevel *= 0.8;
-        this.zoomLevel = Math.max(0.1, this.zoomLevel);
-        this.render();
+        // غیرفعال
+        return;
     }
 
     resetZoom() {
-        this.zoomLevel = 1;
-        this.panX = 0;
-        this.panY = 0;
-        this.render();
+        // غیرفعال
+        return;
     }
 
     drawCrosshair(x, y) {
         const ctx = this.canvas.ctx;
         ctx.save();
+        
         // خطوط عمودی و افقی
         ctx.strokeStyle = 'rgba(44,62,80,0.25)';
         ctx.lineWidth = 1.5;
@@ -916,7 +913,8 @@ export class ProjectDashboard {
         ctx.moveTo(0, y);
         ctx.lineTo(this.width, y);
         ctx.stroke();
-        // علامت + دقیقاً زیر موس (مرکز موس)
+        
+        // علامت + در مرکز موس
         ctx.strokeStyle = 'rgba(44,62,80,0.8)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -925,6 +923,7 @@ export class ProjectDashboard {
         ctx.moveTo(x, y - 8);
         ctx.lineTo(x, y + 8);
         ctx.stroke();
+        
         ctx.restore();
     }
 
