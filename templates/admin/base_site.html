@@ -2,6 +2,76 @@
 
 {% block extrahead %}
     {{ block.super }}
+    <style>
+        /* بزرگتر کردن فونت‌های پنل ادمین */
+        body {
+            font-size: 16px !important;
+        }
+        
+        /* بزرگتر کردن عناوین */
+        h1, h2, h3, h4, h5, h6 {
+            font-size: 1.2em !important;
+        }
+        
+        /* بزرگتر کردن متن‌های جدول */
+        .results table th,
+        .results table td {
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های فرم */
+        .form-row label,
+        .form-row input,
+        .form-row select,
+        .form-row textarea {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن دکمه‌ها */
+        .submit-row input,
+        .submit-row a {
+            font-size: 14px !important;
+            padding: 8px 16px !important;
+        }
+        
+        /* بزرگتر کردن منوی کناری */
+        #nav-sidebar a {
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های breadcrumb */
+        .breadcrumbs {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های پیام‌ها */
+        .messagelist li {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های فیلترها */
+        .filtered .results {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های pagination */
+        .paginator {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های search */
+        .search {
+            font-size: 14px !important;
+        }
+        
+        /* بزرگتر کردن متن‌های object-tools */
+        .object-tools a {
+            font-size: 14px !important;
+            padding: 8px 16px !important;
+        }
+    </style>
     <script>
     function faAdminButtons() {
       document.querySelectorAll('button, input, a').forEach(function(el) {
