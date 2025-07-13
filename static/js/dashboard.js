@@ -322,41 +322,10 @@ export class ProjectDashboard {
                 const thicknessPx2 = layer.thickness_cm * this.yScale / 100;
                 let yBottom1 = yBase1 + thicknessPx1;
                 let yBottom2 = yBase2 + thicknessPx2;
-                // رنگ بر اساس وضعیت و نوع لایه
-                let fillColor = '#ffc107'; // پیش‌فرض: زرد
-                let borderColor = '#222';
-                let opacity = 0.7;
-                if (layer.status === 2) { fillColor = '#7ed957'; borderColor = '#388e3c'; opacity = 0.85; } // تکمیل شده: سبز
-                else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; } // در حال انجام: زرد
-                else if (layer.status === 0) { fillColor = '#bdbdbd'; borderColor = '#757575'; opacity = 0.6; } // شروع نشده: خاکستری
-                if (layer.state !== 1) fillColor = '#ff9800'; // متغیر: نارنجی
-                // افکت ویژه برای بستر طبیعی
-                let isNatural = layer.name.includes('بستر') || layer.name.includes('طبیعی');
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(x1, yBase1);
-                ctx.lineTo(x2, yBase2);
-                ctx.lineTo(x2, yBottom2);
-                ctx.lineTo(x1, yBottom1);
-                ctx.closePath();
-                ctx.globalAlpha = opacity;
-                ctx.fillStyle = fillColor;
-                ctx.fill();
-                ctx.globalAlpha = 1;
-                // border ضخیم‌تر و رنگی‌تر
-                ctx.lineWidth = isNatural ? 3.5 : 2.2;
-                ctx.strokeStyle = borderColor;
-                ctx.shadowColor = isNatural ? '#2196f3' : 'transparent';
-                ctx.shadowBlur = isNatural ? 12 : 0;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                // افکت glow سبز برای تکمیل شده
-                if (layer.status === 2) {
+                if (layer.status === 0) {
+                    // فقط یک خط ساده بکش
                     ctx.save();
-                    ctx.shadowColor = '#7ed957';
-                    ctx.shadowBlur = 16;
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#7ed957';
+                    ctx.strokeStyle = '#888';
                     ctx.beginPath();
                     ctx.moveTo(x1, yBase1);
                     ctx.lineTo(x2, yBase2);
@@ -365,60 +334,31 @@ export class ProjectDashboard {
                     ctx.closePath();
                     ctx.stroke();
                     ctx.restore();
-                }
-                // افکت border چشمک‌زن برای در حال انجام (پالس ساده)
-                if (layer.status === 1 && i % 10 < 5) {
+                } else {
+                    // مثل قبل رنگی بکش
+                    let fillColor = '#ffc107'; // پیش‌فرض: زرد
+                    let borderColor = '#222';
+                    let opacity = 0.7;
+                    if (layer.status === 2) { fillColor = '#7ed957'; borderColor = '#388e3c'; opacity = 0.85; } // تکمیل شده: سبز
+                    else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; } // در حال انجام: زرد
+                    if (layer.state !== 1) fillColor = '#ff9800'; // متغیر: نارنجی
+                    // افکت ویژه برای بستر طبیعی
+                    let isNatural = layer.name.includes('بستر') || layer.name.includes('طبیعی');
                     ctx.save();
-                    ctx.strokeStyle = '#ff9800';
-                    ctx.lineWidth = 4;
-                    ctx.setLineDash([6, 6]);
+                    ctx.globalAlpha = opacity;
                     ctx.beginPath();
                     ctx.moveTo(x1, yBase1);
                     ctx.lineTo(x2, yBase2);
                     ctx.lineTo(x2, yBottom2);
                     ctx.lineTo(x1, yBottom1);
                     ctx.closePath();
+                    ctx.fillStyle = fillColor;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 1.2;
+                    ctx.strokeStyle = borderColor;
                     ctx.stroke();
-                    ctx.setLineDash([]);
                     ctx.restore();
-                }
-                // نام لایه وسط شکل با فونت بزرگ و سایه سفید
-                if (i === Math.floor((profileData.road_points.length - 1) / 2)) {
-                    ctx.save();
-                    ctx.font = 'bold 15px Tahoma';
-                    ctx.fillStyle = '#222';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.shadowColor = '#fff';
-                    ctx.shadowBlur = 6;
-                    let nameX = (x1 + x2) / 2;
-                    let nameY = (yBase1 + yBottom1) / 2;
-                    ctx.fillText(layer.name, nameX, nameY);
-                    ctx.shadowBlur = 0;
-                    // اگر تکمیل شده، تیک سبز کنار نام
-                    if (layer.status === 2) {
-                        ctx.font = 'bold 15px Arial';
-                        ctx.fillStyle = '#43a047';
-                        ctx.fillText('✔', nameX + 40, nameY);
-                    }
-                    // اگر بستر طبیعی، آیکون آب یا خاک آبی کنار نام
-                    if (isNatural) {
-                        ctx.font = 'bold 15px Arial';
-                        ctx.fillStyle = '#2196f3';
-                        ctx.fillText('🌱', nameX - 40, nameY);
-                    }
-                    ctx.restore();
-                }
-                ctx.restore();
-                // Add tooltipData for layer (center of segment)
-                if (i % 10 === 0) {
-                    this.tooltipData.push({
-                        x: (x1 + x2) / 2,
-                        y: (yBase1 + yBottom1) / 2,
-                        width: Math.abs(x2 - x1),
-                        height: Math.abs(yBottom1 - yBase1),
-                        data: { type: 'layer', layer }
-                    });
                 }
                 yBase1 = yBottom1;
                 yBase2 = yBottom2;
