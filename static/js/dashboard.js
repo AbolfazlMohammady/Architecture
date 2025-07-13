@@ -240,34 +240,27 @@ export class ProjectDashboard {
         const specialPoints = [0, points.length-1];
         points.forEach((p, i) => {
             if (specialPoints.includes(i) || p.y === minY || p.y === maxY) {
-                ctx.save();
-                // دایره gradient
-                let gradCircle = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 12);
-                gradCircle.addColorStop(0, '#fff');
-                gradCircle.addColorStop(1, p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894');
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
-                ctx.fillStyle = gradCircle;
-                ctx.globalAlpha = 0.95;
-                ctx.shadowColor = gradCircle;
-                ctx.shadowBlur = 18;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
-                // border دو رنگ
-                ctx.lineWidth = 3.5;
-                ctx.strokeStyle = '#fff';
-                ctx.stroke();
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = '#222';
-                ctx.stroke();
-                ctx.restore();
-                // ذخیره مختصات برای تولتیپ
-                if (!this.profileTooltipData) this.profileTooltipData = [];
-                this.profileTooltipData.push({
-                    x: p.x, y: p.y, r: 15, realX: p.realX, realY: p.realY,
-                    type: specialPoints.includes(i) ? (i === 0 ? 'شروع' : 'پایان') : (p.y === minY ? 'مینیمم' : 'ماکزیمم')
-                });
+                // حذف رسم دایره‌های کوچک روی پروفیل زمین
+                // ctx.save();
+                // let gradCircle = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 12);
+                // gradCircle.addColorStop(0, '#fff');
+                // gradCircle.addColorStop(1, p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894');
+                // ctx.beginPath();
+                // ctx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
+                // ctx.fillStyle = gradCircle;
+                // ctx.globalAlpha = 0.95;
+                // ctx.shadowColor = gradCircle;
+                // ctx.shadowBlur = 18;
+                // ctx.fill();
+                // ctx.shadowBlur = 0;
+                // ctx.globalAlpha = 1;
+                // ctx.lineWidth = 3.5;
+                // ctx.strokeStyle = '#fff';
+                // ctx.stroke();
+                // ctx.lineWidth = 1.5;
+                // ctx.strokeStyle = '#222';
+                // ctx.stroke();
+                // ctx.restore();
             }
         });
         ctx.restore();
