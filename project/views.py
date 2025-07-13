@@ -228,6 +228,17 @@ class ProjectDashboardView(generic.DetailView):
                 'description': request.description,
             })
         
+        # ساخت executed_ranges برای هر لایه بر اساس آزمایش‌های همان لایه
+        layer_executed_ranges = {}
+        for layer in layers:
+            layer_executed_ranges[layer.id] = []
+        for request in experiment_requests:
+            if request.status in [1, 2]:  # فقط آزمایش‌های در حال انجام یا تکمیل شده
+                layer_id = request.layer.id
+                layer_executed_ranges[layer_id].append({
+                    'start': float(request.start_kilometer),
+                    'end': float(request.end_kilometer)
+                })
         # تبدیل شیء Project به دیکشنری ساده قابل JSON
         context['project_data'] = {
             'id': project.id,
@@ -245,7 +256,8 @@ class ProjectDashboardView(generic.DetailView):
                     'order_from_top': layer.order_from_top,
                     'state': layer.state,  # 0: متغیر, 1: ثابت
                     'status': layer.status,  # 0: شروع نشده, 1: در حال انجام, 2: تکمیل شده
-                    'experiments': experiment_data.get(layer.id, [])
+                    'experiments': experiment_data.get(layer.id, []),
+                    'executed_ranges': layer_executed_ranges.get(layer.id, [])
                 } for layer in layers
             ],
             "structures": [
