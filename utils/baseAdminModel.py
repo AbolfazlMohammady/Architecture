@@ -9,3 +9,6 @@ class BtnDeleteSelected:
             actions['delete_selected'][1] = _(self.custom_name)  # تغییر متن دکمه
         return actions
     
+
+
+    
