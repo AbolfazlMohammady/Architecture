@@ -58,62 +58,62 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-9">
-            <div class="card shadow-sm rounded-4 border-0">
+            <div class="card shadow-lg rounded-5 border-0 bg-light">
                 <div class="card-body p-4">
-                    <h4 class="card-title mb-4 text-center">ایجاد لایه پروژه</h4>
+                    <h4 class="card-title mb-4 text-center fw-bold text-primary">ایجاد لایه پروژه</h4>
 
                     {# نمایش پیام خطا در صورت وجود non_field_errors #}
                     {% if form.non_field_errors %}
-                    <div class="alert alert-danger text-center" role="alert">
+                    <div class="alert alert-danger text-center rounded-4 shadow-sm fw-bold" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         {{ form.non_field_errors|striptags }}
                     </div>
                     {% endif %}
 
-                    {# --- بخش انتخاب از لایه‌های قبلی --- #}
+                    {# --- نمایش لایه‌های قبلی به صورت کارت جمع‌وجور --- #}
                     {% if previous_layers and previous_layers|length > 0 %}
                     <div class="mb-4">
-                        <h5 class="mb-3">استفاده از لایه‌های قبلی:</h5>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-sm text-center align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>نام لایه</th>
-                                        <th>ضخامت (سانتی‌متر)</th>
-                                        <th>حالت</th>
-                                        <th>وضعیت</th>
-                                        <th>عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for layer in previous_layers %}
-                                    <tr>
-                                        <td>{{ layer.layer_type }}</td>
-                                        <td>{{ layer.thickness_cm }}</td>
-                                        <td>{{ layer.get_state_display }}</td>
-                                        <td>{{ layer.get_status_display }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-outline-success btn-sm copy-layer-btn"
-                                                data-layer_type="{{ layer.layer_type.id }}"
-                                                data-thickness_cm="{{ layer.thickness_cm }}"
-                                                data-state="{{ layer.state }}"
-                                                data-status="{{ layer.status }}">
-                                                استفاده از این لایه
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <h5 class="mb-3 fw-bold text-success">لایه‌های قبلی این پروژه:</h5>
+                        <div class="row g-2">
+                            {% for layer in previous_layers %}
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="card h-100 shadow-sm rounded-4 border-0 bg-white position-relative small p-2"
+                                     style="min-height: 120px;">
+                                    <div class="card-body py-2 px-2 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="fw-bold text-info mb-1">
+                                                <i class="fas fa-layer-group me-1"></i> {{ layer.layer_type }}
+                                            </div>
+                                            <div class="mb-1">
+                                                <span class="badge bg-secondary">ضخامت: {{ layer.thickness_cm }} سانتی‌متر</span>
+                                                <span class="badge bg-secondary">ترتیب: {{ layer.order_from_top }}</span>
+                                            </div>
+                                            <span class="badge {% if layer.state == 0 %}bg-info text-dark{% else %}bg-success{% endif %} me-1">
+                                                {{ layer.get_state_display }}
+                                            </span>
+                                            <span class="badge {% if layer.status == 0 %}bg-warning text-dark{% elif layer.status == 1 %}bg-primary{% elif layer.status == 2 %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ layer.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100 mt-2 fw-bold copy-layer-btn rounded-3"
+                                            data-layer_type="{{ layer.layer_type.id }}"
+                                            data-thickness_cm="{{ layer.thickness_cm }}"
+                                            data-state="{{ layer.state }}"
+                                            data-status="{{ layer.status }}">
+                                            <i class="fas fa-copy me-1"></i> استفاده از این لایه
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                     {% endif %}
 
-                    <form method="post" novalidate>
+                    <form method="post" novalidate class="bg-white rounded-4 shadow-sm p-4 mb-4">
                         {% csrf_token %}
-
-                        <div class="layer-card">
-                            <h5 class="layer-title">
+                        <div class="layer-card bg-white border-0 p-0">
+                            <h5 class="layer-title mb-3">
                                 <i class="fas fa-layer-group me-2"></i>
                                 اطلاعات لایه
                             </h5>
@@ -121,13 +121,13 @@
                                 {% for field in form %}
                                     {% if field.name != 'project' %}
                                         <div class="col-md-6">
-                                            <label class="form-label">{{ field.label }}</label>
+                                            <label class="form-label fw-bold">{{ field.label }}</label>
                                             {{ field }}
                                             {% if field.help_text %}
-                                                <div class="help-text">{{ field.help_text }}</div>
+                                                <div class="help-text text-muted small">{{ field.help_text }}</div>
                                             {% endif %}
                                             {% if field.errors %}
-                                                <div class="text-danger small">
+                                                <div class="text-danger small fw-bold">
                                                     <i class="fas fa-exclamation-circle me-1"></i>
                                                     {{ field.errors|striptags }}
                                                 </div>
@@ -137,58 +137,21 @@
                                 {% endfor %}
                             </div>
                         </div>
-
                         <div class="row mt-4">
                             <div class="col-6">
-                                <button type="submit" class="btn btn-primary w-100">
+                                <button type="submit" class="btn btn-primary w-100 py-2 fs-5 rounded-3 fw-bold">
                                     <i class="fas fa-save me-2"></i>
                                     ایجاد لایه
                                 </button>
                             </div>
                             <div class="col-6">
-                                <a class="btn btn-outline-primary w-100" href="{% url 'create-project-structure' pk=project.pk %}">
+                                <a class="btn btn-outline-primary w-100 py-2 fs-5 rounded-3 fw-bold" href="{% url 'create-project-structure' pk=project.pk %}">
                                     <i class="fas fa-arrow-right me-2"></i>
                                     مرحله بعد
                                 </a>
                             </div>
                         </div>
                     </form>
-
-                    {% if layers %}
-                        <div class="layer-table">
-                            <h5 class="text-center mb-4">لایه‌های ثبت‌شده برای پروژه "{{ project.name }}"</h5>
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>نام لایه</th>
-                                            <th>ترتیب از بالا</th>
-                                            <th>ضخامت (سانتی‌متر)</th>
-                                            <th>حالت</th>
-                                            <th>وضعیت</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for layer in layers %}
-                                            <tr>
-                                                <td>{{ layer.layer_type }}</td>
-                                                <td>{{ layer.order_from_top }}</td>
-                                                <td>{{ layer.thickness_cm }}</td>
-                                                <td>
-                                                    <span class="state-badge {% if layer.state == 0 %}state-variable{% else %}state-fixed{% endif %}">
-                                                        {{ layer.get_state_display }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ layer.get_status_display }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    {% else %}
-                        <p class="text-muted text-center mt-4">هنوز لایه‌ای برای این پروژه ثبت نشده است.</p>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -196,7 +159,7 @@
 </div>
 
 <div class="text-center my-4">
-    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
+    <button type="button" class="btn btn-secondary btn-lg rounded-4 px-5 fw-bold" onclick="window.history.back();">
         <i class="fas fa-arrow-right"></i> بازگشت
     </button>
 </div>
