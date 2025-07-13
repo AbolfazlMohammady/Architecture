@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" />
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
 {{ project_data|json_script:"project-data" }}
 {% endblock %}
@@ -78,11 +79,11 @@
                 <div class="row">
                   <div class="col-md-3">
                     <label for="startDate" class="form-label">از تاریخ:</label>
-                    <input type="date" id="startDate" class="form-control form-control-sm" placeholder="از تاریخ">
+                    <input type="text" id="startDate" class="form-control form-control-sm" placeholder="از تاریخ" autocomplete="off">
                   </div>
                   <div class="col-md-3">
                     <label for="endDate" class="form-label">تا تاریخ:</label>
-                    <input type="date" id="endDate" class="form-control form-control-sm" placeholder="تا تاریخ">
+                    <input type="text" id="endDate" class="form-control form-control-sm" placeholder="تا تاریخ" autocomplete="off">
                   </div>
                   <div class="col-md-3">
                     <label>&nbsp;</label>
@@ -315,5 +316,22 @@
       });
     }
   };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script>
+  $(function() {
+    $('#startDate').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false
+    });
+    $('#endDate').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false
+    });
+  });
 </script>
 {% endblock %}
