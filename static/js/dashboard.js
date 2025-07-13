@@ -691,8 +691,8 @@ export class ProjectDashboard {
     }
 
     transformX(x) {
-        // فقط مقیاس ثابت بدون زوم
-        return this.margin + 50 + (x - this.xMin) * this.xScale;
+        // شروع نمودار دقیقاً از کیلومتر شروع، بدون فاصله خالی
+        return (x - this.xMin) * this.xScale;
     }
 
     transformY(y) {
