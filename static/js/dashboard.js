@@ -235,34 +235,8 @@ export class ProjectDashboard {
         }
         ctx.stroke();
         // نقاط مهم (شروع، پایان، مینیمم، ماکزیمم)
-        const minY = Math.min(...points.map(p => p.y));
-        const maxY = Math.max(...points.map(p => p.y));
-        const specialPoints = [0, points.length-1];
-        points.forEach((p, i) => {
-            if (specialPoints.includes(i) || p.y === minY || p.y === maxY) {
-                // حذف رسم دایره‌های کوچک روی پروفیل زمین
-                // ctx.save();
-                // let gradCircle = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 12);
-                // gradCircle.addColorStop(0, '#fff');
-                // gradCircle.addColorStop(1, p.y === minY || p.y === maxY ? '#fdcb6e' : '#00b894');
-                // ctx.beginPath();
-                // ctx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
-                // ctx.fillStyle = gradCircle;
-                // ctx.globalAlpha = 0.95;
-                // ctx.shadowColor = gradCircle;
-                // ctx.shadowBlur = 18;
-                // ctx.fill();
-                // ctx.shadowBlur = 0;
-                // ctx.globalAlpha = 1;
-                // ctx.lineWidth = 3.5;
-                // ctx.strokeStyle = '#fff';
-                // ctx.stroke();
-                // ctx.lineWidth = 1.5;
-                // ctx.strokeStyle = '#222';
-                // ctx.stroke();
-                // ctx.restore();
-            }
-        });
+        // حذف رسم دایره‌های کوچک روی پروفیل زمین
+        // (کد رسم دایره کاملاً حذف یا کامنت شود)
         ctx.restore();
     }
 
@@ -291,15 +265,7 @@ export class ProjectDashboard {
         ctx.stroke();
         ctx.shadowBlur = 0;
         // نقاط مهم (شروع و پایان)
-        [0, points.length-1].forEach(idx => {
-            ctx.beginPath();
-            ctx.arc(points[idx].x, points[idx].y, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = '#0984e3';
-            ctx.shadowColor = '#0984e3';
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
+        // حذف رسم دایره‌های کوچک روی پروفیل جاده
         ctx.restore();
     }
 
@@ -362,17 +328,38 @@ export class ProjectDashboard {
                             const height = ((yBottom1 + yBottom2) / 2) - yTop;
                             ctx.fillStyle = fillColor;
                             ctx.fillRect(xr1, yTop, xr2 - xr1, height);
+                            // نوشتن نام لایه وسط هر بازه اجرا شده
+                            ctx.save();
+                            ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+                            ctx.fillStyle = '#222';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(layer.name, (xr1 + xr2) / 2, yTop + height / 2);
+                            ctx.restore();
                         }
+                        ctx.globalAlpha = 1;
+                        ctx.lineWidth = 1.2;
+                        ctx.strokeStyle = borderColor;
+                        ctx.stroke();
+                        ctx.restore();
                     } else {
-                        // اگر executed_ranges نبود، کل لایه را fill کن
-                        ctx.fillStyle = fillColor;
-                        ctx.fill();
+                        // اگر executed_ranges نبود، فقط outline بکش (بدون fill)
+                        ctx.globalAlpha = 1;
+                        ctx.lineWidth = 1.2;
+                        ctx.strokeStyle = borderColor;
+                        ctx.stroke();
+                        // نوشتن نام لایه وسط outline
+                        const xMid = (x1 + x2) / 2;
+                        const yMid = (yBase1 + yBottom1 + yBase2 + yBottom2) / 4;
+                        ctx.save();
+                        ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+                        ctx.fillStyle = '#222';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(layer.name, xMid, yMid);
+                        ctx.restore();
+                        ctx.restore();
                     }
-                    ctx.globalAlpha = 1;
-                    ctx.lineWidth = 1.2;
-                    ctx.strokeStyle = borderColor;
-                    ctx.stroke();
-                    ctx.restore();
                 }
                 yBase1 = yBottom1;
                 yBase2 = yBottom2;
@@ -850,8 +837,7 @@ export class ProjectDashboard {
     drawCrosshair(x, y) {
         const ctx = this.canvas.ctx;
         ctx.save();
-        
-        // خطوط عمودی و افقی
+        // فقط خطوط عمودی و افقی و علامت + رسم شود، هیچ دایره‌ای نکش
         ctx.strokeStyle = 'rgba(44,62,80,0.25)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -860,8 +846,6 @@ export class ProjectDashboard {
         ctx.moveTo(0, y);
         ctx.lineTo(this.width, y);
         ctx.stroke();
-        
-        // علامت + در مرکز موس
         ctx.strokeStyle = 'rgba(44,62,80,0.8)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -870,7 +854,7 @@ export class ProjectDashboard {
         ctx.moveTo(x, y - 8);
         ctx.lineTo(x, y + 8);
         ctx.stroke();
-        
+        // هیچ دایره‌ای رسم نشود
         ctx.restore();
     }
 
