@@ -555,58 +555,13 @@ export class ProjectDashboard {
     }
 
     drawExperimentPixel(experiment, x, y, layer) {
-        const ctx = this.canvas.ctx;
-        ctx.save();
-        // انتخاب رنگ بر اساس وضعیت
-        const colors = {
-            0: '#ffc107', // در انتظار
-            1: '#17a2b8', // در حال انجام
-            2: '#28a745', // تکمیل شده
-            3: '#dc3545'  // رد شده
-        };
-        ctx.fillStyle = colors[experiment.status] || '#ffc107';
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2.5;
-        // افکت glow
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 18;
-        // رسم پیکسل آزمایش
-        const pixelSize = 16;
-        ctx.beginPath();
-        ctx.arc(x, y, pixelSize / 2, 0, 2 * Math.PI);
-        ctx.globalAlpha = 0.98;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
-        ctx.stroke();
-        // افکت hover (اگر موس روی این نقطه است)
-        if (this._hoveredExperiment && this._hoveredExperiment.x === x && this._hoveredExperiment.y === y) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x, y, pixelSize / 2 + 4, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#1976d2';
-            ctx.lineWidth = 3.5;
-            ctx.shadowColor = '#1976d2';
-            ctx.shadowBlur = 16;
-            ctx.globalAlpha = 0.7;
-            ctx.stroke();
-            ctx.restore();
-        }
-        // اضافه کردن نشانگر برای آزمایش‌های تایید شده
-        if (experiment.approval_status === 1) {
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
-            ctx.fillStyle = '#28a745';
-            ctx.fill();
-        }
-        ctx.restore();
-        // ذخیره اطلاعات برای تولتیپ
+        // این تابع فقط اطلاعات تولتیپ را ذخیره کند و هیچ دایره‌ای رسم نکند
         if (!this.tooltipData) this.tooltipData = [];
         this.tooltipData.push({
             x: x,
             y: y,
-            width: pixelSize,
-            height: pixelSize,
+            width: 16,
+            height: 16,
             data: {
                 experiment: experiment,
                 layer: layer
@@ -666,6 +621,8 @@ export class ProjectDashboard {
     showProfileTooltip(x, y) {
         const tooltip = document.getElementById('tooltip');
         if (!this.profileTooltipData) return;
+        // حذف هرگونه highlight یا دایره سبز موس
+        // فقط تولتیپ نمایش داده شود
         const hovered = this.profileTooltipData.find(pt =>
             Math.abs(x - pt.x) < pt.r && Math.abs(y - pt.y) < pt.r
         );
