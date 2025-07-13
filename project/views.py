@@ -259,6 +259,10 @@ class ProjectDashboardView(generic.DetailView):
                 } for structure in structures
             ],
         }
+        # چاپ executed_ranges هر لایه برای بررسی
+        for layer in context['project_data']['layers']:
+            print(f"LAYER: {layer['name']} executed_ranges: {layer.get('executed_ranges')}")
+        print('TEST')
         return context
 
     def read_file(self, profile_file):
