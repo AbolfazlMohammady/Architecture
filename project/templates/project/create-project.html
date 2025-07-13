@@ -396,16 +396,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Format input as user types and show preview
     modalInput.addEventListener('input', function() {
-        // Only allow digits
-        modalInput.value = modalInput.value.replace(/[^\d]/g, '');
-        modalPreview.innerText = formatIntWithCommas(modalInput.value) ? 'نمایش: ' + formatIntWithCommas(modalInput.value) : '';
+        // فقط اعداد و ممیز اعشاری (نقطه یا کاما) مجاز باشد
+        modalInput.value = modalInput.value.replace(/[^\d.,]/g, '');
+        // فقط یک ممیز مجاز باشد
+        let parts = modalInput.value.split(/[.,]/);
+        if(parts.length > 2) {
+            modalInput.value = parts[0] + '.' + parts.slice(1).join('');
+        } else if(parts.length === 2) {
+            modalInput.value = parts[0] + '.' + parts[1];
+        }
+        // پیش‌نمایش با کاما
+        let previewVal = modalInput.value.replace(/,/g, '');
+        if(previewVal) {
+            let num = parseFloat(previewVal);
+            if(!isNaN(num)) {
+                modalPreview.innerText = 'نمایش: ' + num.toLocaleString('en-US', {maximumFractionDigits: 3});
+            } else {
+                modalPreview.innerText = '';
+            }
+        } else {
+            modalPreview.innerText = '';
+        }
     });
 
     // Confirm button sets value
     confirmBtn.addEventListener('click', function() {
         if(currentTargetInput) {
-            // Set plain number (no commas) in the main input
-            currentTargetInput.value = modalInput.value.replace(/[^\d]/g, '');
+            // مقدار را به فرمت اعشاری استاندارد (نقطه) ذخیره کن
+            let val = modalInput.value.replace(/,/g, '.');
+            // فقط یک ممیز مجاز باشد
+            let parts = val.split('.');
+            if(parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+            currentTargetInput.value = val;
         }
         modal.hide();
     });
