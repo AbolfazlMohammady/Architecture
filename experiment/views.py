@@ -415,11 +415,11 @@ def dashboard_charts(request):
         project_data = []
         for project in projects:
             avg = project.paymentcoefficient_set.aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data.append(round(avg, 2))
+            project_data.append(float(round(avg, 2)))
         
         # داده‌های نمودار لایه‌ها
         layer_labels = ['آسفالت گرم', 'اساس', 'زیراساس', 'خاکریزی']
-        layer_data = [asphalt_avg, base_avg, subbase_avg, embankment_avg]
+        layer_data = [float(asphalt_avg), float(base_avg), float(subbase_avg), float(embankment_avg)]
         
         logger.info(f"Calculated statistics - Total: {total_coefficients}, Avg: {average_coefficient}, Best: {best_coefficient}, Worst: {worst_coefficient}")
         
