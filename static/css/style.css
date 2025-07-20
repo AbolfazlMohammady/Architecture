@@ -68,15 +68,18 @@ body, html {
     box-shadow: 0 8px 32px rgba(44,62,80,0.10);
     padding: 2rem 1rem;
     margin-bottom: 2rem;
-    overflow-x: auto;
     max-width: 100%;
+    overflow-x: unset !important;
+    overflow-y: unset !important;
 }
 
 .charts-wrapper {
     display: flex;
-    gap: 24px;
-    min-width: min-content;
     flex-wrap: wrap;
+    gap: 24px;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
 }
 
 .chart-card {
@@ -84,7 +87,8 @@ body, html {
     border-radius: 20px !important;
     box-shadow: 0 6px 24px rgba(44,62,80,0.08) !important;
     transition: box-shadow 0.3s, transform 0.3s;
-    min-width: 200px;
+    min-width: 0 !important;
+    width: 100%;
     max-width: 100%;
     margin: 0 8px;
     border: none;

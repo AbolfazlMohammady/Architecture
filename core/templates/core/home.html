@@ -122,38 +122,42 @@ body, html {
         <p class="welcome-subtitle">مدیریت هوشمند پروژه‌های عمرانی</p>
     </div>
     <div class="charts-container">
-        <div class="charts-wrapper">
-            <!-- نمودار وضعیت کلی پروژه‌ها -->
-            <div class="chart-card">
-                <h3 class="chart-title" style="color:#2196F3;">وضعیت کلی پروژه‌ها</h3>
-                <div class="chart-container">
-                    <canvas id="projectsStatusChart"></canvas>
-                </div>
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#2196F3;">وضعیت کلی پروژه‌ها</h3>
+            <div class="chart-container">
+              <canvas id="projectsStatusChart"></canvas>
             </div>
-            <!-- نمودار پیشرفت پروژه‌ها -->
-            <div class="chart-card">
-                <h3 class="chart-title" style="color:#4CAF50;">پیشرفت پروژه‌ها</h3>
-                <div class="chart-container">
-                    <canvas id="projectsProgressChart"></canvas>
-                </div>
-            </div>
-            <!-- نمودار وضعیت مالی -->
-            <div class="chart-card">
-                <h3 class="chart-title" style="color:#FF5722;">وضعیت مالی</h3>
-                <div class="chart-container">
-                    <canvas id="financialStatusChart"></canvas>
-                </div>
-            </div>
-            <!-- نمودار کیفیت آزمایشات -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">کیفیت آزمایشات</h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="experimentQualityChart"></canvas>
-                </div>
-            </div>
+          </div>
         </div>
+        <div class="col-md-6 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#4CAF50;">پیشرفت پروژه‌ها</h3>
+            <div class="chart-container">
+              <canvas id="projectsProgressChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#FF5722;">وضعیت مالی</h3>
+            <div class="chart-container">
+              <canvas id="financialStatusChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-12 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title">کیفیت آزمایشات</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="experimentQualityChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
