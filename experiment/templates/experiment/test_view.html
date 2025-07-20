@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تست ویو{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">تست ویو</h4>
+                </div>
+                <div class="card-body">
+                    <h5>{{ message }}</h5>
+                    <p>کاربر: {{ user }}</p>
+                    <p>تاریخ: {{ now }}</p>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-primary">لیست ضرایب پرداخت</a>
+                        <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-success">افزودن ضریب پرداخت</a>
+                        <a href="{% url 'experiment:dashboard_charts' %}" class="btn btn-info">نمودارهای داشبورد</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

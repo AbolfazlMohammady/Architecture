@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentResponse, ExperimentApproval
+from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient
 from utils import baseAdminModel
 
 class MyModelAdminMixin(admin.ModelAdmin, baseAdminModel.BtnDeleteSelected):
@@ -32,6 +32,14 @@ class ExperimentRequestAdmin(MyModelAdminMixin):
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'order')
 
+@admin.register(ExperimentRequestApproval)
+class ExperimentRequestApprovalAdmin(MyModelAdminMixin):
+    list_display = ('experiment_request', 'approver', 'status', 'created_at')
+    list_filter = ('status', 'approver')
+    search_fields = ('experiment_request__project__name', 'description')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+
 @admin.register(ExperimentResponse)
 class ExperimentResponseAdmin(MyModelAdminMixin):
     list_display = ('experiment_request', 'response_date', 'created_at')
@@ -47,3 +55,14 @@ class ExperimentApprovalAdmin(MyModelAdminMixin):
     search_fields = ('experiment_response__experiment_request__project__name', 'description')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
+
+@admin.register(PaymentCoefficient)
+class PaymentCoefficientAdmin(MyModelAdminMixin):
+    list_display = ('project', 'layer', 'coefficient', 'start_kilometer', 'end_kilometer', 'calculation_date')
+    list_filter = ('layer', 'project', 'calculation_date')
+    search_fields = ('project__name',)
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('project')

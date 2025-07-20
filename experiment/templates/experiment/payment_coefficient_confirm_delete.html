@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف ضریب پرداخت{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">تایید حذف ضریب پرداخت</h4>
+                </div>
+                <div class="card-body">
+                    <p>آیا از حذف ضریب پرداخت زیر اطمینان دارید؟</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>پروژه:</strong> {{ coefficient.project.name }}<br>
+                        <strong>لایه:</strong> {{ coefficient.get_layer_display }}<br>
+                        <strong>ضریب پرداخت:</strong> {{ coefficient.coefficient }}<br>
+                        <strong>کیلومتراژ:</strong> {{ coefficient.start_kilometer }} تا {{ coefficient.end_kilometer }}
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-secondary">انصراف</a>
+                            <button type="submit" class="btn btn-danger">حذف</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -91,9 +91,64 @@
                     </div>
                     {% endif %}
                     
+                    <!-- تاییدیه‌های پاسخ -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <a href="{{ update_url }}" class="btn btn-warning">
+                            <h4>تاییدیه‌های پاسخ</h4>
+                            {% if experiment_response.experimentapproval_set.all %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>تایید کننده</th>
+                                            <th>وضعیت</th>
+                                            <th>درصد جریمه</th>
+                                            <th>تاریخ تایید</th>
+                                            <th>توضیحات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for approval in experiment_response.experimentapproval_set.all %}
+                                        <tr>
+                                            <td>{{ approval.approver.get_full_name }}</td>
+                                            <td>
+                                                {% if approval.status == 1 %}
+                                                    <span class="badge bg-success">تایید شده</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">رد شده</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if approval.penalty_percentage %}
+                                                    {{ approval.penalty_percentage }}%
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ approval.created_at|date:"Y/m/d H:i" }}</td>
+                                            <td>{{ approval.description|default:"-" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                هنوز تاییدیه‌ای برای این پاسخ ثبت نشده است.
+                            </div>
+                            {% endif %}
+
+                            <div class="mt-3">
+                                <a href="{% url 'experiment:experiment_approval_create' experiment_response.pk %}" class="btn btn-info">
+                                    <i class="fas fa-check"></i> ثبت تاییدیه
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <a href="{% url 'experiment:experiment_response_update' experiment_response.pk %}" class="btn btn-warning">
                                 <i class="fas fa-edit"></i> ویرایش
                             </a>
                             <a href="{% url 'experiment:experiment_response_delete' experiment_response.pk %}" class="btn btn-danger">

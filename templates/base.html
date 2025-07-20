@@ -256,6 +256,16 @@
               <li><a class="dropdown-item" href="{% url 'experiment:experiment_type_list' %}">انواع آزمایشات</a></li>
             </ul>
           </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-light" href="#" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up me-1"></i> ضریب پرداخت
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark">
+              <li><a class="dropdown-item" href="{% url 'experiment:dashboard_charts' %}">نمودارهای داشبورد</a></li>
+              <li><a class="dropdown-item" href="{% url 'experiment:payment_coefficient_list' %}">لیست ضرایب پرداخت</a></li>
+              <li><a class="dropdown-item" href="{% url 'experiment:payment_coefficient_create' %}">افزودن ضریب پرداخت</a></li>
+            </ul>
+          </li>
           {% if request.user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link text-light" href="{% url 'experiment:notification_list' %}">

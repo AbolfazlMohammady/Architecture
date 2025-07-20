@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست ساده</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .message {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .links {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .links a:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تست ساده</h1>
+        <div class="message">
+            <strong>{{ message }}</strong>
+        </div>
+        <p>اگر این صفحه رو می‌بینی، یعنی Django درست کار می‌کنه!</p>
+        
+        <div class="links">
+            <a href="{% url 'experiment:payment_coefficient_list' %}">لیست ضرایب پرداخت</a>
+            <a href="{% url 'experiment:payment_coefficient_create' %}">افزودن ضریب پرداخت</a>
+            <a href="{% url 'experiment:dashboard_charts' %}">نمودارهای داشبورد</a>
+        </div>
+    </div>
+</body>
+</html> 

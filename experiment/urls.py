@@ -13,6 +13,7 @@ urlpatterns = [
     path('requests/<int:pk>/', views.experiment_request_detail, name='experiment_request_detail'),
     path('requests/<int:pk>/update/', views.experiment_request_update, name='experiment_request_update'),
     path('requests/<int:pk>/delete/', views.experiment_request_delete, name='experiment_request_delete'),
+    path('requests/<int:request_id>/approval/', views.experiment_request_approval_create, name='experiment_request_approval_create'),
     
     # پاسخ‌های آزمایش
     path('responses/', views.experiment_response_list, name='experiment_response_list'),
@@ -38,6 +39,20 @@ urlpatterns = [
     path('places/create/', views.concrete_place_create, name='concrete_place_create'),
     path('places/<int:pk>/update/', views.concrete_place_update, name='concrete_place_update'),
     path('places/<int:pk>/delete/', views.concrete_place_delete, name='concrete_place_delete'),
+    
+    # ضریب پرداخت
+    path('payment-coefficients/', views.payment_coefficient_list, name='payment_coefficient_list'),
+    path('payment-coefficients/create/', views.payment_coefficient_create, name='payment_coefficient_create'),
+    path('payment-coefficients/<int:pk>/update/', views.payment_coefficient_update, name='payment_coefficient_update'),
+    path('payment-coefficients/<int:pk>/delete/', views.payment_coefficient_delete, name='payment_coefficient_delete'),
+    path('payment-coefficients/<str:layer>/detail/', views.layer_coefficient_detail, name='layer_coefficient_detail'),
+    
+    # نمودارهای داشبورد
+    path('dashboard-charts/', views.dashboard_charts, name='dashboard_charts'),
+    
+    # تست
+    path('test/', views.test_view, name='test_view'),
+    path('simple-test/', views.simple_test, name='simple_test'),
     
     # API endpoints
     path('api/get-layers/', views.get_layers, name='get_layers'),

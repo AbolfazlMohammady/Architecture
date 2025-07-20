@@ -82,6 +82,28 @@ class ExperimentRequest(models.Model):
     def __str__(self):
         return f"{self.project.name} - {self.order}"
 
+class ExperimentRequestApproval(models.Model):
+    APPROVED = 1
+    REJECTED = 2
+    STATUS_CHOICES = (
+        (APPROVED, 'تایید شده'),
+        (REJECTED, 'رد شده'),
+    )
+    
+    experiment_request = models.ForeignKey(ExperimentRequest, on_delete=models.CASCADE, verbose_name="درخواست آزمایش")
+    approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
+    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
+    description = models.TextField(verbose_name="توضیحات", null=True, blank=True)
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    def __str__(self):
+        return f"تایید درخواست {self.experiment_request} توسط {self.approver}"
+    
+    class Meta:
+        verbose_name = "تایید درخواست آزمایش"
+        verbose_name_plural = "تاییدهای درخواست آزمایش"
+        ordering = ['-created_at']
+
 class ExperimentResponse(models.Model):
     experiment_request = models.ForeignKey(ExperimentRequest, on_delete=models.CASCADE, verbose_name="درخواست آزمایش")
     response_file = models.FileField(upload_to='experiment_responses/', verbose_name="فایل پاسخ")
@@ -125,6 +147,30 @@ class ExperimentApproval(models.Model):
         verbose_name = "تایید آزمایش"
         verbose_name_plural = "تاییدهای آزمایش"
         ordering = ['-created_at']
+
+class PaymentCoefficient(models.Model):
+    LAYER_CHOICES = [
+        ('ASPHALT', 'آسفالت گرم'),
+        ('BASE', 'اساس'),
+        ('SUBBASE', 'زیراساس'),
+        ('EMBANKMENT', 'خاکریزی'),
+    ]
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="پروژه")
+    layer = models.CharField(max_length=20, choices=LAYER_CHOICES, verbose_name="لایه")
+    coefficient = models.DecimalField(max_digits=4, decimal_places=2, verbose_name="ضریب پرداخت")
+    start_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ شروع")
+    end_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ پایان")
+    calculation_date = jmodels.jDateField(verbose_name="تاریخ محاسبه")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    
+    class Meta:
+        verbose_name = "ضریب پرداخت"
+        verbose_name_plural = "ضرایب پرداخت"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.project.name} - {self.get_layer_display()} - {self.coefficient}"
 
 class Message(models.Model):
     RESPONSE_MESSAGE = 0

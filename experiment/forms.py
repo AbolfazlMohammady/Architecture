@@ -74,6 +74,36 @@ class ExperimentRequestForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 3}),
         }
 
+class ExperimentRequestApprovalForm(forms.ModelForm):
+    approval_date = JalaliDateField(
+        widget=AdminJalaliDateWidget,
+        label='تاریخ تایید',
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # تنظیم کلاس‌های فرم
+        for field in self.fields:
+            if isinstance(self.fields[field].widget, (forms.TextInput, forms.NumberInput, forms.Textarea)):
+                self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
+            elif isinstance(self.fields[field].widget, forms.Select):
+                self.fields[field].widget.attrs['class'] = 'form-select'
+        
+        # تنظیم فیلدهای خاص
+        self.fields['experiment_request'].widget = forms.HiddenInput()
+        self.fields['status'].widget.attrs.update({'class': 'form-select'})
+        self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 3})
+    
+    class Meta:
+        model = models.ExperimentRequestApproval
+        fields = ['experiment_request', 'status', 'approval_date', 'description']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
 class ExperimentResponseForm(forms.ModelForm):
     response_date = JalaliDateField(
         widget=AdminJalaliDateWidget,
@@ -126,6 +156,48 @@ class ExperimentApprovalForm(forms.ModelForm):
             'penalty_percentage': forms.NumberInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+class PaymentCoefficientForm(forms.ModelForm):
+    calculation_date = JalaliDateField(
+        widget=AdminJalaliDateWidget,
+        label='تاریخ محاسبه',
+        required=True
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # تنظیم کلاس‌های فرم
+        for field in self.fields:
+            if isinstance(self.fields[field].widget, (forms.TextInput, forms.NumberInput, forms.Textarea)):
+                self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
+            elif isinstance(self.fields[field].widget, forms.Select):
+                self.fields[field].widget.attrs['class'] = 'form-select'
+        
+        # تنظیم محدودیت ضریب پرداخت
+        self.fields['coefficient'].widget.attrs.update({
+            'min': '0',
+            'max': '1.2',
+            'step': '0.01'
+        })
+    
+    class Meta:
+        model = models.PaymentCoefficient
+        fields = ['project', 'layer', 'coefficient', 'start_kilometer', 'end_kilometer', 'calculation_date']
+        widgets = {
+            'project': Select2Widget(attrs={'class': 'form-select'}),
+            'layer': forms.Select(attrs={'class': 'form-select'}),
+            'coefficient': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'start_kilometer': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+            'end_kilometer': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+        }
+    
+    def clean_coefficient(self):
+        coefficient = self.cleaned_data.get('coefficient')
+        if coefficient is not None:
+            if coefficient < 0 or coefficient > 1.2:
+                raise forms.ValidationError('ضریب پرداخت باید بین 0 تا 1.2 باشد.')
+        return coefficient
 
 class ExperimentTypeForm(forms.ModelForm):
     class Meta:
