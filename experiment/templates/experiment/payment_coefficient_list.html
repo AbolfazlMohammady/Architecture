@@ -7,7 +7,12 @@
 <div class="container py-5">
   <section class="payment-coefficients mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h5 class="mb-0 fw-bold">ضرایب پرداخت</h5>
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-outline-secondary rounded-pill me-3" onclick="history.back()">
+          <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+        <h5 class="mb-0 fw-bold">ضرایب پرداخت</h5>
+      </div>
       <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-primary rounded-pill px-4">
         <i class="bi bi-plus-circle me-2"></i>افزودن ضریب پرداخت
       </a>
