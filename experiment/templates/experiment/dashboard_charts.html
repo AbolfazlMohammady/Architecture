@@ -6,188 +6,274 @@
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .card {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: none;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
-    .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px 10px 0 0 !important;
-    }
-    .chart-container {
-        position: relative;
-        height: 400px;
-        margin: 20px 0;
-    }
-    .stats-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    .stats-number {
-        font-size: 2rem;
-        font-weight: bold;
-    }
+  .bg-gradient {
+    background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+  }
+  .card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+  }
+  .card-header {
+    background: linear-gradient(135deg, #1976d2 0%, #43a047 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+  }
+  .chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+  }
+  .stats-card {
+    background: linear-gradient(135deg, #1976d2 0%, #43a047 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+  .stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  }
+  .stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  .stats-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+  }
 </style>
 {% endblock %}
 
 {% block main %}
-
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <h2 class="mb-4">نمودارهای داشبورد</h2>
-        
-        <!-- آمار کلی -->
-        <div class="row">
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <h5>کل ضرایب</h5>
-                    <div class="stats-number">{{ total_coefficients }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <h5>میانگین ضریب</h5>
-                    <div class="stats-number">{{ average_coefficient|floatformat:2 }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <h5>بهترین ضریب</h5>
-                    <div class="stats-number">{{ best_coefficient|floatformat:2 }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <h5>بدترین ضریب</h5>
-                    <div class="stats-number">{{ worst_coefficient|floatformat:2 }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- نمودار توزیع ضرایب -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">توزیع ضرایب پرداخت</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="coefficientDistribution"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- نمودار ضرایب بر اساس پروژه -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">ضرایب پرداخت بر اساس پروژه</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="projectCoefficients"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- نمودار ضرایب بر اساس لایه -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">ضرایب پرداخت بر اساس لایه</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="layerCoefficients"></canvas>
-                </div>
-            </div>
-        </div>
+<div class="container py-5">
+  <section class="dashboard-charts mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 class="mb-0 fw-bold">نمودارهای داشبورد</h5>
+      <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-outline-primary rounded-pill px-4">
+        <i class="bi bi-list me-2"></i>لیست ضرایب
+      </a>
     </div>
+    
+    <!-- آمار کلی -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="stats-card text-center">
+          <div class="stats-icon mb-3">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <h6 class="fw-bold">کل ضرایب</h6>
+          <div class="stats-number">{{ total_coefficients }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stats-card text-center">
+          <div class="stats-icon mb-3">
+            <i class="bi bi-calculator"></i>
+          </div>
+          <h6 class="fw-bold">میانگین ضریب</h6>
+          <div class="stats-number">{{ average_coefficient|floatformat:2 }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stats-card text-center">
+          <div class="stats-icon mb-3">
+            <i class="bi bi-arrow-up-circle"></i>
+          </div>
+          <h6 class="fw-bold">بهترین ضریب</h6>
+          <div class="stats-number">{{ best_coefficient|floatformat:2 }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stats-card text-center">
+          <div class="stats-icon mb-3">
+            <i class="bi bi-arrow-down-circle"></i>
+          </div>
+          <h6 class="fw-bold">بدترین ضریب</h6>
+          <div class="stats-number">{{ worst_coefficient|floatformat:2 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- نمودار توزیع ضرایب -->
+    <div class="card shadow-lg">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-bar-chart me-2"></i>توزیع ضرایب پرداخت
+        </h6>
+        <span class="badge bg-light text-dark">تحلیل آماری</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="coefficientDistribution"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- نمودار ضرایب بر اساس پروژه -->
+    <div class="card shadow-lg">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-graph-up me-2"></i>ضرایب پرداخت بر اساس پروژه
+        </h6>
+        <span class="badge bg-light text-dark">تحلیل پروژه‌ها</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="projectCoefficients"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- نمودار ضرایب بر اساس لایه -->
+    <div class="card shadow-lg">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-pie-chart me-2"></i>ضرایب پرداخت بر اساس لایه
+        </h6>
+        <span class="badge bg-light text-dark">تحلیل لایه‌ها</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="layerCoefficients"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}
 
 {% block script %}
 <script>
-    // نمودار توزیع ضرایب
-    const ctx1 = document.getElementById('coefficientDistribution');
-    if (ctx1) {
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: {{ distribution_labels|safe }},
-                datasets: [{
-                    label: 'تعداد ضرایب',
-                    data: {{ distribution_data|safe }},
-                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+  // نمودار توزیع ضرایب
+  const ctx1 = document.getElementById('coefficientDistribution');
+  if (ctx1) {
+    new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: {{ distribution_labels|safe }},
+        datasets: [{
+          label: 'تعداد ضرایب',
+          data: {{ distribution_data|safe }},
+          backgroundColor: 'rgba(25, 118, 210, 0.8)',
+          borderColor: 'rgba(25, 118, 210, 1)',
+          borderWidth: 2,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0,0,0,0.1)'
             }
-        });
-    }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  }
 
-    // نمودار ضرایب بر اساس پروژه
-    const ctx2 = document.getElementById('projectCoefficients');
-    if (ctx2) {
-        new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: {{ project_labels|safe }},
-                datasets: [{
-                    label: 'میانگین ضریب',
-                    data: {{ project_data|safe }},
-                    borderColor: 'rgba(118, 75, 162, 1)',
-                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 1.2
-                    }
-                }
+  // نمودار ضرایب بر اساس پروژه
+  const ctx2 = document.getElementById('projectCoefficients');
+  if (ctx2) {
+    new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: {{ project_labels|safe }},
+        datasets: [{
+          label: 'میانگین ضریب',
+          data: {{ project_data|safe }},
+          borderColor: 'rgba(67, 160, 71, 1)',
+          backgroundColor: 'rgba(67, 160, 71, 0.1)',
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgba(67, 160, 71, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 1.2,
+            grid: {
+              color: 'rgba(0,0,0,0.1)'
             }
-        });
-    }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  }
 
-    // نمودار ضرایب بر اساس لایه
-    const ctx3 = document.getElementById('layerCoefficients');
-    if (ctx3) {
-        new Chart(ctx3, {
-            type: 'doughnut',
-            data: {
-                labels: {{ layer_labels|safe }},
-                datasets: [{
-                    data: {{ layer_data|safe }},
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(118, 75, 162, 0.8)',
-                        'rgba(255, 99, 132, 0.8)',
-                        'rgba(54, 162, 235, 0.8)',
-                        'rgba(255, 206, 86, 0.8)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
+  // نمودار ضرایب بر اساس لایه
+  const ctx3 = document.getElementById('layerCoefficients');
+  if (ctx3) {
+    new Chart(ctx3, {
+      type: 'doughnut',
+      data: {
+        labels: {{ layer_labels|safe }},
+        datasets: [{
+          data: {{ layer_data|safe }},
+          backgroundColor: [
+            'rgba(25, 118, 210, 0.8)',
+            'rgba(67, 160, 71, 0.8)',
+            'rgba(255, 152, 0, 0.8)',
+            'rgba(244, 67, 54, 0.8)',
+            'rgba(156, 39, 176, 0.8)'
+          ],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true
             }
-        });
-    }
+          }
+        }
+      }
+    });
+  }
 </script>
 {% endblock %} 

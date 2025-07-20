@@ -3,34 +3,97 @@
 
 {% block title %}حذف ضریب پرداخت{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">تایید حذف ضریب پرداخت</h4>
-                </div>
-                <div class="card-body">
-                    <p>آیا از حذف ضریب پرداخت زیر اطمینان دارید؟</p>
-                    
-                    <div class="alert alert-info">
-                        <strong>پروژه:</strong> {{ coefficient.project.name }}<br>
-                        <strong>لایه:</strong> {{ coefficient.get_layer_display }}<br>
-                        <strong>ضریب پرداخت:</strong> {{ coefficient.coefficient }}<br>
-                        <strong>کیلومتراژ:</strong> {{ coefficient.start_kilometer }} تا {{ coefficient.end_kilometer }}
-                    </div>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-secondary">انصراف</a>
-                            <button type="submit" class="btn btn-danger">حذف</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+{% block main %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>تایید حذف ضریب پرداخت
+          </h6>
+          <span class="badge bg-light text-dark">حذف</span>
         </div>
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <div class="text-danger mb-3">
+              <i class="bi bi-exclamation-triangle fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-danger">آیا از حذف این ضریب پرداخت اطمینان دارید؟</h6>
+            <p class="text-muted">این عملیات غیرقابل بازگشت است.</p>
+          </div>
+          
+          <div class="alert alert-info border-0 rounded-3">
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-briefcase text-primary me-2"></i>
+                  <span class="fw-bold">پروژه:</span>
+                  <span class="ms-2">{{ coefficient.project.name }}</span>
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-layers text-primary me-2"></i>
+                  <span class="fw-bold">لایه:</span>
+                  <span class="ms-2">{{ coefficient.get_layer_display }}</span>
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-graph-up text-primary me-2"></i>
+                  <span class="fw-bold">ضریب پرداخت:</span>
+                  <span class="badge {% if coefficient.coefficient >= 1 %}bg-success{% elif coefficient.coefficient >= 0.8 %}bg-warning{% else %}bg-danger{% endif %} ms-2">
+                    {{ coefficient.coefficient }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-arrow-left-right text-primary me-2"></i>
+                  <span class="fw-bold">کیلومتراژ:</span>
+                  <span class="ms-2">{{ coefficient.start_kilometer }} تا {{ coefficient.end_kilometer }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between align-items-center pt-3">
+              <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="bi bi-arrow-right me-2"></i>انصراف
+              </a>
+              <button type="submit" class="btn btn-danger rounded-pill px-4">
+                <i class="bi bi-trash me-2"></i>حذف ضریب پرداخت
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+.card {
+  transition: all 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+}
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+</style>
 {% endblock %} 

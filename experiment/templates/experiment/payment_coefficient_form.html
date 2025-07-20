@@ -4,90 +4,177 @@
 {% block title %}{% if form.instance.pk %}ویرایش ضریب پرداخت{% else %}افزودن ضریب پرداخت{% endif %}{% endblock %}
 
 {% block main %}
-
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="mb-0">
-                            {% if form.instance.pk %}ویرایش ضریب پرداخت{% else %}افزودن ضریب پرداخت{% endif %}
-                        </h4>
-                    </div>
-                    <div class="card-body">
-                        <form method="post">
-                            {% csrf_token %}
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.project.id_for_label }}" class="form-label">پروژه *</label>
-                                    {{ form.project }}
-                                    {% if form.project.errors %}
-                                        <div class="text-danger">{{ form.project.errors }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.layer.id_for_label }}" class="form-label">لایه *</label>
-                                    {{ form.layer }}
-                                    {% if form.layer.errors %}
-                                        <div class="text-danger">{{ form.layer.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label for="{{ form.coefficient.id_for_label }}" class="form-label">ضریب پرداخت *</label>
-                                    {{ form.coefficient }}
-                                    <small class="form-text text-muted">بین 0 تا 1.2</small>
-                                    {% if form.coefficient.errors %}
-                                        <div class="text-danger">{{ form.coefficient.errors }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="{{ form.start_kilometer.id_for_label }}" class="form-label">کیلومتراژ شروع *</label>
-                                    {{ form.start_kilometer }}
-                                    {% if form.start_kilometer.errors %}
-                                        <div class="text-danger">{{ form.start_kilometer.errors }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="{{ form.end_kilometer.id_for_label }}" class="form-label">کیلومتراژ پایان *</label>
-                                    {{ form.end_kilometer }}
-                                    {% if form.end_kilometer.errors %}
-                                        <div class="text-danger">{{ form.end_kilometer.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.calculation_date.id_for_label }}" class="form-label">تاریخ محاسبه *</label>
-                                    {{ form.calculation_date }}
-                                    {% if form.calculation_date.errors %}
-                                        <div class="text-danger">{{ form.calculation_date.errors }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
-                                    {{ form.description }}
-                                    {% if form.description.errors %}
-                                        <div class="text-danger">{{ form.description.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between">
-                                <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-secondary">انصراف</a>
-                                <button type="submit" class="btn btn-primary">
-                                    {% if form.instance.pk %}ذخیره تغییرات{% else %}افزودن ضریب پرداخت{% endif %}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">
+            <i class="bi bi-calculator me-2"></i>
+            {% if form.instance.pk %}ویرایش ضریب پرداخت{% else %}افزودن ضریب پرداخت{% endif %}
+          </h6>
+          <span class="badge bg-light text-dark">
+            {% if form.instance.pk %}ویرایش{% else %}جدید{% endif %}
+          </span>
         </div>
+        <div class="card-body p-4">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.project.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-briefcase text-primary me-2"></i>پروژه *
+                </label>
+                {{ form.project }}
+                {% if form.project.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.project.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.layer.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-layers text-primary me-2"></i>لایه *
+                </label>
+                {{ form.layer }}
+                {% if form.layer.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.layer.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="{{ form.coefficient.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-graph-up text-primary me-2"></i>ضریب پرداخت *
+                </label>
+                {{ form.coefficient }}
+                <div class="form-text">
+                  <i class="bi bi-info-circle me-1"></i>بین 0 تا 1.2
+                </div>
+                {% if form.coefficient.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.coefficient.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="{{ form.start_kilometer.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-arrow-right text-primary me-2"></i>کیلومتراژ شروع *
+                </label>
+                {{ form.start_kilometer }}
+                {% if form.start_kilometer.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.start_kilometer.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="{{ form.end_kilometer.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-arrow-left text-primary me-2"></i>کیلومتراژ پایان *
+                </label>
+                {{ form.end_kilometer }}
+                {% if form.end_kilometer.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.end_kilometer.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.calculation_date.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-calendar text-primary me-2"></i>تاریخ محاسبه *
+                </label>
+                {{ form.calculation_date }}
+                {% if form.calculation_date.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.calculation_date.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-text-paragraph text-primary me-2"></i>توضیحات
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.description.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center pt-3">
+              <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="bi bi-arrow-right me-2"></i>انصراف
+              </a>
+              <button type="submit" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-check-circle me-2"></i>
+                {% if form.instance.pk %}ذخیره تغییرات{% else %}افزودن ضریب پرداخت{% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+.form-control:focus, .form-select:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+  transform: translateY(-1px);
+}
+.form-label {
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.card {
+  transition: all 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+}
+</style>
 {% endblock %} 

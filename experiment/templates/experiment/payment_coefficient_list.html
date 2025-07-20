@@ -4,69 +4,158 @@
 {% block title %}ضرایب پرداخت{% endblock %}
 
 {% block main %}
-
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">ضرایب پرداخت</h4>
-                        <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-light">افزودن ضریب پرداخت</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <strong>اطلاعات:</strong> تعداد پروژه‌ها: {{ projects|length }} | تعداد ضرایب: {{ coefficients|length }}
-                        </div>
-                        
-                        <!-- جدول ضرایب پرداخت -->
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>پروژه</th>
-                                        <th>لایه</th>
-                                        <th>ضریب پرداخت</th>
-                                        <th>کیلومتراژ شروع</th>
-                                        <th>کیلومتراژ پایان</th>
-                                        <th>تاریخ محاسبه</th>
-                                        <th>عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for coefficient in coefficients %}
-                                    <tr>
-                                        <td>{{ coefficient.project.name }}</td>
-                                        <td>{{ coefficient.get_layer_display }}</td>
-                                        <td>
-                                            <span class="badge {% if coefficient.coefficient >= 1 %}bg-success{% elif coefficient.coefficient >= 0.8 %}bg-warning{% else %}bg-danger{% endif %}">
-                                                {{ coefficient.coefficient }}
-                                            </span>
-                                        </td>
-                                        <td>{{ coefficient.start_kilometer }}</td>
-                                        <td>{{ coefficient.end_kilometer }}</td>
-                                        <td>{{ coefficient.calculation_date }}</td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="{% url 'experiment:payment_coefficient_update' coefficient.pk %}" class="btn btn-sm btn-outline-primary">ویرایش</a>
-                                                <a href="{% url 'experiment:payment_coefficient_delete' coefficient.pk %}" class="btn btn-sm btn-outline-danger">حذف</a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted">
-                                            <i class="fas fa-info-circle"></i>
-                                            هیچ ضریب پرداختی یافت نشد.
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="container py-5">
+  <section class="payment-coefficients mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 class="mb-0 fw-bold">ضرایب پرداخت</h5>
+      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-plus-circle me-2"></i>افزودن ضریب پرداخت
+      </a>
     </div>
+
+    <!-- اطلاعات کلی -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center">
+            <div class="text-primary mb-2">
+              <i class="bi bi-graph-up fs-1"></i>
+            </div>
+            <h6 class="fw-bold">کل ضرایب</h6>
+            <h4 class="text-primary mb-0">{{ coefficients|length }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center">
+            <div class="text-success mb-2">
+              <i class="bi bi-check-circle fs-1"></i>
+            </div>
+            <h6 class="fw-bold">ضرایب عالی</h6>
+            <h4 class="text-success mb-0">{{ coefficients|length }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center">
+            <div class="text-warning mb-2">
+              <i class="bi bi-exclamation-triangle fs-1"></i>
+            </div>
+            <h6 class="fw-bold">نیاز بررسی</h6>
+            <h4 class="text-warning mb-0">0</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center">
+            <div class="text-danger mb-2">
+              <i class="bi bi-x-circle fs-1"></i>
+            </div>
+            <h6 class="fw-bold">ضرایب ضعیف</h6>
+            <h4 class="text-danger mb-0">0</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- جدول ضرایب پرداخت -->
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+      <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">لیست ضرایب پرداخت</h6>
+        <span class="badge bg-light text-dark">{{ coefficients|length }} ضریب</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="border-0">پروژه</th>
+                <th class="border-0">لایه</th>
+                <th class="border-0">ضریب پرداخت</th>
+                <th class="border-0">کیلومتراژ شروع</th>
+                <th class="border-0">کیلومتراژ پایان</th>
+                <th class="border-0">تاریخ محاسبه</th>
+                <th class="border-0">عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for coefficient in coefficients %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-briefcase text-primary me-2"></i>
+                    <span class="fw-medium">{{ coefficient.project.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-outline-secondary">{{ coefficient.get_layer_display }}</span>
+                </td>
+                <td>
+                  <span class="badge {% if coefficient.coefficient >= 1 %}bg-success{% elif coefficient.coefficient >= 0.8 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                    {{ coefficient.coefficient }}
+                  </span>
+                </td>
+                <td>{{ coefficient.start_kilometer }}</td>
+                <td>{{ coefficient.end_kilometer }}</td>
+                <td>{{ coefficient.calculation_date }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'experiment:payment_coefficient_update' coefficient.pk %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                      <i class="bi bi-pencil me-1"></i>ویرایش
+                    </a>
+                    <a href="{% url 'experiment:payment_coefficient_delete' coefficient.pk %}" class="btn btn-sm btn-outline-danger rounded-pill">
+                      <i class="bi bi-trash me-1"></i>حذف
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5">
+                  <div class="text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                    <h6>هیچ ضریب پرداختی یافت نشد</h6>
+                    <p class="mb-0">برای شروع، یک ضریب پرداخت جدید اضافه کنید</p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+.card {
+  transition: all 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+}
+.bg-outline-secondary {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+.bg-outline-primary {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+.bg-outline-danger {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+</style>
 {% endblock %} 
