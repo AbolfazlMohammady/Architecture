@@ -27,7 +27,7 @@
               <i class="bi bi-graph-up fs-1"></i>
             </div>
             <h6 class="fw-bold">کل ضرایب</h6>
-            <h4 class="text-primary mb-0">{{ coefficients|length }}</h4>
+            <h4 class="text-primary mb-0">{{ total_coefficients }}</h4>
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
               <i class="bi bi-check-circle fs-1"></i>
             </div>
             <h6 class="fw-bold">ضرایب عالی</h6>
-            <h4 class="text-success mb-0">{{ coefficients|length }}</h4>
+            <h4 class="text-success mb-0">{{ excellent_coefficients }}</h4>
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@
               <i class="bi bi-exclamation-triangle fs-1"></i>
             </div>
             <h6 class="fw-bold">نیاز بررسی</h6>
-            <h4 class="text-warning mb-0">0</h4>
+            <h4 class="text-warning mb-0">{{ needs_review_coefficients }}</h4>
           </div>
         </div>
       </div>
@@ -60,7 +60,7 @@
               <i class="bi bi-x-circle fs-1"></i>
             </div>
             <h6 class="fw-bold">ضرایب ضعیف</h6>
-            <h4 class="text-danger mb-0">0</h4>
+            <h4 class="text-danger mb-0">{{ weak_coefficients }}</h4>
           </div>
         </div>
       </div>

@@ -323,12 +323,24 @@ def payment_coefficient_list(request):
         if layer and coefficients:
             coefficients = coefficients.filter(layer=layer)
         
+        # محاسبه آمار ضرایب
+        total_coefficients = coefficients.count()
+        excellent_coefficients = coefficients.filter(coefficient__gte=1.0).count()
+        weak_coefficients = coefficients.filter(coefficient__lt=0.6).count()
+        needs_review_coefficients = coefficients.filter(coefficient__gte=0.6, coefficient__lt=1.0).count()
+        
+        logger.info(f"Calculated statistics - Total: {total_coefficients}, Excellent: {excellent_coefficients}, Weak: {weak_coefficients}, Needs Review: {needs_review_coefficients}")
+        
         context = {
             'coefficients': coefficients,
             'projects': projects,
             'layers': layers,
             'selected_project': project_id,
-            'selected_layer': layer
+            'selected_layer': layer,
+            'total_coefficients': total_coefficients,
+            'excellent_coefficients': excellent_coefficients,
+            'weak_coefficients': weak_coefficients,
+            'needs_review_coefficients': needs_review_coefficients,
         }
         
         logger.info("Rendering payment_coefficient_list.html template with data")
