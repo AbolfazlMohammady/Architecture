@@ -175,6 +175,11 @@ def experiment_request_detail(request, pk):
 @login_required
 def experiment_response_create(request, pk):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
+    # بررسی وجود پاسخ قبلی و تاییدیه کامل آن
+    last_response = experiment_request.experimentresponse_set.order_by('-created_at').first()
+    if last_response and not last_response.is_fully_approved():
+        messages.error(request, 'تا زمانی که همه نقش‌های کلیدی پروژه پاسخ قبلی را تایید نکرده‌اند، امکان ثبت پاسخ جدید وجود ندارد.')
+        return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES)
         if form.is_valid():
