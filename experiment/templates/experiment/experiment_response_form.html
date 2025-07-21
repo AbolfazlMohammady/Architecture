@@ -1,91 +1,70 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
-{% load widget_tweaks %}
+{% load widget_tweaks %} {# Changed to load widget_tweaks #}
 
-{% block head %}
-{{ form.media }}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
-{% endblock %}
-
-{% block title %}پاسخ به درخواست آزمایش{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/persian-datepicker.min.css' %}">
-{% endblock %}
-
+{% block title %}ثبت پاسخ آزمایش{% endblock %}
 {% block main %}
-<div class="container-fluid py-4">
+<div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-reply me-2"></i>
-                        پاسخ به درخواست آزمایش
-                    </h5>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">ثبت پاسخ آزمایش</h3>
                 </div>
                 <div class="card-body">
-                    <!-- اطلاعات اردر آزمایش -->
-                    <div class="mb-4 p-3 bg-light rounded border">
-                        <strong>پروژه:</strong> {{ experiment_request.project.name }}<br>
-                        <strong>لایه:</strong> {{ experiment_request.layer.name }}<br>
-                        <strong>نوع آزمایش:</strong> {{ experiment_request.experiment_type.name }}<br>
-                        {% if experiment_request.experiment_subtype %}
-                        <strong>زیرنوع:</strong> {{ experiment_request.experiment_subtype.name }}<br>
-                        {% endif %}
-                        <strong>شماره اردر:</strong> {{ experiment_request.order }}<br>
-                        <strong>تاریخ درخواست:</strong> {{ experiment_request.request_date }}<br>
-                    </div>
-                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.response_date.id_for_label }}" class="form-label">تاریخ پاسخ <span class="text-danger">*</span></label>
-                                    {{ form.response_date }}
+                                <div class="form-group">
+                                    <label>شماره درخواست:</label>
+                                    {# Assuming experiment_request is a field on the form, and you want to display its value #}
+                                    {# If experiment_request is meant to be a read-only field, you might render it differently #}
+                                    <p>{{ form.experiment_request.value }}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>تاریخ پاسخ:</label>
+                                    {# Applying form-control class to response_date field #}
+                                    {{ form.response_date|add_class:"form-control" }}
                                     {% if form.response_date.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.response_date.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.response_date.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.response_file.id_for_label }}" class="form-label">فایل پاسخ <span class="text-danger">*</span></label>
-                                    {{ form.response_file }}
+                                <div class="form-group">
+                                    <label>فایل پاسخ:</label>
+                                    {# Applying form-control-file class for file inputs #}
+                                    {{ form.response_file|add_class:"form-control-file" }}
                                     {% if form.response_file.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.response_file.errors }}
-                                    </div>
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.response_file.errors }}
+                                        </div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-
-                        <!-- فیلدهای داینامیک و شرطی آزمایش -->
-                        <div id="dynamic-fields"></div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.description.errors }}
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label>توضیحات:</label>
+                                    {# Applying form-control class to description field #}
+                                    {{ form.description|add_class:"form-control" }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.description.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
-                            {% endif %}
                         </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'experiment:experiment_request_detail' experiment_request.id %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-right me-1"></i>
-                                بازگشت
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>
-                                ثبت پاسخ
-                            </button>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">ثبت پاسخ</button>
+                                <a href="{% url 'experiment:experiment_request_detail' form.experiment_request.value %}" class="btn btn-secondary">بازگشت</a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -93,121 +72,15 @@
         </div>
     </div>
 </div>
-
-<style>
-.card {
-    border: none;
-    margin-bottom: 1rem;
-}
-
-.card-header {
-    border-bottom: none;
-}
-
-.form-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-.form-control {
-    border-radius: 0.25rem;
-    border: 1px solid #ced4da;
-    padding: 0.5rem 0.75rem;
-}
-
-.form-control:focus {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-.btn {
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-}
-
-.btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-.btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-.btn-secondary:hover {
-    background-color: #5c636a;
-    border-color: #565e64;
-}
-
-.invalid-feedback {
-    display: block;
-    margin-top: 0.25rem;
-    font-size: 0.875em;
-    color: #dc3545;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date picker
-    if (typeof $.fn.datepicker !== 'undefined') {
-        $('#{{ form.response_date.id_for_label }}').datepicker({
-            format: 'yyyy/mm/dd',
-            autoclose: true,
-            todayBtn: 'linked',
-            language: 'fa'
-        });
-    }
-
-    // Form validation
-    var forms = document.querySelectorAll('.needs-validation');
-    Array.prototype.slice.call(forms).forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        }, false);
-    });
-});
-</script>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="{% static 'js/persian-date.min.js' %}"></script>
-<script src="{% static 'js/persian-datepicker.min.js' %}"></script>
 <script>
-$(document).ready(function() {
-    // Initialize Select2 on all select elements
-    $('.select2').select2({
-        theme: 'bootstrap4',
-        width: '100%'
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
     });
-
-    var datePicker = $('#{{ form.response_date.id_for_label }}').persianDatepicker({
-        format: 'YYYY/MM/DD',
-        initialValue: false,
-        autoClose: true,
-        position: 'auto',
-        onSelect: function(unix) {
-            var date = new persianDate(unix);
-            $('#{{ form.response_date.id_for_label }}').val(date.format('YYYY/MM/DD'));
-        }
-    });
-
-    // اضافه کردن کلاس‌های Bootstrap به تقویم
-    $('.pwt-btn').addClass('btn btn-sm');
-    $('.pwt-btn-today').addClass('btn-primary');
-    $('.pwt-btn-clear').addClass('btn-secondary');
-    $('.pwt-btn-close').addClass('btn-secondary');
-});
 </script>
-{% endblock %} 
+{% endblock %}

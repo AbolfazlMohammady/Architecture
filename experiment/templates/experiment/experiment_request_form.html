@@ -225,28 +225,33 @@ $(document).ready(function() {
     $('#id_project').on('change', function() {
         var projectId = $(this).val();
         var layerSelect = $('#id_layer');
-        
+        var selectedLayer = layerSelect.data('selected');
+        console.log('Project changed:', projectId); // log selected project
         if (projectId) {
             $.ajax({
                 url: "{% url 'experiment:get_layers' %}",
                 data: {
-                    'project': projectId
+                    'project_id': projectId
                 },
                 dataType: 'json',
                 success: function(data) {
+                    console.log('Layers AJAX response:', data); // log response
                     layerSelect.empty();
                     layerSelect.append($('<option></option>').attr('value', '').text('انتخاب کنید'));
-                    $.each(data, function(index, item) {
-                        layerSelect.append(
-                            $('<option></option>')
-                                .attr('value', item.id)
-                                .text(item.name)
-                        );
+                    $.each(data.layers, function(index, item) {
+                        var option = $('<option></option>')
+                            .attr('value', item.id)
+                            .text(item.name);
+                        if (selectedLayer && selectedLayer == item.id) {
+                            option.attr('selected', 'selected');
+                        }
+                        layerSelect.append(option);
                     });
                     layerSelect.trigger('change');
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching layers:', error);
+                    console.log('AJAX error response:', xhr.responseText); // log error response
                     layerSelect.empty();
                     layerSelect.append($('<option></option>').attr('value', '').text('خطا در دریافت لایه‌ها'));
                 }
@@ -267,13 +272,13 @@ $(document).ready(function() {
             $.ajax({
                 url: "{% url 'experiment:get_subtypes' %}",
                 data: {
-                    'experiment_type': experimentTypeId
+                    'experiment_type_id': experimentTypeId // changed from 'experiment_type' to 'experiment_type_id'
                 },
                 dataType: 'json',
                 success: function(data) {
                     subtypeSelect.empty();
                     subtypeSelect.append($('<option></option>').attr('value', '').text('انتخاب کنید'));
-                    $.each(data, function(index, item) {
+                    $.each(data.subtypes, function(index, item) { // changed data to data.subtypes
                         subtypeSelect.append(
                             $('<option></option>')
                                 .attr('value', item.id)

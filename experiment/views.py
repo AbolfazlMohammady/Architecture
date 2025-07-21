@@ -698,7 +698,7 @@ def get_layers(request):
     project_id = request.GET.get('project_id')
     if project_id:
         layers = ProjectLayer.objects.filter(project_id=project_id)
-        data = [{'id': layer.id, 'name': layer.name} for layer in layers]
+        data = [{'id': layer.id, 'name': layer.layer_type.name} for layer in layers]  # fix here
         return JsonResponse({'layers': data})
     return JsonResponse({'layers': []})
 
