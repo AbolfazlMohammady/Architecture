@@ -132,15 +132,19 @@ def experiment_request_create(request):
             experiment_request.user = request.user
             experiment_request.save()
             form.save_m2m()
-            
-            # ایجاد اعلان برای مدیر کنترل کیفیت
-            if experiment_request.project.quality_control_manager:
-                models.Notification.objects.create(
-                    user=experiment_request.project.quality_control_manager,
-                    experiment_request=experiment_request,
-                    message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای شما ارسال شده است.'
-                )
-            
+            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+            from experiment.models import ExperimentResponse
+            temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
+            notified_users = set()
+            for role in temp_response.get_required_approval_roles():
+                for user in temp_response.get_approvers_for_role(role):
+                    if user and user.id not in notified_users:
+                        models.Notification.objects.create(
+                            user=user,
+                            experiment_request=experiment_request,
+                            message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
+                        )
+                        notified_users.add(user.id)
             messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
     else:
@@ -187,14 +191,17 @@ def experiment_response_create(request, pk):
             experiment_response.experiment_request = experiment_request
             experiment_response.user = request.user
             experiment_response.save()
-            
-            # ایجاد اعلان برای درخواست کننده
-            models.Notification.objects.create(
-                user=experiment_request.user,
-                experiment_request=experiment_request,
-                message=f'پاسخ آزمایش شما برای پروژه {experiment_request.project.name} ثبت شد.'
-            )
-            
+            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+            notified_users = set()
+            for role in experiment_response.get_required_approval_roles():
+                for user in experiment_response.get_approvers_for_role(role):
+                    if user and user.id not in notified_users:
+                        models.Notification.objects.create(
+                            user=user,
+                            experiment_request=experiment_request,
+                            message=f'یک پاسخ آزمایش جدید برای پروژه {experiment_request.project.name} ثبت شد.'
+                        )
+                        notified_users.add(user.id)
             messages.success(request, 'پاسخ آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
     else:
@@ -208,33 +215,30 @@ def experiment_response_create(request, pk):
 def experiment_approval_create(request, response_id):
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=response_id)
     if request.method == 'POST':
-        form = forms.ExperimentApprovalForm(request.POST)
+        post_data = request.POST.copy()
+        if not post_data.get('experiment_response'):
+            post_data['experiment_response'] = experiment_response.pk
+        form = forms.ExperimentApprovalForm(post_data)
         if form.is_valid():
             approval = form.save(commit=False)
             approval.experiment_response = experiment_response
             approval.approver = request.user
             approval.save()
-            
-            # ایجاد اعلان برای کاربران مرتبط
-            status_text = "تایید شد" if approval.status == models.ExperimentApproval.APPROVED else "رد شد"
-            models.Notification.objects.create(
-                user=experiment_response.experiment_request.user,
-                experiment_request=experiment_response.experiment_request,
-                message=f'پاسخ آزمایش شما توسط {request.user.get_full_name()} {status_text}.'
-            )
-            
-            # اعلان برای مدیر کنترل کیفیت
-            if experiment_response.experiment_request.project.quality_control_manager:
-                models.Notification.objects.create(
-                    user=experiment_response.experiment_request.project.quality_control_manager,
-                    experiment_request=experiment_response.experiment_request,
-                    message=f'پاسخ آزمایش برای پروژه {experiment_response.experiment_request.project.name} {status_text}.'
-            )
-            
+            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+            notified_users = set()
+            for role in experiment_response.get_required_approval_roles():
+                for user in experiment_response.get_approvers_for_role(role):
+                    if user and user.id not in notified_users:
+                        models.Notification.objects.create(
+                            user=user,
+                            experiment_request=experiment_response.experiment_request,
+                            message=f'یک تاییدیه جدید برای پاسخ آزمایش پروژه {experiment_response.experiment_request.project.name} ثبت شد.'
+                        )
+                        notified_users.add(user.id)
             messages.success(request, 'تایید آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=response_id)
     else:
-        form = forms.ExperimentApprovalForm()
+        form = forms.ExperimentApprovalForm(initial={'experiment_response': experiment_response.pk})
     return render(request, 'experiment/experiment_approval_form.html', {
         'form': form,
         'experiment_response': experiment_response
