@@ -170,6 +170,16 @@
                                     {% endif %}
                         </div>
 
+                                <div class="mb-3" id="mix-design-group" style="display:none;">
+                                    <label for="id_mix_design" class="form-label">طرح اختلاط</label>
+                                    {% render_field form.mix_design class="form-control" %}
+                                    {% if form.mix_design.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.mix_design.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
                                 <div class="mb-3">
                                     <label for="{{ form.request_file.id_for_label }}" class="form-label">فایل درخواست</label>
                                     {% render_field form.request_file class="form-control" %}
@@ -297,6 +307,19 @@ $(document).ready(function() {
             subtypeSelect.trigger('change');
         }
     });
+
+    // نمایش داینامیک طرح اختلاط
+    function toggleMixDesignField() {
+        var selectedTypes = $('#id_experiment_type').select2('data').map(function(item){ return item.text; });
+        if (selectedTypes.some(function(name){ return name.includes('آسفالت'); })) {
+            $('#mix-design-group').show();
+        } else {
+            $('#mix-design-group').hide();
+            $('#id_mix_design').val('');
+        }
+    }
+    $('#id_experiment_type').on('change', toggleMixDesignField);
+    toggleMixDesignField();
 
     // Trigger change events if values are pre-selected
     if ($('#id_project').val()) {

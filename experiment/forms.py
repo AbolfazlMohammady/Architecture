@@ -12,6 +12,11 @@ class ExperimentRequestForm(forms.ModelForm):
         label='تاریخ درخواست',
         required=True
     )
+    mix_design = forms.CharField(
+        label='طرح اختلاط',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
     
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -58,18 +63,46 @@ class ExperimentRequestForm(forms.ModelForm):
             except (ValueError, TypeError):
                 pass
     
+    def clean(self):
+        cleaned_data = super().clean()
+        experiment_types = cleaned_data.get('experiment_type')
+        # اگر هیچ نوع آزمایشی انتخاب نشده باشد، اعتبارسنجی انجام نمی‌شود
+        if not experiment_types:
+            return cleaned_data
+        # نام انواع آزمایش انتخاب شده را به صورت لیست رشته بگیر
+        type_names = [et.name for et in experiment_types]
+        # اگر مقاومت فشاری بتن و ملات انتخاب شده باشد، محل بتن‌ریزی اجباری شود
+        if any('مقاومت فشاری بتن' in name for name in type_names):
+            if not cleaned_data.get('concrete_place'):
+                self.add_error('concrete_place', 'انتخاب محل بتن‌ریزی الزامی است.')
+        # اگر آسفالت انتخاب شده باشد، طرح اختلاط اجباری شود
+        if any('آسفالت' in name for name in type_names):
+            if not cleaned_data.get('mix_design'):
+                self.add_error('mix_design', 'وارد کردن طرح اختلاط الزامی است.')
+        # اگر خاکریزی انتخاب شده باشد، حد تراکم اجباری شود
+        if any('خاکریزی' in name for name in type_names):
+            if not cleaned_data.get('target_density'):
+                self.add_error('target_density', 'وارد کردن حد تراکم الزامی است.')
+        # اگر ملات بنایی انتخاب شده باشد، حد مقاومت فشاری اجباری شود
+        if any('ملات بنایی' in name for name in type_names):
+            if not cleaned_data.get('target_strength'):
+                self.add_error('target_strength', 'وارد کردن حد مقاومت فشاری الزامی است.')
+        return cleaned_data
+    
     class Meta:
         model = models.ExperimentRequest
         fields = [
             'project', 'layer', 'experiment_type', 'experiment_subtype',
             'concrete_place', 'request_date', 'start_kilometer', 'end_kilometer',
-            'description', 'target_density', 'target_strength', 'request_file'
+            'description', 'target_density', 'target_strength', 'request_file',
+            'mix_design',
         ]
         widgets = {
             'request_date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
             'experiment_type': Select2MultipleWidget(),
             'experiment_subtype': Select2MultipleWidget(),
+            'mix_design': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 class ExperimentRequestApprovalForm(forms.ModelForm):
