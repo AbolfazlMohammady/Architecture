@@ -25,7 +25,7 @@
                                 <div class="form-group">
                                     <label>تاریخ پاسخ:</label>
                                     {# Applying form-control class to response_date field #}
-                                    {{ form.response_date|add_class:"form-control" }}
+                                    {{ form.response_date|add_class:"form-control jalali_date-input" }}
                                     {% if form.response_date.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.response_date.errors }}
@@ -74,12 +74,31 @@
 </div>
 {% endblock %}
 
+{% block head %}
+    {{ form.media }}
+    <link href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
 <script>
     $(document).ready(function() {
         $('.select2').select2({
             theme: 'bootstrap4',
             width: '100%'
+        });
+        // فعال‌سازی تقویم شمسی برای تاریخ پاسخ
+        $('.jalali_date-input').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: false,
+            autoClose: true,
+            position: 'auto',
+            calendar: {
+                persian: {
+                    locale: 'fa'
+                }
+            }
         });
     });
 </script>
