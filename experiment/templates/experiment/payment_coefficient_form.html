@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block title %}{% if form.instance.pk %}ویرایش ضریب پرداخت{% else %}افزودن ضریب پرداخت{% endif %}{% endblock %}
+
+{% block head %}
+    {{ form.media }}
+    <link href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" rel="stylesheet" />
+{% endblock %}
 
 {% block main %}
 <div class="container py-5">
@@ -76,7 +82,7 @@
                 <label for="{{ form.start_kilometer.id_for_label }}" class="form-label fw-bold">
                   <i class="bi bi-arrow-right text-primary me-2"></i>کیلومتراژ شروع *
                 </label>
-                {{ form.start_kilometer }}
+                {% render_field form.start_kilometer class="form-control" readonly="readonly" style="background:#f8f9fa;cursor:pointer;" %}
                 {% if form.start_kilometer.errors %}
                   <div class="invalid-feedback d-block">
                     {% for error in form.start_kilometer.errors %}
@@ -89,7 +95,7 @@
                 <label for="{{ form.end_kilometer.id_for_label }}" class="form-label fw-bold">
                   <i class="bi bi-arrow-left text-primary me-2"></i>کیلومتراژ پایان *
                 </label>
-                {{ form.end_kilometer }}
+                {% render_field form.end_kilometer class="form-control" readonly="readonly" style="background:#f8f9fa;cursor:pointer;" %}
                 {% if form.end_kilometer.errors %}
                   <div class="invalid-feedback d-block">
                     {% for error in form.end_kilometer.errors %}
@@ -105,7 +111,7 @@
                 <label for="{{ form.calculation_date.id_for_label }}" class="form-label fw-bold">
                   <i class="bi bi-calendar text-primary me-2"></i>تاریخ محاسبه *
                 </label>
-                {{ form.calculation_date }}
+                {% render_field form.calculation_date class="jalali_date-input form-control" %}
                 {% if form.calculation_date.errors %}
                   <div class="invalid-feedback d-block">
                     {% for error in form.calculation_date.errors %}
@@ -140,6 +146,27 @@
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Numeric Input (Copied from project/create-project.html) -->
+<div class="modal fade" id="numericInputModal" tabindex="-1" aria-labelledby="numericInputModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="numericInputModalLabel">ورود مقدار کیلومتر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="modalNumericInput" class="form-control form-control-lg text-center" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+        <div class="form-text mt-2" id="modalNumericInputHelp">مقدار را به کیلومتر وارد کنید.</div>
+        <div class="form-text text-primary mt-1" id="modalNumericInputPreview"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-primary" id="modalNumericInputConfirm">تایید</button>
       </div>
     </div>
   </div>
@@ -182,4 +209,105 @@
   box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
 }
 </style>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // فعال‌سازی تقویم شمسی برای تاریخ محاسبه
+        $('.jalali_date-input').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: false,
+            autoClose: true,
+            position: 'auto',
+            calendar: {
+                persian: {
+                    locale: 'fa'
+                }
+            }
+        });
+    });
+
+    // Modal logic for numeric fields (start_kilometer, end_kilometer)
+    let currentTargetInput = null;
+    let modal = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        modal = new bootstrap.Modal(document.getElementById('numericInputModal'));
+        const modalInput = document.getElementById('modalNumericInput');
+        const confirmBtn = document.getElementById('modalNumericInputConfirm');
+        const modalPreview = document.getElementById('modalNumericInputPreview');
+
+        // Attach click to relevant fields
+        ['id_start_kilometer', 'id_end_kilometer'].forEach(function(fieldId) {
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.readOnly = true;
+                el.style.background = '#f8f9fa';
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', function(e) {
+                    currentTargetInput = el;
+                    modalInput.value = el.value.replace(/,/g, '');
+                    modalInput.focus();
+                    modalPreview.innerText = modalInput.value ? 'نمایش: ' + formatIntWithCommas(modalInput.value) + ' متر' : '';
+                    modal.show();
+                });
+            }
+        });
+
+        // Format input as user types and show preview
+        modalInput.addEventListener('input', function() {
+            // فقط اعداد و ممیز اعشاری (نقطه یا کاما) مجاز باشد
+            modalInput.value = modalInput.value.replace(/[^\d.,]/g, '');
+            // فقط یک ممیز مجاز باشد
+            let parts = modalInput.value.split(/[.,]/);
+            if(parts.length > 2) {
+                modalInput.value = parts[0] + '.' + parts.slice(1).join('');
+            } else if(parts.length === 2) {
+                modalInput.value = parts[0] + '.' + parts[1];
+            }
+            // پیش‌نمایش با کاما و تبدیل به متر
+            let previewVal = modalInput.value.replace(/,/g, '');
+            if(previewVal) {
+                let num = parseFloat(previewVal);
+                if(!isNaN(num)) {
+                    modalPreview.innerText = 'نمایش: ' + (num * 1000).toLocaleString('en-US', {maximumFractionDigits: 3}) + ' متر';
+                } else {
+                    modalPreview.innerText = '';
+                }
+            } else {
+                modalPreview.innerText = '';
+            }
+        });
+
+        // Confirm button sets value
+        confirmBtn.addEventListener('click', function() {
+            if(currentTargetInput) {
+                // مقدار را به فرمت اعشاری استاندارد (نقطه) ذخیره کن
+                let val = modalInput.value.replace(/,/g, '.');
+                // فقط یک ممیز مجاز باشد
+                let parts = val.split('.');
+                if(parts.length > 2) {
+                    val = parts[0] + '.' + parts.slice(1).join('');
+                }
+                currentTargetInput.value = val;
+            }
+            modal.hide();
+        });
+
+        // Optional: Enter key confirms
+        modalInput.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') {
+                confirmBtn.click();
+            }
+        });
+    });
+
+    // Utility: format integer with thousand separators
+    function formatIntWithCommas(val) {
+        val = val.replace(/[^\d]/g, '');
+        return val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+</script>
+{% endblock %}
 {% endblock %} 
