@@ -34,14 +34,10 @@ class ExperimentRequestForm(forms.ModelForm):
         else:
             self.fields['layer'].queryset = ProjectLayer.objects.none()
         
-        self.fields['experiment_type'].widget = Select2Widget()
+        self.fields['experiment_type'].widget = Select2MultipleWidget()
         self.fields['experiment_type'].queryset = models.ExperimentType.objects.all()
-        
-        self.fields['experiment_subtype'].widget = Select2Widget()
-        if self.instance.pk and self.instance.experiment_type:
-            self.fields['experiment_subtype'].queryset = self.instance.experiment_type.experimentsubtype_set.all()
-        else:
-            self.fields['experiment_subtype'].queryset = models.ExperimentSubType.objects.none()
+        self.fields['experiment_subtype'].widget = Select2MultipleWidget()
+        self.fields['experiment_subtype'].queryset = models.ExperimentSubType.objects.all()
         
         self.fields['concrete_place'].widget = Select2Widget()
         self.fields['concrete_place'].queryset = models.ConcretePlace.objects.all()
@@ -72,6 +68,8 @@ class ExperimentRequestForm(forms.ModelForm):
         widgets = {
             'request_date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
+            'experiment_type': Select2MultipleWidget(),
+            'experiment_subtype': Select2MultipleWidget(),
         }
 
 class ExperimentRequestApprovalForm(forms.ModelForm):

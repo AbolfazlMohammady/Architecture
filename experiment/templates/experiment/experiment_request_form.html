@@ -62,7 +62,7 @@
 
                                 <div class="mb-3">
                                     <label for="{{ form.experiment_type.id_for_label }}" class="form-label">نوع آزمایش</label>
-                                    {% render_field form.experiment_type class="form-control select2" %}
+                                    {% render_field form.experiment_type class="form-control select2" multiple="multiple" %}
                                     {% if form.experiment_type.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.experiment_type.errors }}
@@ -72,7 +72,7 @@
 
                                 <div class="mb-3">
                                     <label for="{{ form.experiment_subtype.id_for_label }}" class="form-label">زیرگروه آزمایش</label>
-                                    {% render_field form.experiment_subtype class="form-control select2" %}
+                                    {% render_field form.experiment_subtype class="form-control select2" multiple="multiple" %}
                                     {% if form.experiment_subtype.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.experiment_subtype.errors }}
@@ -265,20 +265,19 @@ $(document).ready(function() {
 
     // Handle experiment type change
     $('#id_experiment_type').on('change', function() {
-        var experimentTypeId = $(this).val();
+        var experimentTypeIds = $(this).val(); // آرایه از مقادیر انتخاب شده
         var subtypeSelect = $('#id_experiment_subtype');
-        
-        if (experimentTypeId) {
+        if (experimentTypeIds && experimentTypeIds.length > 0) {
             $.ajax({
                 url: "{% url 'experiment:get_subtypes' %}",
+                traditional: true,
                 data: {
-                    'experiment_type_id': experimentTypeId // changed from 'experiment_type' to 'experiment_type_id'
+                    'experiment_type_id': experimentTypeIds
                 },
                 dataType: 'json',
                 success: function(data) {
                     subtypeSelect.empty();
-                    subtypeSelect.append($('<option></option>').attr('value', '').text('انتخاب کنید'));
-                    $.each(data.subtypes, function(index, item) { // changed data to data.subtypes
+                    $.each(data.subtypes, function(index, item) {
                         subtypeSelect.append(
                             $('<option></option>')
                                 .attr('value', item.id)
@@ -295,7 +294,6 @@ $(document).ready(function() {
             });
         } else {
             subtypeSelect.empty();
-            subtypeSelect.append($('<option></option>').attr('value', '').text('انتخاب کنید'));
             subtypeSelect.trigger('change');
         }
     });

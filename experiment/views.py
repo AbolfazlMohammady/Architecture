@@ -131,6 +131,7 @@ def experiment_request_create(request):
             experiment_request = form.save(commit=False)
             experiment_request.user = request.user
             experiment_request.save()
+            form.save_m2m()
             
             # ایجاد اعلان برای مدیر کنترل کیفیت
             if experiment_request.project.quality_control_manager:
@@ -705,10 +706,15 @@ def get_layers(request):
 @login_required
 @require_http_methods(["GET"])
 def get_subtypes(request):
-    """API برای دریافت زیرنوع‌های آزمایش"""
-    experiment_type_id = request.GET.get('experiment_type_id')
-    if experiment_type_id:
-        subtypes = models.ExperimentSubType.objects.filter(experiment_type_id=experiment_type_id)
+    """API برای دریافت زیرنوع‌های آزمایش (پشتیبانی از چندتایی)"""
+    experiment_type_ids = request.GET.getlist('experiment_type_id[]') or request.GET.getlist('experiment_type_id')
+    if not experiment_type_ids:
+        # اگر فقط یک مقدار به صورت رشته آمده باشد
+        single_id = request.GET.get('experiment_type_id')
+        if single_id:
+            experiment_type_ids = [single_id]
+    if experiment_type_ids:
+        subtypes = models.ExperimentSubType.objects.filter(experiment_type_id__in=experiment_type_ids).distinct()
         data = [{'id': subtype.id, 'name': subtype.name} for subtype in subtypes]
         return JsonResponse({'subtypes': data})
     return JsonResponse({'subtypes': []})

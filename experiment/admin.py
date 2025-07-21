@@ -26,11 +26,19 @@ class ConcretePlaceAdmin(MyModelAdminMixin):
 
 @admin.register(ExperimentRequest)
 class ExperimentRequestAdmin(MyModelAdminMixin):
-    list_display = ('project', 'layer', 'experiment_type', 'experiment_subtype', 'status', 'request_date', 'created_at')
+    list_display = ('project', 'layer', 'get_experiment_types', 'get_experiment_subtypes', 'status', 'request_date', 'created_at')
     list_filter = ('status', 'experiment_type', 'project')
     search_fields = ('project__name', 'layer__layer_type__name', 'experiment_type__name', 'experiment_subtype__name')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'order')
+
+    def get_experiment_types(self, obj):
+        return ", ".join([et.name for et in obj.experiment_type.all()])
+    get_experiment_types.short_description = 'انواع آزمایش'
+
+    def get_experiment_subtypes(self, obj):
+        return ", ".join([st.name for st in obj.experiment_subtype.all()])
+    get_experiment_subtypes.short_description = 'زیرنوع‌های آزمایش'
 
 @admin.register(ExperimentRequestApproval)
 class ExperimentRequestApprovalAdmin(MyModelAdminMixin):
