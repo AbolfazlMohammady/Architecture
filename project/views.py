@@ -198,8 +198,11 @@ class ProjectDashboardView(generic.DetailView):
         # دریافت درخواست‌های آزمایش
         from experiment.models import ExperimentRequest, ExperimentResponse, ExperimentApproval
         experiment_requests = ExperimentRequest.objects.filter(project=project).select_related(
-            'layer', 'experiment_type', 'experiment_subtype'
-        ).prefetch_related('experimentresponse_set__experimentapproval_set')
+            'layer'
+        ).prefetch_related(
+            'experiment_type', 'experiment_subtype',
+            'experimentresponse_set__experimentapproval_set'
+        )
         
         # گروه‌بندی درخواست‌ها بر اساس لایه و کیلومتراژ
         experiment_data = {}

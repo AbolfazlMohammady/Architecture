@@ -15,25 +15,28 @@
 {% block main %}
 <div class="container-fluid bg-light p-3 rounded rounded-2">
   <div class="row mb-3">
-    <div class="col-12">
+    <div class="col-12 d-flex justify-content-between align-items-center">
       <h3 class="text-primary">{{ project.name }}</h3>
-      <div class="row">
-        <div class="col-md-3">
-          <small class="text-muted">مسافت پروژه:</small>
-          <strong>{{ project.masafat|intcomma_float }} کیلومتر</strong>
-        </div>
-        <div class="col-md-3">
-          <small class="text-muted">کیلومتر شروع:</small>
-          <strong>{{ project.start_kilometer|intcomma_float }}</strong>
-        </div>
-        <div class="col-md-3">
-          <small class="text-muted">کیلومتر پایان:</small>
-          <strong>{{ project.end_kilometer|intcomma_float }}</strong>
-        </div>
-        <div class="col-md-3">
-          <small class="text-muted">عرض پروژه:</small>
-          <strong>{{ project.width|intcomma_float }} متر</strong>
-        </div>
+      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-success rounded-pill px-4">
+        <i class="bi bi-plus-circle me-2"></i>ثبت ضریب پرداخت
+      </a>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <small class="text-muted">مسافت پروژه:</small>
+        <strong>{{ project.masafat|intcomma_float }} کیلومتر</strong>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">کیلومتر شروع:</small>
+        <strong>{{ project.start_kilometer|intcomma_float }}</strong>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">کیلومتر پایان:</small>
+        <strong>{{ project.end_kilometer|intcomma_float }}</strong>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">عرض پروژه:</small>
+        <strong>{{ project.width|intcomma_float }} متر</strong>
       </div>
     </div>
   </div>
