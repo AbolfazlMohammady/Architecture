@@ -18,6 +18,19 @@ class ProjectForm(forms.ModelForm):
         label='تاریخ پایان',
         required=False
     )
+
+    lab_manager = forms.ModelChoiceField(
+        queryset=core_models.User.objects.all(),
+        label='مسئول آزمایشگاه',
+        required=False,
+        widget=Select2Widget(attrs={'class': 'form-select'})
+    )
+    hsse_manager = forms.ModelChoiceField(
+        queryset=core_models.User.objects.all(),
+        label='مسئول HSSE پروژه',
+        required=False,
+        widget=Select2Widget(attrs={'class': 'form-select'})
+    )
     
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -35,6 +48,13 @@ class ProjectForm(forms.ModelForm):
         self.fields["quality_control_manager"].widget = Select2Widget()
         self.fields["quality_control_manager"].queryset = core_models.User.objects.all()
         self.fields["quality_control_manager"].widget.attrs["class"] = "form-select"
+        
+        self.fields["lab_manager"].widget = Select2Widget()
+        self.fields["lab_manager"].queryset = core_models.User.objects.all()
+        self.fields["lab_manager"].widget.attrs["class"] = "form-select"
+        self.fields["hsse_manager"].widget = Select2Widget()
+        self.fields["hsse_manager"].queryset = core_models.User.objects.all()
+        self.fields["hsse_manager"].widget.attrs["class"] = "form-select"
         
         
         # self.fields["start_date"].widget.attrs["class"] = "form-control"
@@ -94,6 +114,8 @@ class ProjectForm(forms.ModelForm):
                   'project_manager',
                   'technical_manager',
                   'quality_control_manager',
+                  "lab_manager",
+                  "hsse_manager",
                   "project_experts",
                   "budget",
                   "masafat",

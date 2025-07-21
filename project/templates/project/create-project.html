@@ -176,7 +176,7 @@
                 </h3>
                 <div class="row g-3">
             {% for field in form %}
-                        {% if field.name == 'name' or field.name == 'project_manager' or field.name == 'technical_manager' or field.name == 'quality_control_manager' or field.name == 'project_experts' %}
+                        {% if field.name == 'name' or field.name == 'project_manager' or field.name == 'technical_manager' or field.name == 'quality_control_manager' or field.name == 'lab_manager' or field.name == 'hsse_manager' or field.name == 'project_experts' %}
                             <div class="col-md-4">
                 <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}

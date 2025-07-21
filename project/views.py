@@ -57,6 +57,19 @@ class CreateProjectView(generic.CreateView):
     def get_success_url(self):
         return reverse("create-project-layer", kwargs={'pk': self.object.pk})
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        project = self.object
+        lab_manager = form.cleaned_data.get('lab_manager')
+        hsse_manager = form.cleaned_data.get('hsse_manager')
+        # اگر مسئول آزمایشگاه انتخاب شده و جزو کارشناسان پروژه نیست اضافه کن
+        if lab_manager and lab_manager not in project.project_experts.all():
+            project.project_experts.add(lab_manager)
+        # اگر مسئول HSSE انتخاب شده و جزو کارشناسان پروژه نیست اضافه کن
+        if hsse_manager and hsse_manager not in project.project_experts.all():
+            project.project_experts.add(hsse_manager)
+        return response
+
 # class ExperimentRequestListView(generic.ListView):
 #     model = experiment_models.ExperimentRequest
 #     template_name = 'project/experiment-request-list.html'

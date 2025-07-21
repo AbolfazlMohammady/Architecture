@@ -61,6 +61,24 @@ class Project(models.Model):
                                     null=True, blank=True,
                                     validators=[validate_excel_file]
                                     )
+    lab_manager = models.ForeignKey(
+        core_models.User,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='lab_managed_projects',
+        verbose_name='مسئول آزمایشگاه',
+        help_text='مسئول آزمایشگاه پروژه را انتخاب کنید'
+    )
+    hsse_manager = models.ForeignKey(
+        core_models.User,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='hsse_managed_projects',
+        verbose_name='مسئول HSSE پروژه',
+        help_text='مسئول HSSE پروژه را انتخاب کنید'
+    )
 
     def __str__(self):
         return self.name
