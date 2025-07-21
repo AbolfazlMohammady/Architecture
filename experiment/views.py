@@ -180,7 +180,7 @@ def experiment_response_create(request, pk):
         if form.is_valid():
             experiment_response = form.save(commit=False)
             experiment_response.experiment_request = experiment_request
-            experiment_response.user = self.request.user
+            experiment_response.user = request.user
             experiment_response.save()
             
             # ایجاد اعلان برای درخواست کننده

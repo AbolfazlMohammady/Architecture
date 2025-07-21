@@ -63,7 +63,7 @@
                         <div class="row mt-4">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">ثبت پاسخ</button>
-                                <a href="{% url 'experiment:experiment_request_detail' form.experiment_request.value %}" class="btn btn-secondary">بازگشت</a>
+                                <a href="{% url 'experiment:experiment_request_detail' experiment_request.pk %}" class="btn btn-secondary">بازگشت</a>
                             </div>
                         </div>
                     </form>

@@ -125,6 +125,62 @@ class ExperimentResponse(models.Model):
     def __str__(self):
         return f"{self.experiment_request.project.name} - {self.experiment_request.order}"
 
+    def get_required_approval_roles(self):
+        """لیست نقش‌های کلیدی که باید تاییدیه بدهند (مطابق داکیومنت)"""
+        return [
+            'نماینده پیمانکار',
+            'نقشه بردار پیمانکار',
+            'نقشه بردار نظارت',
+            'نظارت پروژه',
+            'مسئول آزمایشگاه',
+            'مسئول HSSE پروژه',
+        ]
+
+    def get_approvers_for_role(self, role_name):
+        """بر اساس نقش، کاربر(ان) مرتبط با پروژه را برگردان"""
+        project = self.experiment_request.project
+        # اینجا باید بر اساس ساختار پروژه و نقش‌ها، کاربر را پیدا کنیم
+        # نمونه: اگر نقش 'مسئول آزمایشگاه' باشد، از پروژه یا نقش‌های کاربر پیدا کن
+        # اینجا فقط نمونه ساده (نیاز به تکمیل بر اساس مدل پروژه واقعی)
+        if role_name == 'نماینده پیمانکار':
+            return [project.project_manager] if project.project_manager else []
+        if role_name == 'نقشه بردار پیمانکار':
+            return [project.technical_manager] if project.technical_manager else []
+        if role_name == 'نقشه بردار نظارت':
+            return [project.quality_control_manager] if project.quality_control_manager else []
+        if role_name == 'نظارت پروژه':
+            return [project.quality_control_manager] if project.quality_control_manager else []
+        if role_name == 'مسئول آزمایشگاه':
+            # فرض: اولین کاربر با نقش مسئول آزمایشگاه در پروژه
+            return [u for u in project.project_experts.all() if u.roles.filter(name='مسئول آزمایشگاه').exists()]
+        if role_name == 'مسئول HSSE پروژه':
+            return [u for u in project.project_experts.all() if u.roles.filter(name='مسئول HSSE پروژه').exists()]
+        return []
+
+    def get_approval_status_by_role(self):
+        """وضعیت تایید هر نقش را به صورت دیکشنری برمی‌گرداند"""
+        status = {}
+        for role in self.get_required_approval_roles():
+            approvers = self.get_approvers_for_role(role)
+            if not approvers:
+                status[role] = 'تعریف نشده'
+                continue
+            approvals = self.experimentapproval_set.filter(approver__in=approvers)
+            if not approvals.exists():
+                status[role] = 'در انتظار'
+            elif approvals.filter(status=ExperimentApproval.REJECTED).exists():
+                status[role] = 'رد شده'
+            elif approvals.filter(status=ExperimentApproval.APPROVED).count() == len(approvers):
+                status[role] = 'تایید شده'
+            else:
+                status[role] = 'در انتظار'
+        return status
+
+    def is_fully_approved(self):
+        """آیا همه نقش‌های کلیدی تایید کرده‌اند؟"""
+        status = self.get_approval_status_by_role()
+        return all(v == 'تایید شده' for v in status.values() if v != 'تعریف نشده')
+
 class ExperimentApproval(models.Model):
     APPROVED = 1
     REJECTED = 2

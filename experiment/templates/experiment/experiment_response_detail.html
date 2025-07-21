@@ -95,6 +95,35 @@
                     <div class="row mt-4">
                         <div class="col-12">
                             <h4>تاییدیه‌های پاسخ</h4>
+                            <div class="mb-3">
+                                <h5>وضعیت تاییدیه نقش‌های کلیدی پروژه</h5>
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>نقش</th>
+                                            <th>وضعیت تایید</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for role, status in experiment_response.get_approval_status_by_role.items %}
+                                        <tr>
+                                            <td>{{ role }}</td>
+                                            <td>
+                                                {% if status == 'تایید شده' %}
+                                                    <span class="badge bg-success">تایید شده</span>
+                                                {% elif status == 'رد شده' %}
+                                                    <span class="badge bg-danger">رد شده</span>
+                                                {% elif status == 'در انتظار' %}
+                                                    <span class="badge bg-warning text-dark">در انتظار</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                             {% if experiment_response.experimentapproval_set.all %}
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover">
