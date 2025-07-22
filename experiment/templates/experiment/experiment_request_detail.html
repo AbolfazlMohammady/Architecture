@@ -22,7 +22,7 @@
                                 </tr>
                                 <tr>
                                     <th>لایه</th>
-                                    <td>{% if experiment_request.layer %}{{ experiment_request.layer.name }}{% else %}-{% endif %}</td>
+                                    <td>{% if experiment_request.layer %}{{ experiment_request.layer.layer_type.name }} ({{ experiment_request.layer.thickness_cm }} سانتی‌متر، ترتیب: {{ experiment_request.layer.order_from_top }}){% else %}-{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <th>نوع آزمایش</th>

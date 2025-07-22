@@ -90,7 +90,15 @@
                                         -
                                       {% endif %}
                                     </td>
-                                    <td>{{ request.experiment_type.name }}</td>
+                                    <td>
+                                        {% for t in request.experiment_type.all %}
+                                            <span class="badge bg-primary">{{ t.name }}</span>{% if not forloop.last %}، {% endif %}
+                                        {% empty %}{% endfor %}
+                                        <br>
+                                        {% for st in request.experiment_subtype.all %}
+                                            <span class="badge bg-info">{{ st.name }}</span>{% if not forloop.last %}، {% endif %}
+                                        {% empty %}{% endfor %}
+                                    </td>
                                     <td>{{ request.request_date|date:"Y/m/d" }}</td>
                                     <td>
                                         {% if request.status == 0 %}
