@@ -5,6 +5,7 @@ from django_jalali.forms import jDateField
 from project.models import Project, ProjectLayer
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
+from django.forms import inlineformset_factory
 
 class ExperimentRequestForm(forms.ModelForm):
     request_date = JalaliDateField(
@@ -261,3 +262,41 @@ class AsphaltTestForm(forms.ModelForm):
             'stability': forms.NumberInput(attrs={'class': 'form-control'}),
             'flow': forms.NumberInput(attrs={'class': 'form-control'}),
         } 
+
+class ExperimentResponseKilometerForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentResponseKilometer
+        fields = ['start_kilometer', 'end_kilometer']
+
+class ExperimentResponseFileForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentResponseFile
+        fields = ['file']
+
+ExperimentResponseKilometerFormSet = inlineformset_factory(
+    models.ExperimentResponse, models.ExperimentResponseKilometer,
+    form=ExperimentResponseKilometerForm, extra=1, can_delete=True
+)
+ExperimentResponseFileFormSet = inlineformset_factory(
+    models.ExperimentResponse, models.ExperimentResponseFile,
+    form=ExperimentResponseFileForm, extra=1, can_delete=True
+) 
+
+class ExperimentRequestKilometerForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentRequestKilometer
+        fields = ['start_kilometer', 'end_kilometer']
+
+class ExperimentRequestFileForm(forms.ModelForm):
+    class Meta:
+        model = models.ExperimentRequestFile
+        fields = ['file']
+
+ExperimentRequestKilometerFormSet = inlineformset_factory(
+    models.ExperimentRequest, models.ExperimentRequestKilometer,
+    form=ExperimentRequestKilometerForm, extra=1, can_delete=True
+)
+ExperimentRequestFileFormSet = inlineformset_factory(
+    models.ExperimentRequest, models.ExperimentRequestFile,
+    form=ExperimentRequestFileForm, extra=1, can_delete=True
+) 

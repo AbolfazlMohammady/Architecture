@@ -10,6 +10,12 @@ from . import models, forms
 from project.models import ProjectLayer
 from django.contrib import messages
 from django.db.models import Q, Avg, Max, Min
+from .forms import (
+    ExperimentResponseKilometerFormSet, 
+    ExperimentResponseFileFormSet,
+    ExperimentRequestKilometerFormSet,
+    ExperimentRequestFileFormSet
+)
 
 # تنظیم لاگر
 logger = logging.getLogger(__name__)
@@ -127,30 +133,32 @@ def experiment_request_list(request):
 def experiment_request_create(request):
     if request.method == 'POST':
         form = forms.ExperimentRequestForm(request.POST, request.FILES, user=request.user)
-        if form.is_valid():
+        kilometer_formset = ExperimentRequestKilometerFormSet(request.POST, prefix='kilometer')
+        file_formset = ExperimentRequestFileFormSet(request.POST, request.FILES, prefix='file')
+        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
             experiment_request = form.save(commit=False)
             experiment_request.user = request.user
             experiment_request.save()
             form.save_m2m()
-            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
-            from experiment.models import ExperimentResponse
-            temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
-            notified_users = set()
-            for role in temp_response.get_required_approval_roles():
-                for user in temp_response.get_approvers_for_role(role):
-                    if user and user.id not in notified_users:
-                        models.Notification.objects.create(
-                            user=user,
-                            experiment_request=experiment_request,
-                            message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
-                        )
-                        notified_users.add(user.id)
+            kilometer_formset.instance = experiment_request
+            kilometer_formset.save()
+            file_formset.instance = experiment_request
+            file_formset.save()
             messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
+        else:
+            print('Form errors:', form.errors)
+            print('Kilometer formset errors:', kilometer_formset.errors)
+            print('File formset errors:', file_formset.errors)
     else:
         form = forms.ExperimentRequestForm(user=request.user)
-    
-    return render(request, 'experiment/experiment_request_form.html', {'form': form})
+        kilometer_formset = ExperimentRequestKilometerFormSet(prefix='kilometer')
+        file_formset = ExperimentRequestFileFormSet(prefix='file')
+    return render(request, 'experiment/experiment_request_form.html', {
+        'form': form,
+        'kilometer_formset': kilometer_formset,
+        'file_formset': file_formset,
+    })
 
 @login_required
 def experiment_request_edit(request, pk):
@@ -169,11 +177,21 @@ def experiment_request_edit(request, pk):
 
 @login_required
 def experiment_request_detail(request, pk):
+    logger = logging.getLogger(__name__)
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
     experiment_responses = models.ExperimentResponse.objects.filter(experiment_request=experiment_request)
+    kilometer_ranges = experiment_request.kilometer_ranges.all()
+    request_files = experiment_request.files.all()
+    kilometer_ranges_list = list(kilometer_ranges.values('start_kilometer', 'end_kilometer'))
+    request_files_list = list(request_files.values('file'))
+    logger.info(f"[experiment_request_detail] pk={pk}, kilometer_ranges={kilometer_ranges.count()}, request_files={request_files.count()}")
     return render(request, 'experiment/experiment_request_detail.html', {
         'experiment_request': experiment_request,
-        'experiment_responses': experiment_responses
+        'experiment_responses': experiment_responses,
+        'kilometer_ranges': kilometer_ranges,
+        'request_files': request_files,
+        'kilometer_ranges_list': kilometer_ranges_list,
+        'request_files_list': request_files_list,
     })
 
 @login_required
@@ -186,11 +204,17 @@ def experiment_response_create(request, pk):
         return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES)
-        if form.is_valid():
+        kilometer_formset = ExperimentResponseKilometerFormSet(request.POST, prefix='kilometer')
+        file_formset = ExperimentResponseFileFormSet(request.POST, request.FILES, prefix='file')
+        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
             experiment_response = form.save(commit=False)
             experiment_response.experiment_request = experiment_request
             experiment_response.user = request.user
             experiment_response.save()
+            kilometer_formset.instance = experiment_response
+            kilometer_formset.save()
+            file_formset.instance = experiment_response
+            file_formset.save()
             # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
             notified_users = set()
             for role in experiment_response.get_required_approval_roles():
@@ -204,10 +228,21 @@ def experiment_response_create(request, pk):
                         notified_users.add(user.id)
             messages.success(request, 'پاسخ آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
+        else:
+            print('Form errors:', form.errors)
+            print('Form non_field_errors:', form.non_field_errors())
+            print('Kilometer formset errors:', kilometer_formset.errors)
+            print('Kilometer formset non_form_errors:', kilometer_formset.non_form_errors())
+            print('File formset errors:', file_formset.errors)
+            print('File formset non_form_errors:', file_formset.non_form_errors())
     else:
         form = forms.ExperimentResponseForm()
+        kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer')
+        file_formset = ExperimentResponseFileFormSet(prefix='file')
     return render(request, 'experiment/experiment_response_form.html', {
         'form': form,
+        'kilometer_formset': kilometer_formset,
+        'file_formset': file_formset,
         'experiment_request': experiment_request
     })
 

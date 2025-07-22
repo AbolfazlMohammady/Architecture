@@ -22,15 +22,23 @@
                                 </tr>
                                 <tr>
                                     <th>لایه</th>
-                                    <td>{{ experiment_request.layer.name|default:"-" }}</td>
+                                    <td>{% if experiment_request.layer %}{{ experiment_request.layer.name }}{% else %}-{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <th>نوع آزمایش</th>
-                                    <td>{{ experiment_request.experiment_type.name }}</td>
+                                    <td>
+                                        {% for t in experiment_request.experiment_type.all %}
+                                            <span class="badge bg-primary">{{ t.name }}</span>{% if not forloop.last %}، {% endif %}
+                                        {% empty %}-{% endfor %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>زیرگروه آزمایش</th>
-                                    <td>{{ experiment_request.experiment_subtype.name|default:"-" }}</td>
+                                    <td>
+                                        {% for st in experiment_request.experiment_subtype.all %}
+                                            <span class="badge bg-info">{{ st.name }}</span>{% if not forloop.last %}، {% endif %}
+                                        {% empty %}-{% endfor %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>محل بتن‌ریزی</th>
@@ -41,8 +49,16 @@
                                     <td>{{ experiment_request.request_date|date:"Y/m/d" }}</td>
                                 </tr>
                                 <tr>
-                                    <th>کیلومتراژ</th>
-                                    <td>{{ experiment_request.start_kilometer }} تا {{ experiment_request.end_kilometer }}</td>
+                                    <th>بازه‌های کیلومتراژ</th>
+                                    <td>
+                                        {% if kilometer_ranges and kilometer_ranges.count %}
+                                            <div class="d-flex flex-wrap gap-2">
+                                                {% for km in kilometer_ranges %}
+                                                    <span class="badge bg-success">{{ km.start_kilometer }} تا {{ km.end_kilometer }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}-{% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>حد تراکم</th>
@@ -58,11 +74,15 @@
                             <h4>توضیحات</h4>
                             <p>{{ experiment_request.description|linebreaks|default:"-" }}</p>
                             
-                            {% if experiment_request.request_file %}
-                            <h4 class="mt-4">فایل درخواست</h4>
-                            <a href="{{ experiment_request.request_file.url }}" class="btn btn-primary" target="_blank" download>
-                                <i class="fas fa-download"></i> دانلود فایل
-                            </a>
+                            {% if request_files and request_files.count %}
+                            <h4 class="mt-4">فایل‌های درخواست</h4>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for f in request_files %}
+                                    <a href="{{ f.file.url }}" class="btn btn-outline-primary btn-sm" target="_blank" download>
+                                        <i class="fas fa-download"></i> دانلود فایل
+                                    </a>
+                                {% endfor %}
+                            </div>
                             {% endif %}
                         </div>
                     </div>
@@ -191,4 +211,23 @@
         </div>
     </div>
 </div>
+{% endblock %} 
+
+{% block extra_js %}
+<script>
+    // متغیرهای دیباگ از سرور
+    const DEBUG_KILOMETER_RANGES = {{ kilometer_ranges|length }};
+    const DEBUG_REQUEST_FILES = {{ request_files|length }};
+    console.log('kilometer_ranges count:', DEBUG_KILOMETER_RANGES);
+    console.log('request_files count:', DEBUG_REQUEST_FILES);
+    // اگر خواستی جزئیات هر کدام را هم ببینی:
+    try {
+        const km_json = JSON.parse(document.getElementById('km_json').textContent);
+        const files_json = JSON.parse(document.getElementById('files_json').textContent);
+        console.log('kilometer_ranges:', km_json);
+        console.log('request_files:', files_json);
+    } catch (e) { console.log('No JSON debug data'); }
+</script>
+{{ kilometer_ranges_list|json_script:"km_json" }}
+{{ request_files_list|json_script:"files_json" }}
 {% endblock %} 

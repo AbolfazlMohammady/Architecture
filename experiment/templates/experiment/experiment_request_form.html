@@ -199,6 +199,85 @@
                             </div>
                         </div>
 
+                <!-- فرم‌ست کیلومتراژ -->
+                <div class="card mb-4 shadow kilometer-formset-card">
+                    <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
+                        <span><i class="fas fa-ruler-horizontal me-1"></i> بازه‌های کیلومتراژ</span>
+                        <button type="button" class="btn btn-light btn-sm fw-bold" id="add-kilometer"><i class="fas fa-plus-circle me-1 text-success"></i>افزودن بازه</button>
+                    </div>
+                    <div class="card-body pt-3 pb-2" id="kilometer-formset">
+                        {{ kilometer_formset.management_form }}
+                        {% for form in kilometer_formset %}
+                            <div class="row kilometer-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">
+                                <div class="col-5">
+                                    <label class="form-label small">شروع (کیلومتر)</label>
+                                    {% render_field form.start_kilometer class="form-control" placeholder="شروع" %}
+                                </div>
+                                <div class="col-5">
+                                    <label class="form-label small">پایان (کیلومتر)</label>
+                                    {% render_field form.end_kilometer class="form-control" placeholder="پایان" %}
+                                </div>
+                                <div class="col-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger remove-kilometer w-100"><i class="fas fa-trash"></i></button>
+                                </div>
+                                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-2 pb-2">
+                        <div class="form-text text-muted">مثال: 2.000 تا 2.500</div>
+                    </div>
+                </div>
+                <!-- template مخفی برای افزودن بازه جدید -->
+                <template id="kilometer-form-template">
+                    <div class="row kilometer-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">
+                        <div class="col-5">
+                            <label class="form-label small">شروع (کیلومتر)</label>
+                            <input type="text" name="__prefix__-start_kilometer" class="form-control" placeholder="شروع" />
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small">پایان (کیلومتر)</label>
+                            <input type="text" name="__prefix__-end_kilometer" class="form-control" placeholder="پایان" />
+                        </div>
+                        <div class="col-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-danger remove-kilometer w-100"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </template>
+                <!-- فرم‌ست فایل‌ها -->
+                <div class="card mb-4 shadow file-formset-card">
+                    <div class="card-header bg-info text-white d-flex align-items-center justify-content-between">
+                        <span><i class="fas fa-paperclip me-1"></i> فایل‌های درخواست</span>
+                        <button type="button" class="btn btn-light btn-sm fw-bold" id="add-file"><i class="fas fa-plus-circle me-1 text-info"></i>افزودن فایل</button>
+                    </div>
+                    <div class="card-body pt-3 pb-2" id="file-formset">
+                        {{ file_formset.management_form }}
+                        {% for form in file_formset %}
+                            <div class="row file-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">
+                                <div class="col-10">
+                                    <label class="form-label small">فایل</label>
+                                    {% render_field form.file class="form-control" %}
+                                </div>
+                                <div class="col-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger remove-file w-100"><i class="fas fa-trash"></i></button>
+                                </div>
+                                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <template id="file-form-template">
+                    <div class="row file-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">
+                        <div class="col-10">
+                            <label class="form-label small">فایل</label>
+                            <input type="file" name="__prefix__-file" class="form-control" />
+                        </div>
+                        <div class="col-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-danger remove-file w-100"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </template>
+
                 <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-save me-2"></i>
@@ -223,7 +302,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{{ block.super }}
 <script>
 $(document).ready(function() {
     $('.select2').select2({
@@ -328,6 +407,58 @@ $(document).ready(function() {
     if ($('#id_experiment_type').val()) {
         $('#id_experiment_type').trigger('change');
     }
+
+    // کیلومتراژ
+    function updateKilometerFormsetIndexes() {
+        let forms = $('#kilometer-formset .kilometer-form-row');
+        $('#id_kilometer-TOTAL_FORMS').val(forms.length);
+        forms.each(function(i) {
+            $(this).find('input, select').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    let newName = name.replace(/kilometer-\d+-/, 'kilometer-' + i + '-');
+                    $(this).attr('name', newName);
+                    $(this).attr('id', 'id_' + newName);
+                }
+            });
+        });
+    }
+    $('#add-kilometer').click(function() {
+        let total = $('#kilometer-formset .kilometer-form-row').length;
+        let template = $('#kilometer-form-template').html().replace(/__prefix__/g, 'kilometer-' + total);
+        $('#kilometer-formset').append(template);
+        updateKilometerFormsetIndexes();
+    });
+    $('#kilometer-formset').on('click', '.remove-kilometer', function() {
+        $(this).closest('.kilometer-form-row').remove();
+        updateKilometerFormsetIndexes();
+    });
+
+    // فایل
+    function updateFileFormsetIndexes() {
+        let forms = $('#file-formset .file-form-row');
+        $('#id_file-TOTAL_FORMS').val(forms.length);
+        forms.each(function(i) {
+            $(this).find('input, select').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    let newName = name.replace(/file-\d+-/, 'file-' + i + '-');
+                    $(this).attr('name', newName);
+                    $(this).attr('id', 'id_' + newName);
+                }
+            });
+        });
+    }
+    $('#add-file').click(function() {
+        let total = $('#file-formset .file-form-row').length;
+        let template = $('#file-form-template').html().replace(/__prefix__/g, 'file-' + total);
+        $('#file-formset').append(template);
+        updateFileFormsetIndexes();
+    });
+    $('#file-formset').on('click', '.remove-file', function() {
+        $(this).closest('.file-form-row').remove();
+        updateFileFormsetIndexes();
+    });
 });
 </script>
 {% endblock %}

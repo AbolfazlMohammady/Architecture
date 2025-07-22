@@ -1,9 +1,17 @@
 from django.contrib import admin
-from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient
+from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient, ExperimentRequestKilometer, ExperimentRequestFile
 from utils import baseAdminModel
 
 class MyModelAdminMixin(admin.ModelAdmin, baseAdminModel.BtnDeleteSelected):
     pass
+
+class ExperimentRequestKilometerInline(admin.TabularInline):
+    model = ExperimentRequestKilometer
+    extra = 1
+
+class ExperimentRequestFileInline(admin.TabularInline):
+    model = ExperimentRequestFile
+    extra = 1
 
 @admin.register(ExperimentType)
 class ExperimentTypeAdmin(MyModelAdminMixin):
@@ -26,6 +34,7 @@ class ConcretePlaceAdmin(MyModelAdminMixin):
 
 @admin.register(ExperimentRequest)
 class ExperimentRequestAdmin(MyModelAdminMixin):
+    inlines = [ExperimentRequestKilometerInline, ExperimentRequestFileInline]
     list_display = ('project', 'layer', 'get_experiment_types', 'get_experiment_subtypes', 'status', 'request_date', 'created_at')
     list_filter = ('status', 'experiment_type', 'project')
     search_fields = ('project__name', 'layer__layer_type__name', 'experiment_type__name', 'experiment_subtype__name')
@@ -74,3 +83,6 @@ class PaymentCoefficientAdmin(MyModelAdminMixin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('project')
+
+admin.site.register(ExperimentRequestKilometer)
+admin.site.register(ExperimentRequestFile)

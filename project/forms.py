@@ -18,7 +18,6 @@ class ProjectForm(forms.ModelForm):
         label='تاریخ پایان',
         required=False
     )
-
     lab_manager = forms.ModelChoiceField(
         queryset=core_models.User.objects.all(),
         label='مسئول آزمایشگاه',

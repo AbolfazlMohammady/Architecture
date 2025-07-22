@@ -283,3 +283,41 @@ class AsphaltTest(models.Model):
         verbose_name = "آزمایش آسفالت"
         verbose_name_plural = "آزمایشات آسفالت"
         ordering = ['-created_at']
+
+class ExperimentResponseKilometer(models.Model):
+    experiment_response = models.ForeignKey('ExperimentResponse', on_delete=models.CASCADE, related_name='kilometer_ranges')
+    start_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ شروع")
+    end_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ پایان")
+
+    def __str__(self):
+        return f"{self.start_kilometer} تا {self.end_kilometer}"
+
+class ExperimentResponseFile(models.Model):
+    experiment_response = models.ForeignKey('ExperimentResponse', on_delete=models.CASCADE, related_name='files')
+    file = models.FileField(upload_to='experiment_responses/', verbose_name="فایل پاسخ")
+
+    def __str__(self):
+        return f"فایل {self.file.name}"
+
+class ExperimentRequestKilometer(models.Model):
+    experiment_request = models.ForeignKey('ExperimentRequest', on_delete=models.CASCADE, related_name='kilometer_ranges')
+    start_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ شروع")
+    end_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ پایان")
+
+    def __str__(self):
+        return f"{self.start_kilometer} تا {self.end_kilometer}"
+
+    class Meta:
+        verbose_name = "بازه کیلومتراژ درخواست"
+        verbose_name_plural = "بازه‌های کیلومتراژ درخواست"
+
+class ExperimentRequestFile(models.Model):
+    experiment_request = models.ForeignKey('ExperimentRequest', on_delete=models.CASCADE, related_name='files')
+    file = models.FileField(upload_to='experiment_requests/', verbose_name="فایل درخواست")
+
+    def __str__(self):
+        return f"فایل {self.file.name}"
+
+    class Meta:
+        verbose_name = "فایل درخواست آزمایش"
+        verbose_name_plural = "فایل‌های درخواست آزمایش"
