@@ -144,6 +144,19 @@ def experiment_request_create(request):
             kilometer_formset.save()
             file_formset.instance = experiment_request
             file_formset.save()
+            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+            from experiment.models import ExperimentResponse
+            temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
+            notified_users = set()
+            for role in temp_response.get_required_approval_roles():
+                for user in temp_response.get_approvers_for_role(role):
+                    if user and user.id not in notified_users:
+                        models.Notification.objects.create(
+                            user=user,
+                            experiment_request=experiment_request,
+                            message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
+                        )
+                        notified_users.add(user.id)
             messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_list')
         else:
@@ -222,8 +235,8 @@ def experiment_response_create(request, pk):
                     if user and user.id not in notified_users:
                         models.Notification.objects.create(
                             user=user,
-                            experiment_request=experiment_request,
-                            message=f'یک پاسخ آزمایش جدید برای پروژه {experiment_request.project.name} ثبت شد.'
+                            experiment_request=experiment_response.experiment_request,
+                            message=f'یک تاییدیه جدید برای پاسخ آزمایش پروژه {experiment_response.experiment_request.project.name} ثبت شد.'
                         )
                         notified_users.add(user.id)
             messages.success(request, 'پاسخ آزمایش با موفقیت ثبت شد.')
