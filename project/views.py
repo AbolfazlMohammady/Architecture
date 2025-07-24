@@ -23,8 +23,11 @@ class ProjectListView(generic.ListView):
     
     def get_queryset(self):
         user = self.request.user
-        
-        # فیلتر پروژه‌ها بر اساس حضور کاربر در سمت‌های مختلف
+        user_roles = set(user.roles.values_list('name', flat=True))
+        global_roles = set(['ادمین', 'مدیر عامل موسسه', 'مدیر فنی موسسه', 'مدیر کنترل کیفی موسسه', 'کارشناس موسسه'])
+        if user_roles & global_roles:
+            return super().get_queryset()
+        # فقط پروژه‌های مرتبط با کاربر
         return super().get_queryset().filter(
             Q(project_manager=user) | 
             Q(technical_manager=user) | 

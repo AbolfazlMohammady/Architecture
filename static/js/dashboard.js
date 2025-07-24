@@ -293,7 +293,7 @@ export class ProjectDashboard {
             ctx.fillStyle = '#222';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(layer.name, xLabel, yLabel);
+            // ctx.fillText(layer.name, xLabel, yLabel); // حذف نمایش اسم لایه
             ctx.restore();
         }
         for (let i = 0; i < profileData.road_points.length - 1; i++) {
@@ -348,6 +348,15 @@ export class ProjectDashboard {
                             const height = ((yBottom1 + yBottom2) / 2) - yTop;
                             ctx.fillStyle = fillColor;
                             ctx.fillRect(xr1, yTop, xr2 - xr1, height);
+                            // --- اضافه کردن tooltipData برای لایه ---
+                            if (!this.tooltipData) this.tooltipData = [];
+                            this.tooltipData.push({
+                                x: (xr1 + xr2) / 2,
+                                y: yTop + height / 2,
+                                width: Math.abs(xr2 - xr1),
+                                height: Math.abs(height),
+                                data: { type: 'layer', layer }
+                            });
                         }
                         ctx.globalAlpha = 1;
                         ctx.lineWidth = 1.2;
@@ -734,13 +743,14 @@ export class ProjectDashboard {
             }
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
-            // --- موقعیت‌دهی دقیق تولتیپ کنار موس نسبت به کل صفحه ---
+            // --- موقعیت‌دهی دقیق تولتیپ زیر موس و زیر علامت + ---
             const canvas = document.getElementById('mainCanvas');
             const rect = canvas.getBoundingClientRect();
-            const pageX = rect.left + x + window.scrollX;
-            const pageY = rect.top + y + window.scrollY;
-            tooltip.style.left = pageX + 'px';
-            tooltip.style.top = pageY + 'px';
+            const pageX = rect.left + hoveredItem.x + window.scrollX;
+            const pageY = rect.top + hoveredItem.y + window.scrollY;
+            // تولتیپ را دقیقاً زیر نقطه hover و علامت + قرار بده
+            tooltip.style.left = (pageX - tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = (pageY + 16) + 'px'; // 16px پایین‌تر از مرکز علامت +
             tooltip.style.background = 'rgba(255,255,255,0.7)';
             tooltip.style.backdropFilter = 'blur(8px)';
             tooltip.style.borderRadius = '8px';
@@ -749,7 +759,6 @@ export class ProjectDashboard {
             tooltip.style.padding = '10px 14px';
             tooltip.style.fontSize = '13px';
             tooltip.style.pointerEvents = 'none';
-            tooltip.style.zIndex = 2000;
         } else {
             tooltip.style.display = 'none';
         }
