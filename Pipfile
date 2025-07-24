@@ -9,7 +9,6 @@ crispy-bootstrap5 = "==2025.6"
 django = "==5.0.6"
 django-appconf = "==1.1.0"
 django-crispy-forms = "==2.4"
- = "==7.4.0"
 django-jalali-date = "==2.0.0"
 django-select2 = "==8.4.0"
 django-widget-tweaks = "==1.5.0"
@@ -24,8 +23,9 @@ six = "==1.17.0"
 sqlparse = "==0.5.3"
 tzdata = "==2025.2"
 python-dotenv = "*"
-openpyxl = "*"
 django-grappelli = "*"
+xlrd = "*"
+openpyxl = "*"
 
 [dev-packages]
 

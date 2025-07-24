@@ -6,6 +6,8 @@ from django.urls import reverse_lazy,reverse
 from . import forms as project_forms
 from django.forms.models import model_to_dict
 import pandas as pd
+import re
+import math
 # Create your views here.
 
 class ProjectDetailView(generic.DetailView):
@@ -294,35 +296,107 @@ class ProjectDashboardView(generic.DetailView):
         return context
 
     def read_file(self, profile_file):
+        import re
+        import pandas as pd
+        import math
         if not profile_file:
             return {'land_points': [], 'road_points': [], 'error': 'فایل پروفیل موجود نیست'}
         try:
             df = pd.read_excel(profile_file, engine='openpyxl')
-            # تشخیص نام ستون‌ها
-            columns = [col.lower() for col in df.columns]
-            # حالت ۱: فایل با ستون‌های استاندارد (station, cutFill, graph)
-            if 'station' in columns and 'cutfill' in columns:
-                x = df[df.columns[columns.index('station')]].astype(float) / 1000  # تبدیل به کیلومتر
-                y1 = df[df.columns[columns.index('cutfill')]].astype(float)
-                land_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y1)]
-                # اگر ستون ارتفاع دوم (مثلاً graph) وجود داشت و غیر صفر بود
-                if 'graph' in columns and df[df.columns[columns.index('graph')]].abs().sum() > 0:
-                    y2 = df[df.columns[columns.index('graph')]].astype(float)
-                    road_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y2)]
-                else:
-                    road_points = []
-            # حالت ۲: فایل با سه ستون عددی (بدون نام خاص)
+            columns = [col.lower().strip() for col in df.columns]
+
+            def parse_station(val):
+                if pd.isna(val):
+                    return None
+                val = str(val).replace(',', '').strip()
+                # پشتیبانی از فرمت 6+300.00
+                match = re.match(r"(\d+)\+(\d+\.?\d*)", val)
+                if match:
+                    return float(match.group(1)) * 1000 + float(match.group(2))
+                try:
+                    return float(val)
+                except Exception:
+                    return None
+
+            def parse_value(val):
+                if pd.isna(val) or val == '':
+                    return None
+                val = str(val).replace('m', '').replace('M', '').strip()
+                try:
+                    return float(val)
+                except Exception:
+                    return None
+
+            land_points = []
+            road_points = []
+            # حالت ویژه: فقط اختلاف ارتفاع داریم و ستون Elevation Design بی‌معنی است
+            if ('station' in columns and 'elevation difference' in columns):
+                station_col = [c for c in df.columns if c.lower().strip() in ['station', 'ایستگاه']][0]
+                diff_col = [c for c in df.columns if c.lower().strip() in ['elevation difference', 'اختلاف ارتفاع']][0]
+                x = df[station_col].apply(parse_station)
+                y = df[diff_col].apply(parse_value)
+                # مقدار پایه را طوری انتخاب کن که میانگین y حدود 10 باشد
+                base_height = 10 - y.mean() if not pd.isna(y.mean()) else 0
+                y = y + base_height
+                land_points = [
+                    {"x": float(xv) / 1000, "y": float(yv)}
+                    for xv, yv in zip(x, y) if xv is not None and yv is not None
+                ]
+                road_points = [
+                    {"x": float(xv) / 1000, "y": base_height}
+                    for xv in x if xv is not None
+                ]
+            # حالت‌های دیگر (قبلی)
+            elif ('station' in columns and 'cutfill' in columns):
+                station_col = [c for c in df.columns if c.lower().strip() in ['station', 'ایستگاه']][0]
+                y1_col = [c for c in df.columns if c.lower().strip() in ['cutfill', 'اختلاف ارتفاع']][0]
+                x = df[station_col].apply(parse_station)
+                y1 = df[y1_col].apply(parse_value)
+                land_points = [
+                    {"x": float(xv) / 1000, "y": float(yv)}
+                    for xv, yv in zip(x, y1) if xv is not None and yv is not None
+                ]
+                road_points = [
+                    {"x": float(xv) / 1000, "y": 0.0}
+                    for xv in x if xv is not None
+                ]
             elif len(df.columns) >= 2:
-                x = df.iloc[:, 0].astype(float) / 1000
-                y1 = df.iloc[:, 1].astype(float)
-                land_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y1)]
-                if len(df.columns) >= 3 and df.iloc[:, 2].abs().sum() > 0:
-                    y2 = df.iloc[:, 2].astype(float)
-                    road_points = [{"x": float(xv), "y": float(yv)} for xv, yv in zip(x, y2)]
+                x = df.iloc[:, 0].apply(parse_station)
+                y1 = df.iloc[:, 1].apply(parse_value)
+                land_points = [
+                    {"x": float(xv) / 1000, "y": float(yv)}
+                    for xv, yv in zip(x, y1) if xv is not None and yv is not None
+                ]
+                if len(df.columns) >= 3:
+                    y2 = df.iloc[:, 2].apply(parse_value)
+                    road_points = [
+                        {"x": float(xv) / 1000, "y": float(yv)}
+                        for xv, yv in zip(x, y2) if xv is not None and yv is not None
+                    ]
                 else:
-                    road_points = []
+                    road_points = [
+                        {"x": float(xv) / 1000, "y": 0.0}
+                        for xv in x if xv is not None
+                    ]
             else:
                 return {'land_points': [], 'road_points': [], 'error': 'ساختار فایل اکسل نامعتبر است'}
+
+            # حذف نقاط نامعتبر (NaN)
+            def is_valid_point(p):
+                return (
+                    p is not None and
+                    'x' in p and 'y' in p and
+                    p['x'] is not None and p['y'] is not None and
+                    not (isinstance(p['x'], float) and math.isnan(p['x'])) and
+                    not (isinstance(p['y'], float) and math.isnan(p['y']))
+                )
+            land_points = [p for p in land_points if is_valid_point(p)]
+            road_points = [p for p in road_points if is_valid_point(p)]
+
+            # مرتب‌سازی بر اساس x برای جلوگیری از نویز و ناهماهنگی
+            land_points = sorted(land_points, key=lambda p: p['x'])
+            road_points = sorted(road_points, key=lambda p: p['x'])
+
             return {
                 'land_points': land_points,
                 'road_points': road_points,

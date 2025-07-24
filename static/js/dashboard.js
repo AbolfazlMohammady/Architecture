@@ -275,6 +275,27 @@ export class ProjectDashboard {
         if (!profileData.road_points || profileData.road_points.length === 0) return;
         const layers = [...this.projectData.layers].sort((a, b) => a.order_from_top - b.order_from_top);
         if (!this.tooltipData) this.tooltipData = [];
+        // فقط یکبار نام هر لایه را وسط بازه کل لایه یا وسط اولین executed_range بنویس
+        for (let l = 0; l < layers.length; l++) {
+            const layer = layers[l];
+            let xLabel, yLabel;
+            if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
+                const range = layer.executed_ranges[0];
+                xLabel = (this.transformX(range.start) + this.transformX(range.end)) / 2;
+            } else {
+                const x1 = this.transformX(profileData.road_points[0].x);
+                const x2 = this.transformX(profileData.road_points[profileData.road_points.length - 1].x);
+                xLabel = (x1 + x2) / 2;
+            }
+            yLabel = this.transformY(profileData.road_points[0].y) + l * 24 - 10;
+            ctx.save();
+            ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+            ctx.fillStyle = '#222';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(layer.name, xLabel, yLabel);
+            ctx.restore();
+        }
         for (let i = 0; i < profileData.road_points.length - 1; i++) {
             const x1 = this.transformX(profileData.road_points[i].x);
             const x2 = this.transformX(profileData.road_points[i + 1].x);
@@ -284,12 +305,15 @@ export class ProjectDashboard {
             let yBase2 = yTop2;
             for (let l = 0; l < layers.length; l++) {
                 const layer = layers[l];
-                const thicknessPx1 = layer.thickness_cm * this.yScale / 100;
-                const thicknessPx2 = layer.thickness_cm * this.yScale / 100;
+                // ضخامت لایه‌ها را به صورت نسبی و با حداقل و حداکثر معقول محدود کن
+                const canvasHeight = this.height - this.margin * 2 - 30;
+                const maxLayerThicknessPx = canvasHeight * 0.10; // حداکثر 10 درصد ارتفاع نمودار
+                const minLayerThicknessPx = 3;
+                const thicknessPx1 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
+                const thicknessPx2 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
                 let yBottom1 = yBase1 + thicknessPx1;
                 let yBottom2 = yBase2 + thicknessPx2;
                 if (layer.status === 0) {
-                    // فقط یک خط ساده بکش
                     ctx.save();
                     ctx.strokeStyle = '#888';
                     ctx.beginPath();
@@ -301,14 +325,12 @@ export class ProjectDashboard {
                     ctx.stroke();
                     ctx.restore();
                 } else {
-                    // مثل قبل رنگی بکش
-                    let fillColor = '#ffc107'; // پیش‌فرض: زرد
+                    let fillColor = '#ffc107';
                     let borderColor = '#222';
                     let opacity = 0.7;
-                    if (layer.status === 2) { fillColor = '#7ed957'; borderColor = '#388e3c'; opacity = 0.85; } // تکمیل شده: سبز
-                    else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; } // در حال انجام: زرد
-                    if (layer.state !== 1) fillColor = '#ff9800'; // متغیر: نارنجی
-                    // افکت ویژه برای بستر طبیعی
+                    if (layer.status === 2) { fillColor = '#7ed957'; borderColor = '#388e3c'; opacity = 0.85; }
+                    else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; }
+                    if (layer.state !== 1) fillColor = '#ff9800';
                     let isNatural = layer.name.includes('بستر') || layer.name.includes('طبیعی');
                     ctx.save();
                     ctx.globalAlpha = opacity;
@@ -319,23 +341,13 @@ export class ProjectDashboard {
                     ctx.lineTo(x1, yBottom1);
                     ctx.closePath();
                     if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
-                        // نمایش پیکسلی و تکه‌تکه فقط برای بازه‌های اجرا شده
                         for (const range of layer.executed_ranges) {
                             const xr1 = this.transformX(range.start);
                             const xr2 = this.transformX(range.end);
-                            // ارتفاع مستطیل
                             const yTop = (yBase1 + yBase2) / 2;
                             const height = ((yBottom1 + yBottom2) / 2) - yTop;
                             ctx.fillStyle = fillColor;
                             ctx.fillRect(xr1, yTop, xr2 - xr1, height);
-                            // نوشتن نام لایه وسط هر بازه اجرا شده
-                            ctx.save();
-                            ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-                            ctx.fillStyle = '#222';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText(layer.name, (xr1 + xr2) / 2, yTop + height / 2);
-                            ctx.restore();
                         }
                         ctx.globalAlpha = 1;
                         ctx.lineWidth = 1.2;
@@ -343,21 +355,10 @@ export class ProjectDashboard {
                         ctx.stroke();
                         ctx.restore();
                     } else {
-                        // اگر executed_ranges نبود، فقط outline بکش (بدون fill)
                         ctx.globalAlpha = 1;
                         ctx.lineWidth = 1.2;
                         ctx.strokeStyle = borderColor;
                         ctx.stroke();
-                        // نوشتن نام لایه وسط outline
-                        const xMid = (x1 + x2) / 2;
-                        const yMid = (yBase1 + yBottom1 + yBase2 + yBottom2) / 4;
-                        ctx.save();
-                        ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-                        ctx.fillStyle = '#222';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(layer.name, xMid, yMid);
-                        ctx.restore();
                         ctx.restore();
                     }
                 }
@@ -417,16 +418,19 @@ export class ProjectDashboard {
                 // پل را به صورت داینامیک بین start_kilometer و end_kilometer رسم کن
                 const x1 = this.transformX(structure.start_kilometer);
                 const x2 = this.transformX(structure.end_kilometer);
-                // پیدا کردن y روی پروفیل جاده (میانگین y دو سر پل)
+                // پیدا کردن y روی پروفیل جاده (نزدیک‌ترین نقطه به start_kilometer و end_kilometer)
                 let y1 = null, y2 = null;
                 if (profileData.road_points && profileData.road_points.length > 0) {
+                    let minDist1 = Infinity, minDist2 = Infinity;
                     for (let p = 0; p < profileData.road_points.length; p++) {
-                        if (Math.abs(profileData.road_points[p].x - structure.start_kilometer) < 0.001) y1 = this.transformY(profileData.road_points[p].y);
-                        if (Math.abs(profileData.road_points[p].x - structure.end_kilometer) < 0.001) y2 = this.transformY(profileData.road_points[p].y);
+                        const dist1 = Math.abs(profileData.road_points[p].x - structure.start_kilometer);
+                        if (dist1 < minDist1) { minDist1 = dist1; y1 = this.transformY(profileData.road_points[p].y); }
+                        const dist2 = Math.abs(profileData.road_points[p].x - structure.end_kilometer);
+                        if (dist2 < minDist2) { minDist2 = dist2; y2 = this.transformY(profileData.road_points[p].y); }
                     }
                 }
-                if (y1 === null) y1 = this.height / 2;
-                if (y2 === null) y2 = this.height / 2;
+                if (y1 === null) y1 = this.transformY(profileData.road_points[0].y);
+                if (y2 === null) y2 = this.transformY(profileData.road_points[profileData.road_points.length - 1].y);
                 const yBridge = Math.min(y1, y2) - 30; // پل کمی بالاتر از پروفیل جاده
                 const bridgeHeight = 18;
                 const archHeight = 14;
@@ -486,9 +490,9 @@ export class ProjectDashboard {
                 });
             } else {
                 // سایر ابنیه‌ها (آبرو، تونل و ...)
-            const x = this.transformX(structure.kilometer_location);
+                const x = this.transformX(structure.kilometer_location);
                 const y = this.height / 2;
-            this.drawStructureSymbol(structure, x, y);
+                this.drawStructureSymbol(structure, x, y);
             }
         });
     }
