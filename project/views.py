@@ -400,11 +400,31 @@ class ProjectDashboardView(generic.DetailView):
             land_points = sorted(land_points, key=lambda p: p['x'])
             road_points = sorted(road_points, key=lambda p: p['x'])
 
-            return {
+            # --- نرمال‌سازی خودکار اگر دامنه y خیلی کوچک بود ---
+            y_vals = [p['y'] for p in land_points]
+            if y_vals:
+                y_min, y_max = min(y_vals), max(y_vals)
+                if y_max - y_min < 2:
+                    scale = 20 / (y_max - y_min + 1e-6)
+                    y_mean = sum(y_vals) / len(y_vals)
+                    for p in land_points:
+                        p['y'] = (p['y'] - y_mean) * scale
+                    for p in road_points:
+                        p['y'] = (p['y'] - y_mean) * scale
+                    warning = 'داده پروفیل ورودی دامنه بسیار کمی داشت و به صورت خودکار نرمال‌سازی شد.'
+                else:
+                    warning = None
+            else:
+                warning = None
+
+            result = {
                 'land_points': land_points,
                 'road_points': road_points,
                 'total_points': len(land_points)
             }
+            if warning:
+                result['warning'] = warning
+            return result
         except Exception as e:
             return {'land_points': [], 'road_points': [], 'error': str(e)}
     
