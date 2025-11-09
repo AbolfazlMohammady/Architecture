@@ -80,6 +80,7 @@
                 <th class="border-0">پروژه</th>
                 <th class="border-0">لایه</th>
                 <th class="border-0">ضریب پرداخت</th>
+                <th class="border-0">رتبه</th>
                 <th class="border-0">کیلومتراژ شروع</th>
                 <th class="border-0">کیلومتراژ پایان</th>
                 <th class="border-0">تاریخ محاسبه</th>
@@ -103,6 +104,17 @@
                     {{ coefficient.coefficient }}
                   </span>
                 </td>
+                <td>
+                  {% if coefficient.coefficient >= 1.0 %}
+                    <span class="badge bg-success">عالی</span>
+                  {% elif coefficient.coefficient >= 0.8 %}
+                    <span class="badge bg-info">خوب</span>
+                  {% elif coefficient.coefficient >= 0.6 %}
+                    <span class="badge bg-warning">نیاز بررسی</span>
+                  {% else %}
+                    <span class="badge bg-danger">ضعیف</span>
+                  {% endif %}
+                </td>
                 <td>{{ coefficient.start_kilometer }}</td>
                 <td>{{ coefficient.end_kilometer }}</td>
                 <td>{{ coefficient.calculation_date }}</td>
@@ -119,7 +131,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="7" class="text-center py-5">
+                <td colspan="8" class="text-center py-5">
                   <div class="text-muted">
                     <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                     <h6>هیچ ضریب پرداختی یافت نشد</h6>

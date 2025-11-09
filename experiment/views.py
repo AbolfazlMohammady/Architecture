@@ -439,19 +439,6 @@ def dashboard_charts(request):
     """نمایش نمودارهای داشبورد با میانگین ضرایب پرداخت"""
     logger.info(f"Accessing dashboard_charts view by user: {request.user}")
     try:
-        # محاسبه آمار کلی
-        coefficients = models.PaymentCoefficient.objects.all()
-        total_coefficients = coefficients.count()
-        
-        if total_coefficients > 0:
-            average_coefficient = coefficients.aggregate(Avg('coefficient'))['coefficient__avg']
-            best_coefficient = coefficients.aggregate(Max('coefficient'))['coefficient__max']
-            worst_coefficient = coefficients.aggregate(Min('coefficient'))['coefficient__min']
-        else:
-            average_coefficient = 0
-            best_coefficient = 0
-            worst_coefficient = 0
-        
         # محاسبه میانگین ضرایب پرداخت برای هر لایه
         asphalt_avg = models.PaymentCoefficient.objects.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
         base_avg = models.PaymentCoefficient.objects.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
@@ -459,6 +446,7 @@ def dashboard_charts(request):
         embankment_avg = models.PaymentCoefficient.objects.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
         
         # داده‌های نمودار توزیع
+        coefficients = models.PaymentCoefficient.objects.all()
         distribution_labels = ['0.0-0.2', '0.2-0.4', '0.4-0.6', '0.6-0.8', '0.8-1.0', '1.0-1.2']
         distribution_data = []
         for i in range(6):
@@ -467,25 +455,38 @@ def dashboard_charts(request):
             count = coefficients.filter(coefficient__gte=start, coefficient__lt=end).count()
             distribution_data.append(count)
         
-        # داده‌های نمودار پروژه‌ها
+        # داده‌های نمودار پروژه‌ها برای هر لایه
         projects = models.Project.objects.all()
         project_labels = [project.name for project in projects]
-        project_data = []
+        
+        # محاسبه میانگین ضرایب برای هر پروژه و هر لایه
+        project_data_by_layer = {
+            'ASPHALT': [],
+            'BASE': [],
+            'SUBBASE': [],
+            'EMBANKMENT': []
+        }
+        
         for project in projects:
-            avg = project.paymentcoefficient_set.aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data.append(float(round(avg, 2)))
+            # آسفالت گرم
+            asphalt_coeff = project.paymentcoefficient_set.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+            project_data_by_layer['ASPHALT'].append(float(round(asphalt_coeff, 2)))
+            
+            # اساس
+            base_coeff = project.paymentcoefficient_set.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+            project_data_by_layer['BASE'].append(float(round(base_coeff, 2)))
+            
+            # زیراساس
+            subbase_coeff = project.paymentcoefficient_set.filter(layer='SUBBASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+            project_data_by_layer['SUBBASE'].append(float(round(subbase_coeff, 2)))
+            
+            # خاکریزی
+            embankment_coeff = project.paymentcoefficient_set.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+            project_data_by_layer['EMBANKMENT'].append(float(round(embankment_coeff, 2)))
         
-        # داده‌های نمودار لایه‌ها
-        layer_labels = ['آسفالت گرم', 'اساس', 'زیراساس', 'خاکریزی']
-        layer_data = [float(asphalt_avg), float(base_avg), float(subbase_avg), float(embankment_avg)]
-        
-        logger.info(f"Calculated statistics - Total: {total_coefficients}, Avg: {average_coefficient}, Best: {best_coefficient}, Worst: {worst_coefficient}")
+        logger.info(f"Calculated payment coefficients by layer and project")
         
         context = {
-            'total_coefficients': total_coefficients,
-            'average_coefficient': round(average_coefficient, 2),
-            'best_coefficient': round(best_coefficient, 2),
-            'worst_coefficient': round(worst_coefficient, 2),
             'asphalt_avg': round(asphalt_avg, 2),
             'base_avg': round(base_avg, 2),
             'subbase_avg': round(subbase_avg, 2),
@@ -493,9 +494,7 @@ def dashboard_charts(request):
             'distribution_labels': distribution_labels,
             'distribution_data': distribution_data,
             'project_labels': project_labels,
-            'project_data': project_data,
-            'layer_labels': layer_labels,
-            'layer_data': layer_data,
+            'project_data_by_layer': project_data_by_layer,
         }
         
         logger.info("Rendering dashboard_charts.html template")
@@ -504,10 +503,6 @@ def dashboard_charts(request):
         logger.error(f"Error in dashboard_charts: {str(e)}")
         messages.error(request, 'خطا در بارگذاری نمودارهای داشبورد')
         return render(request, 'experiment/dashboard_charts.html', {
-            'total_coefficients': 0,
-            'average_coefficient': 0,
-            'best_coefficient': 0,
-            'worst_coefficient': 0,
             'asphalt_avg': 0,
             'base_avg': 0,
             'subbase_avg': 0,
@@ -515,9 +510,12 @@ def dashboard_charts(request):
             'distribution_labels': [],
             'distribution_data': [],
             'project_labels': [],
-            'project_data': [],
-            'layer_labels': [],
-            'layer_data': [],
+            'project_data_by_layer': {
+                'ASPHALT': [],
+                'BASE': [],
+                'SUBBASE': [],
+                'EMBANKMENT': []
+            },
         })
 
 @login_required

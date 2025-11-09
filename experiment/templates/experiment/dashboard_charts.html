@@ -69,45 +69,6 @@
       </a>
     </div>
     
-    <!-- آمار کلی -->
-    <div class="row mb-4">
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <div class="stats-icon mb-3">
-            <i class="bi bi-graph-up"></i>
-          </div>
-          <h6 class="fw-bold">کل ضرایب</h6>
-          <div class="stats-number">{{ total_coefficients }}</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <div class="stats-icon mb-3">
-            <i class="bi bi-calculator"></i>
-          </div>
-          <h6 class="fw-bold">میانگین ضریب</h6>
-          <div class="stats-number">{{ average_coefficient|floatformat:2 }}</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <div class="stats-icon mb-3">
-            <i class="bi bi-arrow-up-circle"></i>
-          </div>
-          <h6 class="fw-bold">بهترین ضریب</h6>
-          <div class="stats-number">{{ best_coefficient|floatformat:2 }}</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <div class="stats-icon mb-3">
-            <i class="bi bi-arrow-down-circle"></i>
-          </div>
-          <h6 class="fw-bold">بدترین ضریب</h6>
-          <div class="stats-number">{{ worst_coefficient|floatformat:2 }}</div>
-        </div>
-      </div>
-    </div>
 
     <!-- نمودار توزیع ضرایب -->
     <div class="card shadow-lg">
@@ -124,8 +85,8 @@
       </div>
     </div>
 
-    <!-- نمودار ضرایب بر اساس پروژه -->
-    <div class="card shadow-lg">
+    <!-- نمودارهای ضرایب بر اساس پروژه برای هر لایه -->
+    <div class="card shadow-lg mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0">
           <i class="bi bi-graph-up me-2"></i>ضرایب پرداخت بر اساس پروژه
@@ -133,23 +94,31 @@
         <span class="badge bg-light text-dark">تحلیل پروژه‌ها</span>
       </div>
       <div class="card-body">
-        <div class="chart-container">
-          <canvas id="projectCoefficients"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- نمودار ضرایب بر اساس لایه -->
-    <div class="card shadow-lg">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
-          <i class="bi bi-pie-chart me-2"></i>ضرایب پرداخت بر اساس لایه
-        </h6>
-        <span class="badge bg-light text-dark">تحلیل لایه‌ها</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-container">
-          <canvas id="layerCoefficients"></canvas>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <h6 class="text-center mb-3">لایه خاکریزی</h6>
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="embankmentProjectChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <h6 class="text-center mb-3">لایه زیر اساس</h6>
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="subbaseProjectChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <h6 class="text-center mb-3">لایه اساس</h6>
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="baseProjectChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <h6 class="text-center mb-3">لایه آسفالت گرم</h6>
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="asphaltProjectChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -200,16 +169,89 @@
     });
   }
 
-  // نمودار ضرایب بر اساس پروژه
-  const ctx2 = document.getElementById('projectCoefficients');
-  if (ctx2) {
-    new Chart(ctx2, {
+  // نمودارهای ضرایب بر اساس پروژه برای هر لایه
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 1.2,
+        grid: {
+          color: 'rgba(0,0,0,0.1)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
+  };
+
+  // نمودار لایه خاکریزی
+  const ctxEmbankment = document.getElementById('embankmentProjectChart');
+  if (ctxEmbankment) {
+    new Chart(ctxEmbankment, {
       type: 'line',
       data: {
         labels: {{ project_labels|safe }},
         datasets: [{
-          label: 'میانگین ضریب',
-          data: {{ project_data|safe }},
+          label: 'ضریب پرداخت',
+          data: {{ project_data_by_layer.EMBANKMENT|safe }},
+          borderColor: 'rgba(156, 39, 176, 1)',
+          backgroundColor: 'rgba(156, 39, 176, 0.1)',
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgba(156, 39, 176, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }]
+      },
+      options: lineChartOptions
+    });
+  }
+
+  // نمودار لایه زیر اساس
+  const ctxSubbase = document.getElementById('subbaseProjectChart');
+  if (ctxSubbase) {
+    new Chart(ctxSubbase, {
+      type: 'line',
+      data: {
+        labels: {{ project_labels|safe }},
+        datasets: [{
+          label: 'ضریب پرداخت',
+          data: {{ project_data_by_layer.SUBBASE|safe }},
+          borderColor: 'rgba(255, 152, 0, 1)',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgba(255, 152, 0, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }]
+      },
+      options: lineChartOptions
+    });
+  }
+
+  // نمودار لایه اساس
+  const ctxBase = document.getElementById('baseProjectChart');
+  if (ctxBase) {
+    new Chart(ctxBase, {
+      type: 'line',
+      data: {
+        labels: {{ project_labels|safe }},
+        datasets: [{
+          label: 'ضریب پرداخت',
+          data: {{ project_data_by_layer.BASE|safe }},
           borderColor: 'rgba(67, 160, 71, 1)',
           backgroundColor: 'rgba(67, 160, 71, 0.1)',
           tension: 0.4,
@@ -220,65 +262,31 @@
           pointRadius: 6
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 1.2,
-            grid: {
-              color: 'rgba(0,0,0,0.1)'
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
-        }
-      }
+      options: lineChartOptions
     });
   }
 
-  // نمودار ضرایب بر اساس لایه
-  const ctx3 = document.getElementById('layerCoefficients');
-  if (ctx3) {
-    new Chart(ctx3, {
-      type: 'doughnut',
+  // نمودار لایه آسفالت گرم
+  const ctxAsphalt = document.getElementById('asphaltProjectChart');
+  if (ctxAsphalt) {
+    new Chart(ctxAsphalt, {
+      type: 'line',
       data: {
-        labels: {{ layer_labels|safe }},
+        labels: {{ project_labels|safe }},
         datasets: [{
-          data: {{ layer_data|safe }},
-          backgroundColor: [
-            'rgba(25, 118, 210, 0.8)',
-            'rgba(67, 160, 71, 0.8)',
-            'rgba(255, 152, 0, 0.8)',
-            'rgba(244, 67, 54, 0.8)',
-            'rgba(156, 39, 176, 0.8)'
-          ],
-          borderWidth: 2,
-          borderColor: '#fff'
+          label: 'ضریب پرداخت',
+          data: {{ project_data_by_layer.ASPHALT|safe }},
+          borderColor: 'rgba(25, 118, 210, 1)',
+          backgroundColor: 'rgba(25, 118, 210, 0.1)',
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgba(25, 118, 210, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              padding: 20,
-              usePointStyle: true
-            }
-          }
-        }
-      }
+      options: lineChartOptions
     });
   }
 </script>

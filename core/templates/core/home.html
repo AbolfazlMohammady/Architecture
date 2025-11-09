@@ -159,6 +159,56 @@ body, html {
         </div>
       </div>
     </div>
+    
+    <!-- نمودارهای ضرایب پرداخت -->
+    <div class="charts-container">
+      <div class="row justify-content-center">
+        <div class="col-md-3 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#9C27B0;">میانگین ضریب پرداخت لایه خاکریزی</h3>
+            <div class="chart-container">
+              <canvas id="embankmentCoefficientChart"></canvas>
+            </div>
+            <div class="text-center mt-2">
+              <h4 class="mb-0" style="color:#9C27B0;">{{ payment_coefficients.embankment.avg }}</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#FF9800;">میانگین ضریب پرداخت لایه زیر اساس</h3>
+            <div class="chart-container">
+              <canvas id="subbaseCoefficientChart"></canvas>
+            </div>
+            <div class="text-center mt-2">
+              <h4 class="mb-0" style="color:#FF9800;">{{ payment_coefficients.subbase.avg }}</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#4CAF50;">میانگین ضریب پرداخت لایه اساس</h3>
+            <div class="chart-container">
+              <canvas id="baseCoefficientChart"></canvas>
+            </div>
+            <div class="text-center mt-2">
+              <h4 class="mb-0" style="color:#4CAF50;">{{ payment_coefficients.base.avg }}</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-12 mb-4">
+          <div class="chart-card h-100">
+            <h3 class="chart-title" style="color:#2196F3;">میانگین ضریب پرداخت لایه آسفالت گرم</h3>
+            <div class="chart-container">
+              <canvas id="asphaltCoefficientChart"></canvas>
+            </div>
+            <div class="text-center mt-2">
+              <h4 class="mb-0" style="color:#2196F3;">{{ payment_coefficients.asphalt.avg }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -335,6 +385,89 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    });
+
+    // نمودارهای ضرایب پرداخت
+    const paymentCoefficientOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                enabled: false
+            }
+        }
+    };
+
+    // نمودار ضریب پرداخت خاکریزی
+    new Chart(document.getElementById('embankmentCoefficientChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['میانگین', 'باقیمانده'],
+            datasets: [{
+                data: [
+                    {{ payment_coefficients.embankment.avg }},
+                    {{ payment_coefficients.embankment.remaining }}
+                ],
+                backgroundColor: ['#9C27B0', '#E1BEE7'],
+                borderWidth: 0
+            }]
+        },
+        options: paymentCoefficientOptions
+    });
+
+    // نمودار ضریب پرداخت زیر اساس
+    new Chart(document.getElementById('subbaseCoefficientChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['میانگین', 'باقیمانده'],
+            datasets: [{
+                data: [
+                    {{ payment_coefficients.subbase.avg }},
+                    {{ payment_coefficients.subbase.remaining }}
+                ],
+                backgroundColor: ['#FF9800', '#FFE0B2'],
+                borderWidth: 0
+            }]
+        },
+        options: paymentCoefficientOptions
+    });
+
+    // نمودار ضریب پرداخت اساس
+    new Chart(document.getElementById('baseCoefficientChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['میانگین', 'باقیمانده'],
+            datasets: [{
+                data: [
+                    {{ payment_coefficients.base.avg }},
+                    {{ payment_coefficients.base.remaining }}
+                ],
+                backgroundColor: ['#4CAF50', '#C8E6C9'],
+                borderWidth: 0
+            }]
+        },
+        options: paymentCoefficientOptions
+    });
+
+    // نمودار ضریب پرداخت آسفالت گرم
+    new Chart(document.getElementById('asphaltCoefficientChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['میانگین', 'باقیمانده'],
+            datasets: [{
+                data: [
+                    {{ payment_coefficients.asphalt.avg }},
+                    {{ payment_coefficients.asphalt.remaining }}
+                ],
+                backgroundColor: ['#2196F3', '#BBDEFB'],
+                borderWidth: 0
+            }]
+        },
+        options: paymentCoefficientOptions
     });
 });
 </script>

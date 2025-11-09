@@ -112,6 +112,38 @@ class HomeView(LoginRequiredMixin,generic.ListView):
                 'remaining': 0,
                 'unexpected': 0
             }
+        
+        # محاسبه میانگین ضرایب پرداخت برای هر لایه
+        from experiment.models import PaymentCoefficient
+        from django.db.models import Avg
+        
+        embankment_avg = PaymentCoefficient.objects.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        subbase_avg = PaymentCoefficient.objects.filter(layer='SUBBASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        base_avg = PaymentCoefficient.objects.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        asphalt_avg = PaymentCoefficient.objects.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        
+        context['payment_coefficients'] = {
+            'embankment': {
+                'name': 'خاکریزی',
+                'avg': round(float(embankment_avg), 2),
+                'remaining': round(1.2 - float(embankment_avg), 2) if embankment_avg > 0 else 1.2
+            },
+            'subbase': {
+                'name': 'زیر اساس',
+                'avg': round(float(subbase_avg), 2),
+                'remaining': round(1.2 - float(subbase_avg), 2) if subbase_avg > 0 else 1.2
+            },
+            'base': {
+                'name': 'اساس',
+                'avg': round(float(base_avg), 2),
+                'remaining': round(1.2 - float(base_avg), 2) if base_avg > 0 else 1.2
+            },
+            'asphalt': {
+                'name': 'آسفالت گرم',
+                'avg': round(float(asphalt_avg), 2),
+                'remaining': round(1.2 - float(asphalt_avg), 2) if asphalt_avg > 0 else 1.2
+            }
+        }
 
         return context
 

@@ -90,7 +90,7 @@
                                 <h5 class="card-title mb-0">اطلاعات محل و کیلومتراژ</h5>
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
+                                <div class="mb-3" id="concrete-place-group" style="display:none;">
                                     <label for="{{ form.concrete_place.id_for_label }}" class="form-label">محل بتن‌ریزی</label>
                                     {% render_field form.concrete_place class="form-control select2" %}
                                     {% if form.concrete_place.errors %}
@@ -150,7 +150,7 @@
                                     {% endif %}
                         </div>
 
-                                <div class="mb-3">
+                                <div class="mb-3" id="target-density-group" style="display:none;">
                                     <label for="{{ form.target_density.id_for_label }}" class="form-label">حد تراکم</label>
                                     {% render_field form.target_density class="form-control" %}
                                     {% if form.target_density.errors %}
@@ -160,7 +160,7 @@
                                     {% endif %}
                                 </div>
 
-                                <div class="mb-3">
+                                <div class="mb-3" id="target-strength-group" style="display:none;">
                                     <label for="{{ form.target_strength.id_for_label }}" class="form-label">حد مقاومت فشاری</label>
                                     {% render_field form.target_strength class="form-control" %}
                                     {% if form.target_strength.errors %}
@@ -387,18 +387,44 @@ $(document).ready(function() {
         }
     });
 
-    // نمایش داینامیک طرح اختلاط
-    function toggleMixDesignField() {
+    // نمایش داینامیک فیلدها بر اساس نوع آزمایش
+    function toggleFieldsByExperimentType() {
         var selectedTypes = $('#id_experiment_type').select2('data').map(function(item){ return item.text; });
+        
+        // نمایش/مخفی کردن طرح اختلاط برای آسفالت
         if (selectedTypes.some(function(name){ return name.includes('آسفالت'); })) {
             $('#mix-design-group').show();
         } else {
             $('#mix-design-group').hide();
             $('#id_mix_design').val('');
         }
+        
+        // نمایش/مخفی کردن محل بتن‌ریزی برای مقاومت فشاری بتن
+        if (selectedTypes.some(function(name){ return name.includes('مقاومت فشاری بتن'); })) {
+            $('#concrete-place-group').show();
+        } else {
+            $('#concrete-place-group').hide();
+            $('#id_concrete_place').val('').trigger('change');
+        }
+        
+        // نمایش/مخفی کردن حد تراکم برای خاکریزی
+        if (selectedTypes.some(function(name){ return name.includes('خاکریزی'); })) {
+            $('#target-density-group').show();
+        } else {
+            $('#target-density-group').hide();
+            $('#id_target_density').val('');
+        }
+        
+        // نمایش/مخفی کردن حد مقاومت فشاری برای ملات بنایی
+        if (selectedTypes.some(function(name){ return name.includes('ملات بنایی'); })) {
+            $('#target-strength-group').show();
+        } else {
+            $('#target-strength-group').hide();
+            $('#id_target_strength').val('');
+        }
     }
-    $('#id_experiment_type').on('change', toggleMixDesignField);
-    toggleMixDesignField();
+    $('#id_experiment_type').on('change', toggleFieldsByExperimentType);
+    toggleFieldsByExperimentType();
 
     // Trigger change events if values are pre-selected
     if ($('#id_project').val()) {
