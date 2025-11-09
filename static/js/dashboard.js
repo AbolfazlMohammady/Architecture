@@ -22,9 +22,15 @@ export class ProjectDashboard {
         this.dateFilterEnd = null;
         
         // تنظیمات زوم و پن
-        this.zoomLevel = 1;
+        this.zoomLevel = 1.0;
         this.panX = 0;
         this.panY = 0;
+        this.zoomCenterX = null;
+        this.zoomCenterY = null;
+        this.originalXMin = null;
+        this.originalXMax = null;
+        this.originalYMin = null;
+        this.originalYMax = null;
         
         // موقعیت موس
         this.mouseX = null;
@@ -138,22 +144,36 @@ export class ProjectDashboard {
             return;
         }
 
+        // ذخیره مقادیر اصلی برای reset zoom
+        if (this.originalXMin === null) {
+            this.originalXMin = this.projectData.start_kilometer;
+            this.originalXMax = this.projectData.end_kilometer;
+            
+            const yValues = [...profileData.land_points.map(p => p.y), ...profileData.road_points.map(p => p.y)];
+            const originalYMin = Math.min(...yValues);
+            const originalYMax = Math.max(...yValues);
+            const yRange = originalYMax - originalYMin;
+            const yMargin = yRange * 0.1;
+            
+            this.originalYMin = originalYMin - yMargin;
+            this.originalYMax = originalYMax + yMargin;
+        }
+
         // استفاده از محدوده پروژه برای محور X - این مهم است!
         // محور X باید از start_kilometer شروع شود (مثل عکس قبلی)
-        this.xMin = this.projectData.start_kilometer;
-        this.xMax = this.projectData.end_kilometer;
+        // اعمال زوم
+        const originalXRange = this.originalXMax - this.originalXMin;
+        const xCenter = (this.originalXMin + this.originalXMax) / 2;
+        const zoomedXRange = originalXRange / this.zoomLevel;
+        this.xMin = xCenter - zoomedXRange / 2;
+        this.xMax = xCenter + zoomedXRange / 2;
         
         // محاسبه محدوده Y از داده‌ها
-        const yValues = [...profileData.land_points.map(p => p.y), ...profileData.road_points.map(p => p.y)];
-        this.yMin = Math.min(...yValues);
-        this.yMax = Math.max(...yValues);
-        
-        // اضافه کردن حاشیه فقط برای محور Y
-        const yRange = this.yMax - this.yMin;
-        const yMargin = yRange * 0.1;
-        
-        this.yMin -= yMargin;
-        this.yMax += yMargin;
+        const originalYRange = this.originalYMax - this.originalYMin;
+        const yCenter = (this.originalYMin + this.originalYMax) / 2;
+        const zoomedYRange = originalYRange / this.zoomLevel;
+        this.yMin = yCenter - zoomedYRange / 2;
+        this.yMax = yCenter + zoomedYRange / 2;
         
         // محاسبه مقیاس‌ها
         // استفاده از dynamicWidth که در setupCanvas محاسبه شده
@@ -164,8 +184,8 @@ export class ProjectDashboard {
         const canvasWidth = (this.dynamicWidth || this.width) - this.margin - 50; // کم کردن margin و عرض محور Y
         const canvasHeight = this.height - this.margin * 2 - 30; // کم کردن ارتفاع محور X
         
-        const xRange = this.xMax - this.xMin;
-        this.xScale = canvasWidth / xRange;
+        const currentXRange = this.xMax - this.xMin;
+        this.xScale = canvasWidth / currentXRange;
         this.yScale = canvasHeight / (this.yMax - this.yMin);
     }
 
@@ -1080,18 +1100,26 @@ export class ProjectDashboard {
 
     // متدهای زوم
     zoomIn() {
-        // غیرفعال
-        return;
+        // افزایش سطح زوم
+        this.zoomLevel = Math.min(this.zoomLevel * 1.2, 5.0); // حداکثر 5 برابر
+        this.calculateScales();
+        this.render();
     }
 
     zoomOut() {
-        // غیرفعال
-        return;
+        // کاهش سطح زوم
+        this.zoomLevel = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
+        this.calculateScales();
+        this.render();
     }
 
     resetZoom() {
-        // غیرفعال
-        return;
+        // بازنشانی زوم به حالت اولیه
+        this.zoomLevel = 1.0;
+        this.zoomCenterX = null;
+        this.zoomCenterY = null;
+        this.calculateScales();
+        this.render();
     }
 
     drawCrosshair(x, y) {

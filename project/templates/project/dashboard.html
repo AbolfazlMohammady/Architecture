@@ -13,188 +13,230 @@
 {% endblock %}
 
 {% block main %}
-<div class="container-fluid bg-light p-3 rounded rounded-2">
-  <div class="row mb-3">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-      <h3 class="text-primary">{{ project.name }}</h3>
-      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-success rounded-pill px-4">
+<div class="dashboard-wrapper">
+  <!-- هدر پروژه -->
+  <div class="dashboard-header-modern">
+    <div class="header-content">
+      <div class="project-title-section">
+        <h2 class="project-title">
+          <i class="bi bi-diagram-3 me-2"></i>{{ project.name }}
+        </h2>
+        <p class="project-subtitle">داشبورد کنترل کیفیت پروژه</p>
+      </div>
+      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn-modern btn-primary-modern">
         <i class="bi bi-plus-circle me-2"></i>ثبت ضریب پرداخت
       </a>
     </div>
-      <div class="row">
-        <div class="col-md-3">
-          <small class="text-muted">مسافت پروژه:</small>
-          <strong>{{ project.masafat|intcomma_float }} کیلومتر</strong>
+    
+    <!-- کارت‌های اطلاعات پروژه -->
+    <div class="project-info-cards">
+      <div class="info-card-modern">
+        <div class="info-icon bg-gradient-blue">
+          <i class="bi bi-speedometer2"></i>
         </div>
-        <div class="col-md-3">
-          <small class="text-muted">کیلومتر شروع:</small>
-          <strong>{{ project.start_kilometer|intcomma_float }}</strong>
+        <div class="info-content">
+          <span class="info-label">مسافت پروژه</span>
+          <span class="info-value">{{ project.masafat|intcomma_float }} <small>کیلومتر</small></span>
         </div>
-        <div class="col-md-3">
-          <small class="text-muted">کیلومتر پایان:</small>
-          <strong>{{ project.end_kilometer|intcomma_float }}</strong>
+      </div>
+      <div class="info-card-modern">
+        <div class="info-icon bg-gradient-green">
+          <i class="bi bi-geo-alt"></i>
         </div>
-        <div class="col-md-3">
-          <small class="text-muted">عرض پروژه:</small>
-          <strong>{{ project.width|intcomma_float }} متر</strong>
+        <div class="info-content">
+          <span class="info-label">کیلومتر شروع</span>
+          <span class="info-value">{{ project.start_kilometer|intcomma_float }}</span>
+        </div>
+      </div>
+      <div class="info-card-modern">
+        <div class="info-icon bg-gradient-orange">
+          <i class="bi bi-geo-alt-fill"></i>
+        </div>
+        <div class="info-content">
+          <span class="info-label">کیلومتر پایان</span>
+          <span class="info-value">{{ project.end_kilometer|intcomma_float }}</span>
+        </div>
+      </div>
+      <div class="info-card-modern">
+        <div class="info-icon bg-gradient-purple">
+          <i class="bi bi-arrows-expand"></i>
+        </div>
+        <div class="info-content">
+          <span class="info-label">عرض پروژه</span>
+          <span class="info-value">{{ project.width|intcomma_float }} <small>متر</small></span>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- کنترل‌های نمودار -->
-  <div class="row mb-3">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h6 class="mb-0">کنترل‌های نمودار</h6>
+  <div class="chart-controls-modern">
+    <div class="controls-header">
+      <h5 class="controls-title">
+        <i class="bi bi-sliders me-2"></i>کنترل‌های نمودار
+      </h5>
+      <div class="zoom-controls-modern">
+        <button class="btn-icon-modern" id="zoomIn" title="زوم این">
+          <i class="bi bi-zoom-in"></i>
+        </button>
+        <button class="btn-icon-modern" id="zoomOut" title="زوم اوت">
+          <i class="bi bi-zoom-out"></i>
+        </button>
+        <button class="btn-icon-modern" id="resetZoom" title="بازنشانی">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="controls-body">
+      <div class="coordinates-section">
+        <div class="coordinate-input-modern">
+          <label for="xinput" class="coordinate-label">
+            <i class="bi bi-geo-alt me-1"></i>کیلومتر
+          </label>
+          <input id="xinput" type="text" class="coordinate-field" readonly>
         </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-2">
-              <label for="xinput" class="form-label">کیلومتر</label>
-              <input id="xinput" type="text" class="form-control form-control-sm" readonly>
-            </div>
-            <div class="col-md-2">
-              <label for="yinput" class="form-label">ارتفاع</label>
-              <input id="yinput" type="text" class="form-control form-control-sm" readonly>
-            </div>
-            <div class="col-md-8">
-              <div class="btn-group" role="group">
-                <button class="btn btn-outline-primary btn-sm" id="toggleRoadLine">
-                  <i class="fas fa-road"></i> خط جاده
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="toggleLandLine">
-                  <i class="fas fa-mountain"></i> خط زمین
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="toggleLayerLine">
-                  <i class="fas fa-layer-group"></i> لایه‌ها
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="toggleStructures">
-                  <i class="fas fa-bridge"></i> ابنیه‌ها
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="toggleExperiments">
-                  <i class="fas fa-flask"></i> آزمایش‌ها
-                </button>
-              </div>
-              
-              <!-- فیلتر زمانی -->
-              <div class="date-filter-section mt-2">
-                <div class="row">
-                  <div class="col-md-3">
-                    <label for="startDate" class="form-label">از تاریخ:</label>
-                    <input type="text" id="startDate" class="form-control form-control-sm" placeholder="از تاریخ" autocomplete="off">
-                  </div>
-                  <div class="col-md-3">
-                    <label for="endDate" class="form-label">تا تاریخ:</label>
-                    <input type="text" id="endDate" class="form-control form-control-sm" placeholder="تا تاریخ" autocomplete="off">
-                  </div>
-                  <div class="col-md-3">
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn btn-primary btn-sm w-100" id="applyDateFilter">
-                      <i class="fas fa-filter"></i> اعمال فیلتر
-                    </button>
-                  </div>
-                  <div class="col-md-3">
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="clearDateFilter">
-                      <i class="fas fa-times"></i> پاک کردن
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="coordinate-input-modern">
+          <label for="yinput" class="coordinate-label">
+            <i class="bi bi-arrow-up me-1"></i>ارتفاع
+          </label>
+          <input id="yinput" type="text" class="coordinate-field" readonly>
+        </div>
+      </div>
+      
+      <div class="toggle-buttons-section">
+        <div class="toggle-buttons-group">
+          <button class="btn-toggle-modern" id="toggleRoadLine">
+            <i class="bi bi-signpost-2"></i>
+            <span>خط جاده</span>
+          </button>
+          <button class="btn-toggle-modern" id="toggleLandLine">
+            <i class="bi bi-mountain"></i>
+            <span>خط زمین</span>
+          </button>
+          <button class="btn-toggle-modern" id="toggleLayerLine">
+            <i class="bi bi-stack"></i>
+            <span>لایه‌ها</span>
+          </button>
+          <button class="btn-toggle-modern" id="toggleStructures">
+            <i class="bi bi-bridge"></i>
+            <span>ابنیه‌ها</span>
+          </button>
+          <button class="btn-toggle-modern" id="toggleExperiments">
+            <i class="bi bi-flask"></i>
+            <span>آزمایش‌ها</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- فیلتر زمانی -->
+      <div class="date-filter-modern">
+        <div class="filter-header">
+          <i class="bi bi-calendar-range me-2"></i>
+          <span>فیلتر زمانی</span>
+        </div>
+        <div class="filter-body">
+          <div class="date-input-group">
+            <label for="startDate" class="date-label">از تاریخ</label>
+            <input type="text" id="startDate" class="date-input-modern" placeholder="از تاریخ" autocomplete="off">
           </div>
+          <div class="date-input-group">
+            <label for="endDate" class="date-label">تا تاریخ</label>
+            <input type="text" id="endDate" class="date-input-modern" placeholder="تا تاریخ" autocomplete="off">
+          </div>
+          <button type="button" class="btn-filter-modern btn-apply" id="applyDateFilter">
+            <i class="bi bi-funnel me-1"></i>اعمال فیلتر
+          </button>
+          <button type="button" class="btn-filter-modern btn-clear" id="clearDateFilter">
+            <i class="bi bi-x-circle me-1"></i>پاک کردن
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- نمودار اصلی -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">نمودار پروفیل طولی پروژه</h6>
-          <div class="btn-group btn-group-sm" role="group">
-            <button class="btn btn-outline-secondary" id="zoomIn">
-              <i class="fas fa-search-plus"></i>
-            </button>
-            <button class="btn btn-outline-secondary" id="zoomOut">
-              <i class="fas fa-search-minus"></i>
-            </button>
-            <button class="btn btn-outline-secondary" id="resetZoom">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
+  <div class="chart-container-modern">
+    <div class="chart-header-modern">
+      <h5 class="chart-title">
+        <i class="bi bi-graph-up-arrow me-2"></i>نمودار پروفیل طولی پروژه
+      </h5>
+    </div>
+    <div class="chart-body-modern">
+      <div class="chart-wrapper-modern">
+        <!-- ستون چپ: محور Y -->
+        <div class="y-axis-wrapper">
+          <canvas id="yAxisCanvas" class="y-axis-canvas"></canvas>
         </div>
-        <div class="card-body p-0">
-          <div id="dashboard-flex" style="display: flex; flex-direction: row; width: 100%; background: #fff; min-height: 500px; direction: ltr;">
-            <!-- ستون چپ: محور Y -->
-            <div style="flex: 0 0 50px; background: #fff; z-index: 20; display: flex; flex-direction: column; align-items: flex-end;">
-              <canvas id="yAxisCanvas" style="width: 50px; height: 470px; background: white; pointer-events: none;"></canvas>
-            </div>
-            <!-- ستون راست: نمودار و محور X -->
-            <div id="dashboard-container" style="flex: 1 1 auto; overflow-x: auto; overflow-y: hidden; min-width: 1200px; position: relative; white-space: nowrap;">
-              <!-- Start: Make chart horizontally scrollable -->
-              <div id="chart-scroll-x" style="overflow-x: auto; overflow-y: hidden; width: 100%;">
-                <div id="chart-canvas-inner" style="width: 100%; min-width: 1200px;">
-                  <!-- Compact Legend Box -->
-                  <div id="chart-legend" style="position: absolute; top: 12px; left: 18px; background: rgba(255,255,255,0.65); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; padding: 6px 8px; font-size: 11px; z-index: 100; min-width: 150px; max-width: 220px; backdrop-filter: blur(8px);">
-                    <table style="width:100%; border-collapse:collapse;">
-                      <tr>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><g stroke="rgba(255,0,0,0.5)" stroke-width="2"><line x1="0" y1="14" x2="14" y2="0" /><line x1="6" y1="14" x2="20" y2="0" /></g></svg>
-                        </td>
-                        <td style="padding:2px 4px;">خاکبرداری</td>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><g stroke="rgba(0,100,255,0.5)" stroke-width="2"><line x1="0" y1="14" x2="14" y2="0" /><line x1="6" y1="14" x2="20" y2="0" /></g></svg>
-                        </td>
-                        <td style="padding:2px 4px;">خاکریزی</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:2px 4px;">
-                          <!-- پل واقعی کوچک -->
-                          <svg width="38" height="22">
-                            <rect x="4" y="7" width="30" height="6" fill="#90a4ae" stroke="#37474f" stroke-width="1.5" />
-                            <path d="M4,13 Q19,21 34,13" fill="none" stroke="#607d8b" stroke-width="1.5" />
-                            <rect x="2" y="13" width="4" height="7" fill="#78909c" stroke="#37474f" stroke-width="1" />
-                            <rect x="32" y="13" width="4" height="7" fill="#78909c" stroke="#37474f" stroke-width="1" />
-                          </svg>
-                        </td>
-                        <td style="padding:2px 4px;">پل</td>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#7ed957" stroke="#388e3c" stroke-width="2" /><text x="20" y="13" font-size="13" fill="#43a047">✔</text></svg>
-                        </td>
-                        <td style="padding:2px 4px;">لایه تکمیل‌شده</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#ffc107" stroke="#ff9800" stroke-width="2" /></svg>
-                        </td>
-                        <td style="padding:2px 4px;">لایه در حال انجام</td>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#bdbdbd" stroke="#757575" stroke-width="2" /></svg>
-                        </td>
-                        <td style="padding:2px 4px;">لایه شروع‌نشده</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#ff9800" stroke="#ff9800" stroke-width="2" /></svg>
-                        </td>
-                        <td style="padding:2px 4px;">لایه متغیر</td>
-                        <td style="padding:2px 4px;">
-                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#fff" stroke="#2196f3" stroke-width="3" /><text x="6" y="13" font-size="13" fill="#2196f3">🌱</text></svg>
-                        </td>
-                        <td style="padding:2px 4px;">بستر طبیعی</td>
-                      </tr>
-                    </table>
+        <!-- ستون راست: نمودار و محور X -->
+        <div class="chart-main-wrapper" id="dashboard-container">
+          <div class="chart-scroll-container" id="chart-scroll-x">
+            <div class="chart-inner-container" id="chart-canvas-inner">
+              <!-- Legend Box - ریدیزاین شده -->
+              <div class="chart-legend-modern" id="chart-legend">
+                <div class="legend-header">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <span>راهنما</span>
+                </div>
+                <div class="legend-body">
+                  <div class="legend-item">
+                    <div class="legend-icon">
+                      <svg width="24" height="16"><g stroke="rgba(255,0,0,0.7)" stroke-width="2.5"><line x1="0" y1="16" x2="16" y2="0" /><line x1="7" y1="16" x2="23" y2="0" /></g></svg>
+                    </div>
+                    <span class="legend-text">خاکبرداری</span>
                   </div>
-                  <!-- End Legend Box -->
-                  <canvas id="mainCanvas" style="width: 100%; min-width: 1200px; height: 470px; background: white; cursor: crosshair; display: block;"></canvas>
-                  <canvas id="xAxisCanvas" style="width: 100%; min-width: 1200px; height: 50px; background: white; pointer-events: none; display: block;"></canvas>
+                  <div class="legend-item">
+                    <div class="legend-icon">
+                      <svg width="24" height="16"><g stroke="rgba(0,100,255,0.7)" stroke-width="2.5"><line x1="0" y1="16" x2="16" y2="0" /><line x1="7" y1="16" x2="23" y2="0" /></g></svg>
+                    </div>
+                    <span class="legend-text">خاکریزی</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon">
+                      <svg width="40" height="24">
+                        <rect x="5" y="8" width="30" height="7" fill="#90a4ae" stroke="#37474f" stroke-width="1.8" rx="1" />
+                        <path d="M5,15 Q20,24 35,15" fill="none" stroke="#607d8b" stroke-width="1.8" />
+                        <rect x="3" y="15" width="5" height="8" fill="#78909c" stroke="#37474f" stroke-width="1.2" rx="0.5" />
+                        <rect x="32" y="15" width="5" height="8" fill="#78909c" stroke="#37474f" stroke-width="1.2" rx="0.5" />
+                      </svg>
+                    </div>
+                    <span class="legend-text">پل</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-green">
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#7ed957" stroke="#388e3c" stroke-width="2.2" rx="1" /><text x="19" y="14" font-size="12" fill="#43a047">✔</text></svg>
+                    </div>
+                    <span class="legend-text">لایه تکمیل‌شده</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-orange">
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#ffc107" stroke="#ff9800" stroke-width="2.2" rx="1" /></svg>
+                    </div>
+                    <span class="legend-text">لایه در حال انجام</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-gray">
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#bdbdbd" stroke="#757575" stroke-width="2.2" rx="1" /></svg>
+                    </div>
+                    <span class="legend-text">لایه شروع‌نشده</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-variable">
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#ff9800" stroke="#ff9800" stroke-width="2.2" rx="1" opacity="0.3" /></svg>
+                    </div>
+                    <span class="legend-text">لایه متغیر</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-natural">
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#fff" stroke="#2196f3" stroke-width="2.5" rx="1" /><text x="7" y="14" font-size="12" fill="#2196f3">🌱</text></svg>
+                    </div>
+                    <span class="legend-text">بستر طبیعی</span>
+                  </div>
                 </div>
               </div>
-              <!-- End: Make chart horizontally scrollable -->
+              <!-- End Legend Box -->
+              <canvas id="mainCanvas" class="main-canvas-modern"></canvas>
+              <canvas id="xAxisCanvas" class="x-axis-canvas-modern"></canvas>
             </div>
           </div>
         </div>
@@ -203,18 +245,14 @@
   </div>
 
   <!-- اطلاعات لایه‌ها -->
-  <div class="row mt-3">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h6 class="mb-0">وضعیت لایه‌ها</h6>
-        </div>
-        <div class="card-body">
-          <div class="row" id="layers-info">
-            <!-- اطلاعات لایه‌ها اینجا نمایش داده می‌شود -->
-          </div>
-        </div>
-      </div>
+  <div class="layers-section-modern">
+    <div class="layers-header-modern">
+      <h5 class="layers-title">
+        <i class="bi bi-layers me-2"></i>وضعیت لایه‌ها
+      </h5>
+    </div>
+    <div class="layers-grid" id="layers-info">
+      <!-- اطلاعات لایه‌ها اینجا نمایش داده می‌شود -->
     </div>
   </div>
 
@@ -283,11 +321,9 @@
     function updateButtonState(buttonId, isActive) {
       const button = document.getElementById(buttonId);
       if (isActive) {
-        button.classList.remove('btn-outline-primary');
-        button.classList.add('btn-primary');
+        button.classList.add('active');
       } else {
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-outline-primary');
+        button.classList.remove('active');
       }
     }
     
@@ -296,26 +332,34 @@
       container.innerHTML = '';
       
       layers.forEach(layer => {
-        const layerDiv = document.createElement('div');
-        layerDiv.className = 'col-md-3 mb-2';
-        
         const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'secondary';
         const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'شروع نشده';
         const stateText = layer.state === 1 ? 'ثابت' : 'متغیر';
+        const statusIcon = layer.status === 2 ? 'bi-check-circle-fill' : layer.status === 1 ? 'bi-clock-history' : 'bi-circle';
+        const statusColor = layer.status === 2 ? '#28a745' : layer.status === 1 ? '#ffc107' : '#6c757d';
         
-        layerDiv.innerHTML = `
-          <div class="card border-${statusClass}">
-            <div class="card-body p-2">
-              <h6 class="card-title mb-1">${layer.name}</h6>
-              <small class="text-muted">${stateText} - ${layer.thickness_cm}cm</small>
-              <div class="mt-1">
-                <span class="badge bg-${statusClass}">${statusText}</span>
-                <span class="badge bg-info">${layer.experiments.length} آزمایش</span>
-              </div>
+        const layerCard = document.createElement('div');
+        layerCard.className = 'layer-card-modern';
+        layerCard.innerHTML = `
+          <div class="layer-card-header">
+            <div class="layer-icon" style="background: linear-gradient(135deg, ${statusColor}15, ${statusColor}25);">
+              <i class="bi ${statusIcon}" style="color: ${statusColor};"></i>
+            </div>
+            <div class="layer-info">
+              <h6 class="layer-name">${layer.name}</h6>
+              <span class="layer-details">${stateText} - ${layer.thickness_cm}cm</span>
+            </div>
+          </div>
+          <div class="layer-card-body">
+            <div class="layer-badge-modern" style="background: ${statusColor}15; color: ${statusColor}; border-color: ${statusColor}40;">
+              <i class="bi ${statusIcon} me-1"></i>${statusText}
+            </div>
+            <div class="layer-badge-modern layer-badge-info">
+              <i class="bi bi-flask me-1"></i>${layer.experiments.length} آزمایش
             </div>
           </div>
         `;
-        container.appendChild(layerDiv);
+        container.appendChild(layerCard);
       });
     }
   };
