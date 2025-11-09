@@ -67,27 +67,38 @@ class ExperimentRequestForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         experiment_types = cleaned_data.get('experiment_type')
+        experiment_subtypes = cleaned_data.get('experiment_subtype')
+        
         # اگر هیچ نوع آزمایشی انتخاب نشده باشد، اعتبارسنجی انجام نمی‌شود
         if not experiment_types:
             return cleaned_data
+        
         # نام انواع آزمایش انتخاب شده را به صورت لیست رشته بگیر
         type_names = [et.name for et in experiment_types]
+        subtype_names = [est.name for est in experiment_subtypes] if experiment_subtypes else []
+        
         # اگر مقاومت فشاری بتن و ملات انتخاب شده باشد، محل بتن‌ریزی اجباری شود
         if any('مقاومت فشاری بتن' in name for name in type_names):
             if not cleaned_data.get('concrete_place'):
                 self.add_error('concrete_place', 'انتخاب محل بتن‌ریزی الزامی است.')
+        
         # اگر آسفالت انتخاب شده باشد، طرح اختلاط اجباری شود
         if any('آسفالت' in name for name in type_names):
             if not cleaned_data.get('mix_design'):
                 self.add_error('mix_design', 'وارد کردن طرح اختلاط الزامی است.')
-        # اگر خاکریزی انتخاب شده باشد، حد تراکم اجباری شود
-        if any('خاکریزی' in name for name in type_names):
+        
+        # اگر "تراکم نسبی" انتخاب شده و زیرنوع "خاکریزی" انتخاب شده باشد، حد تراکم اجباری شود
+        if any('تراکم نسبی' in name for name in type_names) and \
+           any('خاکریزی' in name for name in subtype_names):
             if not cleaned_data.get('target_density'):
                 self.add_error('target_density', 'وارد کردن حد تراکم الزامی است.')
-        # اگر ملات بنایی انتخاب شده باشد، حد مقاومت فشاری اجباری شود
-        if any('ملات بنایی' in name for name in type_names):
+        
+        # اگر "مقاومت فشاری بتن و ملات" انتخاب شده و زیرنوع "ملات بنایی" انتخاب شده باشد، حد مقاومت فشاری اجباری شود
+        if any('مقاومت فشاری بتن' in name for name in type_names) and \
+           any('ملات بنایی' in name for name in subtype_names):
             if not cleaned_data.get('target_strength'):
                 self.add_error('target_strength', 'وارد کردن حد مقاومت فشاری الزامی است.')
+        
         return cleaned_data
     
     class Meta:

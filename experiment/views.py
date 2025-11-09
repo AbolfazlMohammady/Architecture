@@ -171,6 +171,7 @@ def experiment_request_create(request):
         'form': form,
         'kilometer_formset': kilometer_formset,
         'file_formset': file_formset,
+        'user': request.user,
     })
 
 @login_required
@@ -185,7 +186,8 @@ def experiment_request_edit(request, pk):
         form = forms.ExperimentRequestForm(instance=experiment_request)
     
     return render(request, 'experiment/experiment_request_form.html', {
-        'form': form
+        'form': form,
+        'user': request.user,
     })
 
 @login_required
@@ -699,7 +701,10 @@ def experiment_request_update(request, pk):
             return redirect('experiment:experiment_request_list')
     else:
         form = forms.ExperimentRequestForm(instance=experiment_request, user=request.user)
-    return render(request, 'experiment/experiment_request_form.html', {'form': form})
+    return render(request, 'experiment/experiment_request_form.html', {
+        'form': form,
+        'user': request.user,
+    })
 
 @login_required
 def experiment_request_delete(request, pk):

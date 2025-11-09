@@ -11,6 +11,13 @@
 <div class="container py-5">
   <section class="project-list mb-5">
     <h5 class="mb-4 fw-bold">لیست پروژه‌ها</h5>
+    {% if error_message %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error_message }}
+      <a href="{% url 'login' %}" class="btn btn-sm btn-primary ms-3">ورود به حساب کاربری</a>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
     <div class="row g-4">
       {% for project in projects %}
       <div class="col-12 col-md-6 col-lg-4">

@@ -23,7 +23,18 @@ class ProjectListView(generic.ListView):
     
     def get_queryset(self):
         user = self.request.user
-        user_roles = set(user.roles.values_list('name', flat=True))
+        
+        # بررسی اینکه آیا کاربر لاگین شده است
+        if not user.is_authenticated:
+            return project_models.Project.objects.none()
+        
+        # بررسی اینکه آیا کاربر نقش دارد
+        try:
+            user_roles = set(user.roles.values_list('name', flat=True))
+        except AttributeError:
+            # اگر کاربر نقش نداشته باشد
+            user_roles = set()
+        
         global_roles = set(['ادمین', 'مدیر عامل موسسه', 'مدیر فنی موسسه', 'مدیر کنترل کیفی موسسه', 'کارشناس موسسه'])
         if user_roles & global_roles:
             return super().get_queryset()
@@ -34,9 +45,18 @@ class ProjectListView(generic.ListView):
             Q(quality_control_manager=user) | 
             Q(project_experts=user)
         ).distinct()
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # بررسی اینکه آیا کاربر لاگین شده است
+        if not user.is_authenticated:
+            context['error_message'] = 'برای مشاهده لیست پروژه‌ها، لطفاً ابتدا وارد حساب کاربری خود شوید.'
+            context['projects'] = []
+            context['project_progress'] = {}
+            return context
+        
         projects = context['projects']
 
         project_progress_dict = {}

@@ -41,6 +41,12 @@
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
+                                    <label class="form-label">نام و نام خانوادگی</label>
+                                    <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly>
+                                    <small class="form-text text-muted">نام کاربر به صورت پیشفرض ثبت شده است</small>
+                                </div>
+                                
+                                <div class="mb-3">
                                     <label for="{{ form.project.id_for_label }}" class="form-label">پروژه</label>
                                     {% render_field form.project class="form-control select2" %}
                                     {% if form.project.errors %}
@@ -61,23 +67,25 @@
                         </div>
 
                                 <div class="mb-3">
-                                    <label for="{{ form.experiment_type.id_for_label }}" class="form-label">نوع آزمایش</label>
+                                    <label for="{{ form.experiment_type.id_for_label }}" class="form-label">آزمایش</label>
                                     {% render_field form.experiment_type class="form-control select2" multiple="multiple" %}
                                     {% if form.experiment_type.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.experiment_type.errors }}
                                         </div>
                                     {% endif %}
+                                    <small class="form-text text-muted">می‌توانید چند مورد را انتخاب کنید</small>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="{{ form.experiment_subtype.id_for_label }}" class="form-label">زیرگروه آزمایش</label>
+                                    <label for="{{ form.experiment_subtype.id_for_label }}" class="form-label">نوع</label>
                                     {% render_field form.experiment_subtype class="form-control select2" multiple="multiple" %}
                                     {% if form.experiment_subtype.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.experiment_subtype.errors }}
                                         </div>
                                     {% endif %}
+                                    <small class="form-text text-muted">بستگی به آزمایش انتخاب شده دارد</small>
                                 </div>
                                 </div>
                             </div>
@@ -387,9 +395,10 @@ $(document).ready(function() {
         }
     });
 
-    // نمایش داینامیک فیلدها بر اساس نوع آزمایش
+    // نمایش داینامیک فیلدها بر اساس نوع آزمایش و زیرنوع
     function toggleFieldsByExperimentType() {
         var selectedTypes = $('#id_experiment_type').select2('data').map(function(item){ return item.text; });
+        var selectedSubtypes = $('#id_experiment_subtype').select2('data').map(function(item){ return item.text; });
         
         // نمایش/مخفی کردن طرح اختلاط برای آسفالت
         if (selectedTypes.some(function(name){ return name.includes('آسفالت'); })) {
@@ -399,7 +408,7 @@ $(document).ready(function() {
             $('#id_mix_design').val('');
         }
         
-        // نمایش/مخفی کردن محل بتن‌ریزی برای مقاومت فشاری بتن
+        // نمایش/مخفی کردن محل بتن‌ریزی برای مقاومت فشاری بتن و ملات
         if (selectedTypes.some(function(name){ return name.includes('مقاومت فشاری بتن'); })) {
             $('#concrete-place-group').show();
         } else {
@@ -407,23 +416,32 @@ $(document).ready(function() {
             $('#id_concrete_place').val('').trigger('change');
         }
         
-        // نمایش/مخفی کردن حد تراکم برای خاکریزی
-        if (selectedTypes.some(function(name){ return name.includes('خاکریزی'); })) {
+        // نمایش/مخفی کردن حد تراکم برای "خاکریزی" در زیرنوع "تراکم نسبی"
+        if (selectedTypes.some(function(name){ return name.includes('تراکم نسبی'); }) && 
+            selectedSubtypes.some(function(name){ return name.includes('خاکریزی'); })) {
             $('#target-density-group').show();
         } else {
             $('#target-density-group').hide();
             $('#id_target_density').val('');
         }
         
-        // نمایش/مخفی کردن حد مقاومت فشاری برای ملات بنایی
-        if (selectedTypes.some(function(name){ return name.includes('ملات بنایی'); })) {
+        // نمایش/مخفی کردن حد مقاومت فشاری برای "ملات بنایی" در زیرنوع "مقاومت فشاری بتن و ملات"
+        if (selectedTypes.some(function(name){ return name.includes('مقاومت فشاری بتن'); }) && 
+            selectedSubtypes.some(function(name){ return name.includes('ملات بنایی'); })) {
             $('#target-strength-group').show();
         } else {
             $('#target-strength-group').hide();
             $('#id_target_strength').val('');
         }
     }
+    
+    // اجرای تابع هنگام تغییر نوع آزمایش
     $('#id_experiment_type').on('change', toggleFieldsByExperimentType);
+    
+    // اجرای تابع هنگام تغییر زیرنوع
+    $('#id_experiment_subtype').on('change', toggleFieldsByExperimentType);
+    
+    // اجرای اولیه
     toggleFieldsByExperimentType();
 
     // Trigger change events if values are pre-selected
