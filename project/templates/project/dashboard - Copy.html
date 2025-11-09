@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}
+داشبورد پروژه - {{ project.name }}
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" />
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+{{ project_data|json_script:"project-data" }}
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid bg-light p-3 rounded rounded-2">
+  <div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <h3 class="text-primary">{{ project.name }}</h3>
+      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-success rounded-pill px-4">
+        <i class="bi bi-plus-circle me-2"></i>ثبت ضریب پرداخت
+      </a>
+    </div>
+      <div class="row">
+        <div class="col-md-3">
+          <small class="text-muted">مسافت پروژه:</small>
+          <strong>{{ project.masafat|intcomma_float }} کیلومتر</strong>
+        </div>
+        <div class="col-md-3">
+          <small class="text-muted">کیلومتر شروع:</small>
+          <strong>{{ project.start_kilometer|intcomma_float }}</strong>
+        </div>
+        <div class="col-md-3">
+          <small class="text-muted">کیلومتر پایان:</small>
+          <strong>{{ project.end_kilometer|intcomma_float }}</strong>
+        </div>
+        <div class="col-md-3">
+          <small class="text-muted">عرض پروژه:</small>
+          <strong>{{ project.width|intcomma_float }} متر</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- کنترل‌های نمودار -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">کنترل‌های نمودار</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-2">
+              <label for="xinput" class="form-label">کیلومتر</label>
+              <input id="xinput" type="text" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="col-md-2">
+              <label for="yinput" class="form-label">ارتفاع</label>
+              <input id="yinput" type="text" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="col-md-8">
+              <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary btn-sm" id="toggleRoadLine">
+                  <i class="fas fa-road"></i> خط جاده
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleLandLine">
+                  <i class="fas fa-mountain"></i> خط زمین
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleLayerLine">
+                  <i class="fas fa-layer-group"></i> لایه‌ها
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleStructures">
+                  <i class="fas fa-bridge"></i> ابنیه‌ها
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="toggleExperiments">
+                  <i class="fas fa-flask"></i> آزمایش‌ها
+                </button>
+              </div>
+              
+              <!-- فیلتر زمانی -->
+              <div class="date-filter-section mt-2">
+                <div class="row">
+                  <div class="col-md-3">
+                    <label for="startDate" class="form-label">از تاریخ:</label>
+                    <input type="text" id="startDate" class="form-control form-control-sm" placeholder="از تاریخ" autocomplete="off">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="endDate" class="form-label">تا تاریخ:</label>
+                    <input type="text" id="endDate" class="form-control form-control-sm" placeholder="تا تاریخ" autocomplete="off">
+                  </div>
+                  <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-primary btn-sm w-100" id="applyDateFilter">
+                      <i class="fas fa-filter"></i> اعمال فیلتر
+                    </button>
+                  </div>
+                  <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="clearDateFilter">
+                      <i class="fas fa-times"></i> پاک کردن
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نمودار اصلی -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">نمودار پروفیل طولی پروژه</h6>
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn btn-outline-secondary" id="zoomIn">
+              <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="btn btn-outline-secondary" id="zoomOut">
+              <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-outline-secondary" id="resetZoom">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div id="dashboard-flex" style="display: flex; flex-direction: row; width: 100%; background: #fff; min-height: 500px; direction: ltr;">
+            <!-- ستون چپ: محور Y -->
+            <div style="flex: 0 0 50px; background: #fff; z-index: 20; display: flex; flex-direction: column; align-items: flex-end;">
+              <canvas id="yAxisCanvas" style="width: 50px; height: 470px; background: white; pointer-events: none;"></canvas>
+            </div>
+            <!-- ستون راست: نمودار و محور X -->
+            <div id="dashboard-container" style="flex: 1 1 auto; overflow-x: auto; overflow-y: hidden; min-width: 1200px; position: relative; white-space: nowrap;">
+              <!-- Start: Make chart horizontally scrollable -->
+              <div id="chart-scroll-x" style="overflow-x: auto; overflow-y: hidden; width: 100%;">
+                <div id="chart-canvas-inner" style="width: 100%; min-width: 1200px;">
+                  <!-- Compact Legend Box -->
+                  <div id="chart-legend" style="position: absolute; top: 12px; left: 18px; background: rgba(255,255,255,0.65); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; padding: 6px 8px; font-size: 11px; z-index: 100; min-width: 150px; max-width: 220px; backdrop-filter: blur(8px);">
+                    <table style="width:100%; border-collapse:collapse;">
+                      <tr>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><g stroke="rgba(255,0,0,0.5)" stroke-width="2"><line x1="0" y1="14" x2="14" y2="0" /><line x1="6" y1="14" x2="20" y2="0" /></g></svg>
+                        </td>
+                        <td style="padding:2px 4px;">خاکبرداری</td>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><g stroke="rgba(0,100,255,0.5)" stroke-width="2"><line x1="0" y1="14" x2="14" y2="0" /><line x1="6" y1="14" x2="20" y2="0" /></g></svg>
+                        </td>
+                        <td style="padding:2px 4px;">خاکریزی</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:2px 4px;">
+                          <!-- پل واقعی کوچک -->
+                          <svg width="38" height="22">
+                            <rect x="4" y="7" width="30" height="6" fill="#90a4ae" stroke="#37474f" stroke-width="1.5" />
+                            <path d="M4,13 Q19,21 34,13" fill="none" stroke="#607d8b" stroke-width="1.5" />
+                            <rect x="2" y="13" width="4" height="7" fill="#78909c" stroke="#37474f" stroke-width="1" />
+                            <rect x="32" y="13" width="4" height="7" fill="#78909c" stroke="#37474f" stroke-width="1" />
+                          </svg>
+                        </td>
+                        <td style="padding:2px 4px;">پل</td>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#7ed957" stroke="#388e3c" stroke-width="2" /><text x="20" y="13" font-size="13" fill="#43a047">✔</text></svg>
+                        </td>
+                        <td style="padding:2px 4px;">لایه تکمیل‌شده</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#ffc107" stroke="#ff9800" stroke-width="2" /></svg>
+                        </td>
+                        <td style="padding:2px 4px;">لایه در حال انجام</td>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#bdbdbd" stroke="#757575" stroke-width="2" /></svg>
+                        </td>
+                        <td style="padding:2px 4px;">لایه شروع‌نشده</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#ff9800" stroke="#ff9800" stroke-width="2" /></svg>
+                        </td>
+                        <td style="padding:2px 4px;">لایه متغیر</td>
+                        <td style="padding:2px 4px;">
+                          <svg width="22" height="14"><rect x="2" y="4" width="18" height="7" fill="#fff" stroke="#2196f3" stroke-width="3" /><text x="6" y="13" font-size="13" fill="#2196f3">🌱</text></svg>
+                        </td>
+                        <td style="padding:2px 4px;">بستر طبیعی</td>
+                      </tr>
+                    </table>
+                  </div>
+                  <!-- End Legend Box -->
+                  <canvas id="mainCanvas" style="width: 100%; min-width: 1200px; height: 470px; background: white; cursor: crosshair; display: block;"></canvas>
+                  <canvas id="xAxisCanvas" style="width: 100%; min-width: 1200px; height: 50px; background: white; pointer-events: none; display: block;"></canvas>
+                </div>
+              </div>
+              <!-- End: Make chart horizontally scrollable -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- اطلاعات لایه‌ها -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">وضعیت لایه‌ها</h6>
+        </div>
+        <div class="card-body">
+          <div class="row" id="layers-info">
+            <!-- اطلاعات لایه‌ها اینجا نمایش داده می‌شود -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تولتیپ برای نمایش اطلاعات -->
+  <div id="tooltip" class="tooltip-custom"></div>
+</div>
+
+<script type="module" src="{% static 'js/dashboard.js' %}"></script>
+<script type="module">
+  import { ProjectDashboard } from "{% static 'js/dashboard.js' %}";
+  
+  window.onload = () => {
+    const projectData = JSON.parse(document.getElementById('project-data').textContent);
+    
+    // تنظیم مقادیر اولیه کنترل‌ها
+    document.getElementById("xinput").value = projectData.start_kilometer;
+    document.getElementById("yinput").value = "0";
+    
+    // ایجاد نمونه داشبورد
+    const dashboard = new ProjectDashboard({
+      containerId: 'dashboard-container',
+      projectData: projectData,
+      width: 1200,
+      height: 500,
+      margin: 50
+    });
+    
+    // اتصال دکمه‌های کنترل
+    document.getElementById('toggleRoadLine').addEventListener('click', () => {
+      dashboard.toggleRoadLine();
+      updateButtonState('toggleRoadLine', dashboard.showRoadLine);
+    });
+    
+    document.getElementById('toggleLandLine').addEventListener('click', () => {
+      dashboard.toggleLandLine();
+      updateButtonState('toggleLandLine', dashboard.showLandLine);
+    });
+    
+    document.getElementById('toggleLayerLine').addEventListener('click', () => {
+      dashboard.toggleLayerLine();
+      updateButtonState('toggleLayerLine', dashboard.showLayerLine);
+    });
+    
+    document.getElementById('toggleStructures').addEventListener('click', () => {
+      dashboard.toggleStructures();
+      updateButtonState('toggleStructures', dashboard.showStructures);
+    });
+    
+    document.getElementById('toggleExperiments').addEventListener('click', () => {
+      dashboard.toggleExperiments();
+      updateButtonState('toggleExperiments', dashboard.showExperiments);
+    });
+    
+    // کنترل‌های زوم
+    document.getElementById('zoomIn').addEventListener('click', () => dashboard.zoomIn());
+    document.getElementById('zoomOut').addEventListener('click', () => dashboard.zoomOut());
+    document.getElementById('resetZoom').addEventListener('click', () => dashboard.resetZoom());
+    
+    // کنترل‌های فیلتر زمانی
+    document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());
+    document.getElementById('clearDateFilter').addEventListener('click', () => dashboard.clearDateFilter());
+    
+    // نمایش اطلاعات لایه‌ها
+    displayLayersInfo(projectData.layers);
+    
+    function updateButtonState(buttonId, isActive) {
+      const button = document.getElementById(buttonId);
+      if (isActive) {
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-primary');
+      } else {
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+      }
+    }
+    
+    function displayLayersInfo(layers) {
+      const container = document.getElementById('layers-info');
+      container.innerHTML = '';
+      
+      layers.forEach(layer => {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'col-md-3 mb-2';
+        
+        const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'secondary';
+        const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'شروع نشده';
+        const stateText = layer.state === 1 ? 'ثابت' : 'متغیر';
+        
+        layerDiv.innerHTML = `
+          <div class="card border-${statusClass}">
+            <div class="card-body p-2">
+              <h6 class="card-title mb-1">${layer.name}</h6>
+              <small class="text-muted">${stateText} - ${layer.thickness_cm}cm</small>
+              <div class="mt-1">
+                <span class="badge bg-${statusClass}">${statusText}</span>
+                <span class="badge bg-info">${layer.experiments.length} آزمایش</span>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(layerDiv);
+      });
+    }
+  };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script>
+  $(function() {
+    $('#startDate').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false
+    });
+    $('#endDate').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false
+    });
+  });
+</script>
+{% endblock %}
