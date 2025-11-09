@@ -41,12 +41,29 @@ export class XAxisCanvas {
 
     // لیبل‌گذاری پویا بر اساس طول بازه
     const range = this.end_km - this.start_km;
-    let step = range < 10 ? 0.5 : 1;
+    // استفاده از data که از drawAxes می‌آید (اگر موجود باشد)
     let labels = [];
-    for (let km = this.start_km; km <= this.end_km + 0.0001; km += step) {
-      // گرد کردن به یک رقم اعشار برای جلوگیری از اعشار اضافی
-      let label = Math.round(km * 10) / 10;
-      labels.push(label);
+    if (this.data && this.data.length > 0) {
+      // استفاده از data که قبلاً در drawAxes تنظیم شده
+      labels = this.data;
+    } else {
+      // fallback: تنظیم step بر اساس طول پروژه
+      let step;
+      if (range <= 5) {
+        step = 0.5;
+      } else if (range <= 20) {
+        step = 1;
+      } else if (range <= 50) {
+        step = 2;
+      } else if (range <= 100) {
+        step = 5;
+      } else {
+        step = 10;
+      }
+      for (let km = this.start_km; km <= this.end_km + 0.0001; km += step) {
+        let label = Math.round(km * 10) / 10;
+        labels.push(label);
+      }
     }
     labels.forEach((km) => {
       const x = ((km - this.start_km) / range) * this.width;

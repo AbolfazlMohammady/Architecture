@@ -13,10 +13,22 @@ export class Canvas {
 
     
     this.canvas = document.getElementById('mainCanvas');
-    this.canvas.width = width;
-    this.canvas.height = height;
+    
+    // افزایش کیفیت canvas با devicePixelRatio
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
 
     this.ctx = this.canvas.getContext('2d');
+    
+    // تنظیم scale برای کیفیت بالا
+    this.ctx.scale(dpr, dpr);
+    
+    // بهبود کیفیت رندرینگ
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
     
     
     // this.container.appendChild(this.canvas);
@@ -44,6 +56,7 @@ export class Canvas {
     this.landLine.update(points);
   }
   clear() {
+    // پاک کردن canvas - چون scale تنظیم شده، از width و height اصلی استفاده می‌کنیم
     this.ctx.clearRect(0, 0, this.width, this.height);
 }
 

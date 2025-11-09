@@ -47,19 +47,19 @@ export class ProjectDashboard {
     setupCanvas() {
         // Calculate dynamic width based on project length
         const projectLength = this.projectData.end_kilometer - this.projectData.start_kilometer;
-        const pxPerKm = 300; // 300px per km for better scrollability
+        const pxPerKm = 50; // 50px per km - نمودار بازتر با کیفیت بهتر
         const minWidth = 1200;
-        const dynamicWidth = Math.max(minWidth, Math.ceil(projectLength * pxPerKm));
+        this.dynamicWidth = Math.max(minWidth, Math.ceil(projectLength * pxPerKm));
         // Set the inner div width to match canvas for full scroll
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
-            chartInner.style.width = dynamicWidth + 'px';
+            chartInner.style.width = this.dynamicWidth + 'px';
         }
 
         // ایجاد canvas اصلی
         this.canvas = new Canvas({
             containerId: this.containerId,
-            width: dynamicWidth,
+            width: this.dynamicWidth,
             height: this.height,
             margin: this.margin,
             start_kilometer: this.projectData.start_kilometer,
@@ -78,7 +78,7 @@ export class ProjectDashboard {
         // ایجاد محور X
         this.xAxis = new XAxisCanvas({
             canvasId: 'xAxisCanvas',
-            width: dynamicWidth - 50, // کم کردن عرض محور Y
+            width: this.dynamicWidth - 50, // کم کردن عرض محور Y
             height: 30,
             margin: this.margin,
             xunit: 100
@@ -138,41 +138,55 @@ export class ProjectDashboard {
             return;
         }
 
-        // محاسبه محدوده داده‌ها
-        const xValues = profileData.land_points.map(p => p.x);
-        const yValues = [...profileData.land_points.map(p => p.y), ...profileData.road_points.map(p => p.y)];
+        // استفاده از محدوده پروژه برای محور X - این مهم است!
+        // باید از start_kilometer و end_kilometer پروژه استفاده شود
+        this.xMin = this.projectData.start_kilometer;
+        this.xMax = this.projectData.end_kilometer;
         
-        this.xMin = Math.min(...xValues);
-        this.xMax = Math.max(...xValues);
+        // محاسبه محدوده Y از داده‌ها
+        const yValues = [...profileData.land_points.map(p => p.y), ...profileData.road_points.map(p => p.y)];
         this.yMin = Math.min(...yValues);
         this.yMax = Math.max(...yValues);
         
-        // اضافه کردن حاشیه
-        const xRange = this.xMax - this.xMin;
+        // اضافه کردن حاشیه فقط برای محور Y
         const yRange = this.yMax - this.yMin;
-        const xMargin = xRange * 0.1;
         const yMargin = yRange * 0.1;
         
-        this.xMin -= xMargin;
-        this.xMax += xMargin;
         this.yMin -= yMargin;
         this.yMax += yMargin;
         
         // محاسبه مقیاس‌ها
-        const canvasWidth = this.width - this.margin * 2 - 50; // کم کردن عرض محور Y
+        // استفاده از dynamicWidth که در setupCanvas محاسبه شده
+        const canvasWidth = (this.dynamicWidth || this.width) - 50; // کم کردن عرض محور Y (50px)
         const canvasHeight = this.height - this.margin * 2 - 30; // کم کردن ارتفاع محور X
         
-        this.xScale = canvasWidth / (this.xMax - this.xMin);
+        const xRange = this.xMax - this.xMin;
+        this.xScale = canvasWidth / xRange;
         this.yScale = canvasHeight / (this.yMax - this.yMin);
     }
 
     drawAxes() {
         // بروزرسانی محور X
         const xLabels = [];
-        const step = 0.5; // هر ۵۰۰ متر
         const start = this.projectData.start_kilometer;
         const end = this.projectData.end_kilometer;
-        for (let km = start; km <= end; km += step) {
+        const projectLength = end - start;
+        
+        // تنظیم step بر اساس طول پروژه - برای پروژه‌های بزرگ step بزرگتر
+        let step;
+        if (projectLength <= 5) {
+            step = 0.5; // هر 500 متر برای پروژه‌های کوچک
+        } else if (projectLength <= 20) {
+            step = 1; // هر 1 کیلومتر
+        } else if (projectLength <= 50) {
+            step = 2; // هر 2 کیلومتر
+        } else if (projectLength <= 100) {
+            step = 5; // هر 5 کیلومتر
+        } else {
+            step = 10; // هر 10 کیلومتر برای پروژه‌های خیلی بزرگ
+        }
+        
+        for (let km = start; km <= end + 0.0001; km += step) {
             xLabels.push(km);
         }
         this.xAxis.update(xLabels, start, end);
@@ -210,18 +224,20 @@ export class ProjectDashboard {
             const cp2y = p1.y;
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
         }
-        ctx.strokeStyle = 'rgba(56,249,215,0.18)';
-        ctx.lineWidth = 16;
+        ctx.strokeStyle = 'rgba(56,249,215,0.12)';
+        ctx.lineWidth = 10;
         ctx.shadowColor = '#38f9d7';
-        ctx.shadowBlur = 24;
+        ctx.shadowBlur = 12; // کاهش هاله آبی
         ctx.stroke();
-        // خط اصلی پروفیل
+        // خط اصلی پروفیل - بهبود کیفیت
         ctx.shadowBlur = 0;
         const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
         grad.addColorStop(0, '#43e97b');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 4.5;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 0; i < points.length - 1; i++) {
@@ -249,14 +265,16 @@ export class ProjectDashboard {
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
-        // گرادینت آبی-بنفش برای پروفیل جاده
+        // گرادینت آبی-بنفش برای پروفیل جاده - بهبود کیفیت
         const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
         grad.addColorStop(0, '#00c6ff');
         grad.addColorStop(1, '#0072ff');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.shadowColor = '#00c6ff';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length; i++) {
@@ -307,10 +325,10 @@ export class ProjectDashboard {
                 const layer = layers[l];
                 // ضخامت لایه‌ها را به صورت نسبی و با حداقل و حداکثر معقول محدود کن
                 const canvasHeight = this.height - this.margin * 2 - 30;
-                const maxLayerThicknessPx = canvasHeight * 0.10; // حداکثر 10 درصد ارتفاع نمودار
-                const minLayerThicknessPx = 3;
-                const thicknessPx1 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                const thicknessPx2 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
+                const maxLayerThicknessPx = canvasHeight * 0.12; // حداکثر 12 درصد ارتفاع نمودار برای نمایش بهتر
+                const minLayerThicknessPx = 2;
+                let thicknessPx1 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
+                let thicknessPx2 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
                 let yBottom1 = yBase1 + thicknessPx1;
                 let yBottom2 = yBase2 + thicknessPx2;
                 if (layer.status === 0) {
@@ -330,7 +348,17 @@ export class ProjectDashboard {
                     let opacity = 0.7;
                     if (layer.status === 2) { fillColor = '#7ed957'; borderColor = '#388e3c'; opacity = 0.85; }
                     else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; }
-                    if (layer.state !== 1) fillColor = '#ff9800';
+                    if (layer.state !== 1) {
+                        fillColor = '#ff9800';
+                        opacity = 0.1; // کاهش شدید opacity برای خط نارنجی (لایه متغیر) تا نازک‌تر دیده شود
+                        // کاهش ضخامت لایه برای لایه‌های متغیر
+                        const thicknessReduction = 0.3; // کاهش 70% ضخامت
+                        thicknessPx1 = Math.max(thicknessPx1 * thicknessReduction, 1);
+                        thicknessPx2 = Math.max(thicknessPx2 * thicknessReduction, 1);
+                        // به‌روزرسانی yBottom بعد از کاهش ضخامت
+                        yBottom1 = yBase1 + thicknessPx1;
+                        yBottom2 = yBase2 + thicknessPx2;
+                    }
                     let isNatural = layer.name.includes('بستر') || layer.name.includes('طبیعی');
                     ctx.save();
                     ctx.globalAlpha = opacity;
@@ -341,31 +369,83 @@ export class ProjectDashboard {
                     ctx.lineTo(x1, yBottom1);
                     ctx.closePath();
                     if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
+                        // رسم لایه‌ها در موقعیت دقیق خودشان (بر اساس executed_ranges)
                         for (const range of layer.executed_ranges) {
                             const xr1 = this.transformX(range.start);
                             const xr2 = this.transformX(range.end);
-                            const yTop = (yBase1 + yBase2) / 2;
-                            const height = ((yBottom1 + yBottom2) / 2) - yTop;
+                            
+                            // پیدا کردن yTop و yBottom برای این بازه - استفاده از interpolate
+                            // پیدا کردن نزدیک‌ترین road_points به range.start و range.end
+                            let yTopStart = yTop1, yTopEnd = yTop2;
+                            let yBottomStart = yBottom1, yBottomEnd = yBottom2;
+                            
+                            // پیدا کردن نزدیک‌ترین نقطه به range.start
+                            let minDistStart = Infinity;
+                            let minDistEnd = Infinity;
+                            for (let p = 0; p < profileData.road_points.length; p++) {
+                                const point = profileData.road_points[p];
+                                const distStart = Math.abs(point.x - range.start);
+                                const distEnd = Math.abs(point.x - range.end);
+                                if (distStart < minDistStart) {
+                                    minDistStart = distStart;
+                                    yTopStart = this.transformY(point.y);
+                                }
+                                if (distEnd < minDistEnd) {
+                                    minDistEnd = distEnd;
+                                    yTopEnd = this.transformY(point.y);
+                                }
+                            }
+                            
+                            // محاسبه yBottom بر اساس yTop و لایه‌های قبلی
+                            const canvasHeight = this.height - this.margin * 2 - 30;
+                            let tempYBaseStart = yTopStart;
+                            let tempYBaseEnd = yTopEnd;
+                            for (let tempL = 0; tempL <= l; tempL++) {
+                                const tempLayer = layers[tempL];
+                                let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, canvasHeight * 0.12), 2);
+                                // کاهش ضخامت برای لایه‌های متغیر
+                                if (tempLayer.state !== 1) {
+                                    tempThickness = Math.max(tempThickness * 0.3, 1);
+                                }
+                                tempYBaseStart += tempThickness;
+                                tempYBaseEnd += tempThickness;
+                            }
+                            yBottomStart = tempYBaseStart;
+                            yBottomEnd = tempYBaseEnd;
+                            
+                            // رسم لایه در موقعیت دقیق
+                            ctx.beginPath();
+                            ctx.moveTo(xr1, yTopStart);
+                            ctx.lineTo(xr2, yTopEnd);
+                            ctx.lineTo(xr2, yBottomEnd);
+                            ctx.lineTo(xr1, yBottomStart);
+                            ctx.closePath();
                             ctx.fillStyle = fillColor;
-                            ctx.fillRect(xr1, yTop, xr2 - xr1, height);
+                            ctx.fill();
+                            
+                            // stroke برای لایه
+                            ctx.globalAlpha = 1;
+                            ctx.lineWidth = 0.8;
+                            ctx.strokeStyle = borderColor;
+                            ctx.stroke();
+                            
                             // --- اضافه کردن tooltipData برای لایه ---
                             if (!this.tooltipData) this.tooltipData = [];
                             this.tooltipData.push({
                                 x: (xr1 + xr2) / 2,
-                                y: yTop + height / 2,
+                                y: (yTopStart + yBottomStart + yTopEnd + yBottomEnd) / 4,
                                 width: Math.abs(xr2 - xr1),
-                                height: Math.abs(height),
+                                height: Math.abs((yBottomStart + yBottomEnd) / 2 - (yTopStart + yTopEnd) / 2),
                                 data: { type: 'layer', layer }
                             });
                         }
-                        ctx.globalAlpha = 1;
-                        ctx.lineWidth = 1.2;
-                        ctx.strokeStyle = borderColor;
-                        ctx.stroke();
                         ctx.restore();
                     } else {
+                        // رسم لایه کامل (بدون executed_ranges) - در موقعیت دقیق
+                        ctx.fillStyle = fillColor;
+                        ctx.fill();
                         ctx.globalAlpha = 1;
-                        ctx.lineWidth = 1.2;
+                        ctx.lineWidth = 0.8; // کاهش ضخامت خط
                         ctx.strokeStyle = borderColor;
                         ctx.stroke();
                         ctx.restore();
@@ -645,8 +725,9 @@ export class ProjectDashboard {
     }
 
     transformX(x) {
-        // شروع نمودار دقیقاً از کیلومتر شروع، بدون فاصله خالی
-        return (x - this.xMin) * this.xScale;
+        // تبدیل مختصات X از کیلومتر به پیکسل
+        // اضافه کردن margin برای فاصله از لبه چپ
+        return this.margin + (x - this.xMin) * this.xScale;
     }
 
     transformY(y) {
@@ -655,20 +736,26 @@ export class ProjectDashboard {
 
     handleMouseMove(e) {
         const rect = e.target.getBoundingClientRect();
+        
+        // محاسبه دقیق موقعیت موس - مستقیماً از مختصات canvas
+        // rect.width و rect.height همان canvas.style.width/height هستند
+        // که با dynamicWidth و height برابر هستند
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
         
         // اطمینان از اینکه موس در محدوده canvas است
-        if (this.mouseX < 0 || this.mouseX > this.width || this.mouseY < 0 || this.mouseY > this.height) {
+        const canvasWidth = this.dynamicWidth || this.width;
+        if (this.mouseX < 0 || this.mouseX > canvasWidth || this.mouseY < 0 || this.mouseY > this.height) {
             this.mouseX = null;
             this.mouseY = null;
             this.render();
             return;
         }
         
-        // بروزرسانی نمایش مختصات
-        const realX = this.xMin + (this.mouseX - this.margin - 50) / (this.xScale * this.zoomLevel);
-        const realY = this.yMax - (this.mouseY - this.margin) / (this.yScale * this.zoomLevel);
+        // بروزرسانی نمایش مختصات - محاسبه دقیق بر اساس xScale
+        // mouseX از لبه چپ canvas است، پس باید margin و محور Y را کم کنیم
+        const realX = this.xMin + (this.mouseX - this.margin - 50) / this.xScale;
+        const realY = this.yMax - (this.mouseY - this.margin) / this.yScale;
         document.getElementById('xinput').value = realX.toFixed(3);
         document.getElementById('yinput').value = realY.toFixed(3);
         
@@ -850,24 +937,37 @@ export class ProjectDashboard {
     drawCrosshair(x, y) {
         const ctx = this.canvas.ctx;
         ctx.save();
-        // فقط خطوط عمودی و افقی و علامت + رسم شود، هیچ دایره‌ای نکش
+        // فقط خطوط عمودی و افقی و علامت + رسم شود - بهبود کیفیت و دقت
+        const canvasWidth = this.dynamicWidth || this.width;
+        
+        // خطوط راهنما (کمرنگ)
         ctx.strokeStyle = 'rgba(44,62,80,0.25)';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 0.8;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, this.height);
         ctx.moveTo(0, y);
-        ctx.lineTo(this.width, y);
+        ctx.lineTo(canvasWidth, y);
         ctx.stroke();
-        ctx.strokeStyle = 'rgba(44,62,80,0.8)';
+        
+        // علامت + در مرکز (پررنگ و دقیق)
+        ctx.strokeStyle = 'rgba(44,62,80,0.95)';
         ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x - 8, y);
         ctx.lineTo(x + 8, y);
         ctx.moveTo(x, y - 8);
         ctx.lineTo(x, y + 8);
         ctx.stroke();
-        // هیچ دایره‌ای رسم نشود
+        
+        // دایره کوچک در مرکز برای دقت بیشتر
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(44,62,80,0.95)';
+        ctx.fill();
+        
         ctx.restore();
     }
 
@@ -903,18 +1003,20 @@ export class ProjectDashboard {
             ctx.closePath();
             ctx.clip();
 
-            // هاشور مورب با زاویه ۴۵ درجه
-            let color = 'rgba(200,200,200,0.15)';
-            if (isExcavation) color = 'rgba(255,0,0,0.5)';
-            if (isEmbankment) color = 'rgba(0,100,255,0.4)';
+            // هاشور مورب با زاویه ۴۵ درجه - بهبود کیفیت و وضوح
+            let color = 'rgba(200,200,200,0.3)';
+            if (isExcavation) color = 'rgba(255,0,0,0.75)'; // قرمز پررنگ‌تر برای خاکبرداری
+            if (isEmbankment) color = 'rgba(0,100,255,0.65)'; // آبی پررنگ‌تر برای خاکریزی
             ctx.strokeStyle = color;
-            ctx.lineWidth = 1.2;
-            // خطوط مورب ۴۵ درجه
+            ctx.lineWidth = 1.8; // ضخامت مناسب برای وضوح
+            ctx.lineCap = 'round';
+            // خطوط مورب ۴۵ درجه با فاصله مناسب
             const minX = Math.min(x1, x2);
             const maxX = Math.max(x1, x2);
             const minY = Math.min(yLand1, yRoad1, yLand2, yRoad2);
             const maxY = Math.max(yLand1, yRoad1, yLand2, yRoad2);
-            for (let d = minX - (maxY - minY); d < maxX + (maxY - minY); d += 8) {
+            const spacing = 6; // فاصله مناسب برای وضوح بهتر مناطق
+            for (let d = minX - (maxY - minY); d < maxX + (maxY - minY); d += spacing) {
                 ctx.beginPath();
                 ctx.moveTo(d, minY - 20);
                 ctx.lineTo(d + (maxY - minY) + 40, maxY + 20);
