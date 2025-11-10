@@ -225,7 +225,7 @@ class ProjectDashboardView(generic.DetailView):
         project:project_models.Project = self.get_object()
         
         # خواندن فایل پروفیل
-        profile_data = self.read_file(project.profile_file)
+        profile_data = self.read_file(project.profile_file, project)
         
         # دریافت لایه‌ها و مرتب‌سازی بر اساس ترتیب از بالا
         layers = project_models.ProjectLayer.objects.filter(project=project).order_by('order_from_top')
@@ -318,7 +318,7 @@ class ProjectDashboardView(generic.DetailView):
         print('TEST')
         return context
 
-    def read_file(self, profile_file):
+    def read_file(self, profile_file, project=None):
         import re
         import pandas as pd
         import math
@@ -358,17 +358,26 @@ class ProjectDashboardView(generic.DetailView):
                 diff_col = [c for c in df.columns if c.lower().strip() in ['elevation difference', 'اختلاف ارتفاع']][0]
                 x = df[station_col].apply(parse_station)
                 y = df[diff_col].apply(parse_value)
-                # مقدار پایه را طوری انتخاب کن که میانگین y حدود 10 باشد
-                base_height = 10 - y.mean() if not pd.isna(y.mean()) else 0
-                y = y + base_height
+                # استفاده از مقادیر واقعی Elevation Difference (بدون نرمال‌سازی)
+                # این باعث می‌شود محور Y از minimum Elevation Difference شروع شود
                 land_points = [
                     {"x": float(xv) / 1000, "y": float(yv)}
                     for xv, yv in zip(x, y) if xv is not None and yv is not None
                 ]
+                # road_points روی Y=0 هستند (Elevation Design = 0)
                 road_points = [
-                    {"x": float(xv) / 1000, "y": base_height}
+                    {"x": float(xv) / 1000, "y": 0.0}
                     for xv in x if xv is not None
                 ]
+                # محاسبه start_kilometer و end_kilometer از داده‌های فایل
+                valid_x = [xv for xv in x if xv is not None]
+                if valid_x and project:
+                    min_station = min(valid_x) / 1000  # تبدیل به کیلومتر
+                    max_station = max(valid_x) / 1000  # تبدیل به کیلومتر
+                    # به‌روزرسانی start_kilometer و end_kilometer در پروژه
+                    project.start_kilometer = min_station
+                    project.end_kilometer = max_station
+                    project.save(update_fields=['start_kilometer', 'end_kilometer'])
             # حالت‌های دیگر (قبلی)
             elif ('station' in columns and 'cutfill' in columns):
                 station_col = [c for c in df.columns if c.lower().strip() in ['station', 'ایستگاه']][0]
@@ -420,22 +429,10 @@ class ProjectDashboardView(generic.DetailView):
             land_points = sorted(land_points, key=lambda p: p['x'])
             road_points = sorted(road_points, key=lambda p: p['x'])
 
-            # --- نرمال‌سازی خودکار اگر دامنه y خیلی کوچک بود ---
-            y_vals = [p['y'] for p in land_points]
-            if y_vals:
-                y_min, y_max = min(y_vals), max(y_vals)
-                if y_max - y_min < 2:
-                    scale = 20 / (y_max - y_min + 1e-6)
-                    y_mean = sum(y_vals) / len(y_vals)
-                    for p in land_points:
-                        p['y'] = (p['y'] - y_mean) * scale
-                    for p in road_points:
-                        p['y'] = (p['y'] - y_mean) * scale
-                    warning = 'داده پروفیل ورودی دامنه بسیار کمی داشت و به صورت خودکار نرمال‌سازی شد.'
-                else:
-                    warning = None
-            else:
-                warning = None
+            # --- حذف نرمال‌سازی خودکار ---
+            # استفاده از مقادیر واقعی داده‌ها (بدون نرمال‌سازی)
+            # این باعث می‌شود محور Y از minimum Elevation Difference شروع شود
+            warning = None
 
             result = {
                 'land_points': land_points,

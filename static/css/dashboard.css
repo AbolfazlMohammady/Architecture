@@ -480,6 +480,10 @@ html, body {
   flex-direction: column;
   align-items: flex-end;
   border-right: 2px solid #e8ecf1;
+  /* اطمینان از اینکه اسکرول روی Y-axis نمی‌افتد */
+  position: sticky;
+  left: 0;
+  flex-shrink: 0;
 }
 
 .y-axis-canvas {
@@ -487,28 +491,42 @@ html, body {
   height: 470px;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   pointer-events: none;
+  /* اطمینان از اینکه canvas درست نمایش داده می‌شود */
+  display: block;
 }
 
 .chart-main-wrapper {
   flex: 1 1 auto;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: hidden; /* اسکرول عمودی فقط در chart-scroll-container */
   min-width: 1200px;
   position: relative;
   white-space: nowrap;
   background: #fff;
+  direction: ltr; /* جهت از چپ به راست */
+  /* حذف max-height از اینجا */
 }
 
 .chart-scroll-container {
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto; /* اسکرول عمودی فعال */
   width: 100%;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
+  direction: ltr; /* جهت اسکرول از چپ به راست */
+  text-align: left; /* تراز به سمت چپ */
+  scroll-behavior: smooth; /* اسکرول نرم */
+  -webkit-overflow-scrolling: touch; /* اسکرول نرم در موبایل */
+  max-height: 80vh; /* حداکثر ارتفاع برای اسکرول عمودی */
+  /* اطمینان از اسکرول کامل */
+  position: relative;
+  /* اطمینان از اینکه اسکرول روی محتوا می‌افتد نه روی Y-axis */
+  margin-left: 0;
 }
 
 .chart-scroll-container::-webkit-scrollbar {
-  height: 8px;
+  height: 8px; /* اسکرول افقی */
+  width: 8px; /* اسکرول عمودی */
 }
 
 .chart-scroll-container::-webkit-scrollbar-track {
@@ -526,9 +544,13 @@ html, body {
 }
 
 .chart-inner-container {
-  width: 100%;
-  min-width: 1200px;
   position: relative;
+  display: block; /* تغییر از flex به block */
+  text-align: left; /* تراز به سمت چپ */
+  direction: ltr; /* جهت از چپ به راست */
+  overflow: visible; /* اجازه اسکرول */
+  min-width: 1200px; /* حداقل عرض */
+  /* عرض به صورت داینامیک تنظیم می‌شود */
 }
 
 /* ============================================
@@ -536,48 +558,51 @@ html, body {
    ============================================ */
 .chart-legend-modern {
   position: absolute;
-  top: 16px;
-  left: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border: 1.5px solid rgba(226, 232, 240, 0.8);
-  padding: 1rem 1.25rem;
-  font-size: 0.85rem;
+  top: 4px;
+  left: 4px; /* گوشه چپ بالا */
+  background: rgba(255, 255, 255, 0.6); /* شفاف‌تر */
+  backdrop-filter: blur(6px);
+  border-radius: 0.25rem; /* گوشه مربع */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); /* سایه کمتر */
+  border: 1px solid rgba(226, 232, 240, 0.4); /* حاشیه نازک‌تر */
+  padding: 0.4rem 0.5rem; /* padding کمتر */
+  font-size: 0.6rem; /* فونت کوچک‌تر */
   z-index: 100;
-  min-width: 200px;
-  max-width: 280px;
+  width: 120px; /* عرض ثابت - مربع */
+  max-height: 200px; /* حداکثر ارتفاع */
+  overflow-y: auto; /* اسکرول عمودی اگر لازم باشد */
   transition: all 0.3s ease;
+  opacity: 0.75; /* شفاف‌تر */
 }
 
 .chart-legend-modern:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  opacity: 1; /* در hover شفافیت کامل */
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .legend-header {
   display: flex;
   align-items: center;
-  font-weight: 700;
+  font-weight: 600;
   color: #2d3748;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f4f8;
-  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #f0f4f8;
+  font-size: 0.75rem; /* کوچک‌تر */
 }
 
 .legend-body {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem; /* فاصله کمتر */
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
+  gap: 0.5rem; /* فاصله کمتر */
+  padding: 0.2rem 0; /* padding کمتر */
   transition: all 0.2s ease;
 }
 
@@ -586,15 +611,15 @@ html, body {
 }
 
 .legend-icon {
-  width: 32px;
-  height: 20px;
+  width: 24px; /* کوچک‌تر */
+  height: 16px; /* کوچک‌تر */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 0.25rem;
+  border-radius: 0.2rem;
   background: rgba(248, 250, 252, 0.8);
-  padding: 2px;
+  padding: 1px;
 }
 
 .legend-icon-green {
@@ -618,8 +643,8 @@ html, body {
 }
 
 .legend-text {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.65rem; /* کوچک‌تر */
+  font-weight: 400; /* وزن کمتر */
   color: #475569;
   flex: 1;
 }

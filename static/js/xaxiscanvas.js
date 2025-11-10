@@ -13,11 +13,13 @@ export class XAxisCanvas {
     this.data = [];
   }
 
-  update(data, start_km, end_km) {
+  update(data, start_km, end_km, xScale, xMin) {
     this.data = data;
     this.start_km = start_km;
     this.end_km = end_km;
-    console.log('XAxisCanvas.update:', { data, start_km, end_km });
+    this.xScale = xScale;
+    this.xMin = xMin;
+    console.log('XAxisCanvas.update:', { data, start_km, end_km, xScale, xMin });
     this.draw();
   }
 
@@ -66,9 +68,17 @@ export class XAxisCanvas {
       }
     }
     labels.forEach((km) => {
-      // محاسبه موقعیت X بر اساس start_km (نه صفر)
-      // این باعث می‌شود نمودار از start_km شروع شود نه از صفر
-      const x = ((km - this.start_km) / range) * this.width;
+      // محاسبه موقعیت X بر اساس xScale و xMin (مثل transformX)
+      // اگر xScale و xMin موجود باشند، از آنها استفاده کن
+      let x;
+      if (this.xScale !== null && this.xScale !== undefined && this.xMin !== null && this.xMin !== undefined) {
+        // استفاده از همان فرمول transformX
+        x = this.margin + (km - this.xMin) * this.xScale;
+      } else {
+        // fallback: استفاده از روش قبلی
+        x = this.margin + ((km - this.start_km) / range) * (this.width - this.margin * 2);
+      }
+      
       // تبدیل عدد به فارسی
       let kmLabel = km.toString().replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
       ctx.save();
@@ -78,8 +88,9 @@ export class XAxisCanvas {
       ctx.textBaseline = 'top';
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 2;
-      // فقط اگر x در محدوده canvas است، لیبل را رسم کن
-      if (x >= 0 && x <= this.width) {
+      // رسم لیبل اگر x در محدوده canvas است (حتی اگر منفی باشد، برای اسکرول)
+      // اما فقط اگر x در محدوده منطقی است (نه خیلی دور)
+      if (x >= -100 && x <= this.width + 100) {
         ctx.fillText(kmLabel, x, this.height - 18);
         // خط کوچک زیر لیبل
         ctx.beginPath();
