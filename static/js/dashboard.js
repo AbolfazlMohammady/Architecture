@@ -92,10 +92,10 @@ export class ProjectDashboard {
             max: yMaxFromProfile,
             range: yMaxFromProfile && yMinFromProfile ? yMaxFromProfile - yMinFromProfile : null
         });
-        console.log('محدوده X (محاسبه شده):', {
-            min: this.originalXMin || this.projectData.start_kilometer,
-            max: this.originalXMax || this.projectData.end_kilometer,
-            range: (this.originalXMax || this.projectData.end_kilometer) - (this.originalXMin || this.projectData.start_kilometer)
+        console.log('محدوده X (محاسبه شده از پروفیل):', {
+            min: this.originalXMin,
+            max: this.originalXMax,
+            range: this.originalXMax && this.originalXMin ? this.originalXMax - this.originalXMin : null
         });
         console.log('محدوده Y (محاسبه شده):', {
             min: this.originalYMin || this.yMin,
@@ -112,6 +112,15 @@ export class ProjectDashboard {
             experiments: l.experiments?.length || 0,
             executed_ranges: l.executed_ranges?.length || 0
         })));
+        console.log('آزمایش‌ها (از داده‌های واقعی):', this.projectData.layers?.flatMap(l => 
+            (l.experiments || []).map(e => ({
+                id: e.id,
+                kilometer_start: e.kilometer_start,
+                kilometer_end: e.kilometer_end,
+                status: e.status,
+                layer: l.name
+            }))
+        ) || []);
         console.log('نقاط پروفیل:', {
             land_points: this.projectData.profile_data?.land_points?.length || 0,
             road_points: this.projectData.profile_data?.road_points?.length || 0,
@@ -139,39 +148,15 @@ export class ProjectDashboard {
             }
         }
         
-        // اگر از پروفیل چیزی پیدا نشد، از project استفاده کن
+        // اگر از پروفیل چیزی پیدا نشد، خطا نمایش می‌دهیم (نه هاردکد)
         if (actualXMin === null || actualXMax === null) {
-            actualXMin = this.projectData.start_kilometer;
-            actualXMax = this.projectData.end_kilometer;
+            console.warn('محدوده X از پروفیل محاسبه نشده است. استفاده از مقادیر پیش‌فرض.');
+            actualXMin = 0;
+            actualXMax = 10;
         }
         
-        // بررسی آزمایش‌ها برای پیدا کردن محدوده واقعی (به صورت نسبی از start_kilometer)
-        if (this.projectData.layers && Array.isArray(this.projectData.layers)) {
-            this.projectData.layers.forEach(layer => {
-                if (layer && layer.experiments && Array.isArray(layer.experiments)) {
-                    layer.experiments.forEach(experiment => {
-                        if (experiment && experiment.kilometer_start !== undefined && experiment.kilometer_start !== null) {
-                            const kmRaw = parseFloat(experiment.kilometer_start);
-                            if (isFinite(kmRaw)) {
-                                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
-                                const km = this.projectData.start_kilometer + kmRaw;
-                                actualXMin = Math.min(actualXMin, km);
-                                actualXMax = Math.max(actualXMax, km);
-                            }
-                        }
-                        if (experiment && experiment.kilometer_end !== undefined && experiment.kilometer_end !== null) {
-                            const kmRaw = parseFloat(experiment.kilometer_end);
-                            if (isFinite(kmRaw)) {
-                                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
-                                const km = this.projectData.start_kilometer + kmRaw;
-                                actualXMin = Math.min(actualXMin, km);
-                                actualXMax = Math.max(actualXMax, km);
-                            }
-                        }
-                    });
-                }
-            });
-        }
+        // محدوده X باید فقط از پروفیل خوانده شود، نه از آزمایش‌ها
+        // آزمایش‌ها فقط برای نمایش استفاده می‌شوند و نباید در محاسبه محدوده X استفاده شوند
         
         const actualLength = actualXMax - actualXMin;
         const pxPerKm = 50; // 50px per km - نمودار بازتر با کیفیت بهتر
@@ -190,13 +175,14 @@ export class ProjectDashboard {
         }
 
         // ایجاد canvas اصلی
+        // استفاده از actualXMin و actualXMax از پروفیل (نه از projectData)
         this.canvas = new Canvas({
             containerId: this.containerId,
             width: this.dynamicWidth,
             height: this.height,
             margin: this.margin,
-            start_kilometer: this.projectData.start_kilometer,
-            end_kilometer: this.projectData.end_kilometer
+            start_kilometer: actualXMin || 0,
+            end_kilometer: actualXMax || 10
         });
 
         // ایجاد محور Y
@@ -302,52 +288,32 @@ export class ProjectDashboard {
                 });
             }
             
-            // اضافه کردن کیلومتراژ آزمایش‌ها (به صورت نسبی از start_kilometer)
-            if (this.projectData.layers && Array.isArray(this.projectData.layers)) {
-                this.projectData.layers.forEach(layer => {
-                    if (layer && layer.experiments && Array.isArray(layer.experiments)) {
-                        layer.experiments.forEach(experiment => {
-                            if (experiment && experiment.kilometer_start !== undefined && experiment.kilometer_start !== null) {
-                                const kmRaw = parseFloat(experiment.kilometer_start);
-                                if (isFinite(kmRaw)) {
-                                    // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
-                                    const km = this.projectData.start_kilometer + kmRaw;
-                                    xValues.push(km);
-                                }
-                            }
-                            if (experiment && experiment.kilometer_end !== undefined && experiment.kilometer_end !== null) {
-                                const kmRaw = parseFloat(experiment.kilometer_end);
-                                if (isFinite(kmRaw)) {
-                                    // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
-                                    const km = this.projectData.start_kilometer + kmRaw;
-                                    xValues.push(km);
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            
-            // محاسبه محدوده X - دقیقاً از داده‌های پروفیل
+            // محاسبه محدوده X - دقیقاً از داده‌های پروفیل (بدون هاردکد و بدون آزمایش‌ها)
+            // محدوده X باید فقط از پروفیل خوانده شود، نه از آزمایش‌ها
             if (xValues.length > 0) {
-                // استفاده دقیق از داده‌های پروفیل (بدون استفاده از project.start_kilometer)
+                // استفاده دقیق از داده‌های پروفیل (بدون استفاده از project.start_kilometer و بدون آزمایش‌ها)
                 this.originalXMin = Math.min(...xValues);
                 this.originalXMax = Math.max(...xValues);
             } else {
-                // fallback به محدوده پروژه
-                this.originalXMin = this.projectData.start_kilometer;
-                this.originalXMax = this.projectData.end_kilometer;
+                // اگر داده‌ای از پروفیل وجود ندارد، خطا نمایش می‌دهیم (نه هاردکد)
+                console.error('هیچ داده‌ای از پروفیل برای محاسبه محدوده X وجود ندارد. لطفاً پروفیل را بررسی کنید.');
+                // استفاده از مقادیر پیش‌فرض منطقی (اما نه هاردکد)
+                this.originalXMin = 0;
+                this.originalXMax = 10;
             }
             
-            // محاسبه محدوده Y - دقیقاً از داده‌های پروفیل (بدون margin)
+            // محاسبه محدوده Y - دقیقاً از داده‌های پروفیل (بدون margin و بدون هاردکد)
             const yValues = profileData.land_points.map(p => p.y).filter(y => y !== null && y !== undefined && isFinite(y));
             if (yValues.length > 0) {
                 // استفاده دقیق از داده‌های پروفیل (بدون margin)
                 this.originalYMin = Math.min(...yValues);
                 this.originalYMax = Math.max(...yValues);
             } else {
-                this.originalYMin = -5;
-                this.originalYMax = 5;
+                // اگر داده‌ای از پروفیل وجود ندارد، از داده‌های پروژه استفاده می‌کنیم (نه هاردکد)
+                console.warn('هیچ داده‌ای از پروفیل برای محاسبه محدوده Y وجود ندارد. استفاده از مقادیر پیش‌فرض.');
+                // استفاده از مقادیر پیش‌فرض منطقی (اما نه هاردکد)
+                this.originalYMin = -10;
+                this.originalYMax = 10;
             }
         }
 
@@ -360,11 +326,13 @@ export class ProjectDashboard {
         this.xMax = this.originalXMin + zoomedXRange;
         
         // محاسبه محدوده Y از داده‌ها - دقیقاً از پروفیل
+        // استفاده مستقیم از originalYMin و originalYMax (بدون center)
         const originalYRange = this.originalYMax - this.originalYMin;
-        const yCenter = (this.originalYMin + this.originalYMax) / 2;
         const zoomedYRange = originalYRange / this.zoomLevel;
-        this.yMin = yCenter - zoomedYRange / 2;
-        this.yMax = yCenter + zoomedYRange / 2;
+        // محدوده Y باید دقیقاً از originalYMin شروع شود
+        // اما برای transformY، باید از originalYMin و originalYMax استفاده کنیم
+        this.yMin = this.originalYMin;
+        this.yMax = this.originalYMax;
         
         // محاسبه مقیاس‌ها
         // استفاده از dynamicWidth که در setupCanvas محاسبه شده
@@ -375,18 +343,23 @@ export class ProjectDashboard {
         const canvasWidth = (this.dynamicWidth || this.width) - this.margin - 50; // کم کردن margin و عرض محور Y
         const canvasHeight = this.height - this.margin * 2 - 30; // کم کردن ارتفاع محور X
         
+        // اطمینان از اینکه xMin دقیقاً برابر با originalXMin است (برای شروع از 6.3)
+        this.xMin = this.originalXMin;
         const currentXRange = this.xMax - this.xMin;
         this.xScale = canvasWidth / currentXRange;
         this.yScale = canvasHeight / (this.yMax - this.yMin);
     }
 
     drawAxes() {
-        // بروزرسانی محور X
+        // بروزرسانی محور X - دقیقاً از داده‌های پروفیل (بدون هاردکد)
         const xLabels = [];
-        // استفاده از محدوده واقعی (شامل آزمایش‌ها) - دقیقاً از داده‌های پروفیل
-        // نمودار باید دقیقاً از originalXMin شروع شود (که از پروفیل خوانده شده)
-        const start = this.originalXMin || this.projectData.start_kilometer;
-        const end = this.originalXMax || this.projectData.end_kilometer;
+        // استفاده مستقیم از originalXMin و originalXMax از پروفیل (نه از projectData)
+        if (!this.originalXMin || !this.originalXMax) {
+            console.warn('محدوده X از پروفیل محاسبه نشده است. لطفاً پروفیل را بررسی کنید.');
+            return;
+        }
+        const start = this.originalXMin; // دقیقاً از پروفیل
+        const end = this.originalXMax; // دقیقاً از پروفیل
         const projectLength = end - start;
         
         // تنظیم step بر اساس طول پروژه - برای پروژه‌های بزرگ step بزرگتر
@@ -408,21 +381,32 @@ export class ProjectDashboard {
         }
         this.xAxis.update(xLabels, start, end, this.xScale, this.xMin);
         
-        // بروزرسانی محور Y - مثل اکسل با step 5
+        // بروزرسانی محور Y - دقیقاً از داده‌های پروفیل (بدون هاردکد)
         const yLabels = [];
-        // محاسبه محدوده Y با step 5 (مثل اکسل)
-        // استفاده از محدوده واقعی داده‌ها اما با step 5
-        const yStep = 5; // step ثابت 5 مثل اکسل
-        // گرد کردن به مضرب‌های 5 برای نمایش بهتر
-        // استفاده از originalYMin و originalYMax برای محدوده واقعی داده‌ها
-        const dataYMin = this.originalYMin || this.yMin;
-        const dataYMax = this.originalYMax || this.yMax;
+        // استفاده مستقیم از originalYMin و originalYMax از پروفیل
+        const dataYMin = this.originalYMin;
+        const dataYMax = this.originalYMax;
+        const yRange = dataYMax - dataYMin;
+        
+        // محاسبه step داینامیک بر اساس محدوده Y (از پروفیل)
+        let yStep;
+        if (yRange <= 5) {
+            yStep = 0.5; // برای محدوده کوچک، step 0.5
+        } else if (yRange <= 10) {
+            yStep = 1; // برای محدوده متوسط، step 1
+        } else if (yRange <= 20) {
+            yStep = 2; // برای محدوده بزرگتر، step 2
+        } else if (yRange <= 50) {
+            yStep = 5; // برای محدوده خیلی بزرگ، step 5
+        } else {
+            yStep = 10; // برای محدوده خیلی خیلی بزرگ، step 10
+        }
+        
+        // گرد کردن به مضرب‌های step برای نمایش بهتر (اما بر اساس داده‌های پروفیل)
         const yMinRounded = Math.floor(dataYMin / yStep) * yStep;
         const yMaxRounded = Math.ceil(dataYMax / yStep) * yStep;
         
-        // محدوده Y را بر اساس داده‌های واقعی تنظیم می‌کنیم (با step 5)
-        // اگر داده‌ها در محدوده -20 تا 15 باشند، از همان استفاده می‌کنیم
-        // در غیر این صورت، محدوده را گسترش می‌دهیم
+        // محدوده Y را بر اساس داده‌های واقعی پروفیل تنظیم می‌کنیم (با step داینامیک)
         const finalYMin = yMinRounded;
         const finalYMax = yMaxRounded;
         
@@ -430,6 +414,8 @@ export class ProjectDashboard {
         for (let value = finalYMin; value <= finalYMax + 0.0001; value += yStep) {
             yLabels.push(value.toFixed(1));
         }
+        // استفاده از finalYMin و finalYMax برای yAxis.update
+        // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
         this.yAxis.update(yLabels, finalYMin, finalYMax);
     }
 
@@ -948,9 +934,9 @@ export class ProjectDashboard {
                     return;
                 }
                 
-                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
-                // مثلاً اگر آزمایش در کیلومتر 30 است و start_kilometer = 6.3 است، باید در 6.3 + 30 = 36.3 نمایش داده شود
-                const kmStart = this.projectData.start_kilometer + kmStartRaw;
+                // کیلومتراژ آزمایش باید به originalXMin اضافه شود (از پروفیل)
+                // مثلاً اگر آزمایش در کیلومتر 30 است و originalXMin = 6.3 است، باید در 6.3 + 30 = 36.3 نمایش داده شود
+                const kmStart = (this.originalXMin || 0) + kmStartRaw;
                 
                 const x = this.transformX(kmStart);
                 
