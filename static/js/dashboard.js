@@ -41,12 +41,20 @@ export class ProjectDashboard {
         this.tooltipData = [];
         this._hoveredExperiment = null;
         
+        // فلگ برای جلوگیری از محاسبه مجدد مقیاس‌ها
+        this._scalesCalculated = false;
+        
+        // فلگ برای بهینه‌سازی render در handleMouseMove
+        this._renderRequested = false;
+        
         this.init();
     }
 
     init() {
         this.setupCanvas();
         this.setupEventListeners();
+        // محاسبه مقیاس‌ها یک بار قبل از render
+        this.calculateScales();
         this.render();
         // نمایش اطلاعات در کنسول
         this.logChartInfo();
@@ -167,11 +175,28 @@ export class ProjectDashboard {
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             chartInner.style.width = this.dynamicWidth + 'px';
+            chartInner.style.minWidth = this.dynamicWidth + 'px';
         }
         this.chartScrollContainer = document.getElementById('chart-scroll-x');
         if (this.chartScrollContainer) {
+            // فعال کردن اسکرول افقی
+            this.chartScrollContainer.style.overflowX = 'auto';
+            this.chartScrollContainer.style.overflowY = 'hidden';
+            this.chartScrollContainer.style.width = '100%';
             this.chartScrollContainer.scrollLeft = 0;
             this.chartScrollContainer.scrollTop = 0;
+        }
+        
+        // تنظیم عرض canvas و محور X برای اسکرول
+        const mainCanvas = document.getElementById('mainCanvas');
+        if (mainCanvas) {
+            mainCanvas.style.width = this.dynamicWidth + 'px';
+            mainCanvas.style.minWidth = this.dynamicWidth + 'px';
+        }
+        const xAxisCanvas = document.getElementById('xAxisCanvas');
+        if (xAxisCanvas) {
+            xAxisCanvas.style.width = (this.dynamicWidth - 50) + 'px';
+            xAxisCanvas.style.minWidth = (this.dynamicWidth - 50) + 'px';
         }
 
         // ایجاد canvas اصلی
@@ -228,12 +253,36 @@ export class ProjectDashboard {
     }
 
     render() {
+        // لاگ برای دیباگ - بررسی تغییر مقیاس‌ها
+        const beforeXScale = this.xScale;
+        const beforeYScale = this.yScale;
+        
         this.canvas.clear();
         this.profileTooltipData = [];
         this.tooltipData = [];
         this._hoveredExperiment = null;
-        this.calculateScales();
+        
+        // محاسبه مقیاس‌ها را از render حذف کردیم
+        // مقیاس‌ها فقط یک بار در init() محاسبه می‌شوند
+        // این باعث می‌شود که مقیاس‌ها ثابت بمانند و زوم خودکار نداشته باشیم
+        
+        // بررسی تغییر مقیاس‌ها بعد از drawAxes
         this.drawAxes();
+        
+        // لاگ برای دیباگ - بررسی تغییر مقیاس‌ها بعد از drawAxes
+        if (beforeXScale !== undefined && beforeYScale !== undefined) {
+            if (this.xScale !== beforeXScale || this.yScale !== beforeYScale) {
+                console.warn('⚠️ مقیاس‌ها تغییر کردند!', {
+                    before: { xScale: beforeXScale, yScale: beforeYScale },
+                    after: { xScale: this.xScale, yScale: this.yScale },
+                    dynamicWidth: this.dynamicWidth,
+                    xMin: this.xMin,
+                    xMax: this.xMax,
+                    yMin: this.yMin,
+                    yMax: this.yMax
+                });
+            }
+        }
         if (this.showLandLine) {
             this.drawLandProfile();
         }
@@ -262,6 +311,11 @@ export class ProjectDashboard {
     }
 
     calculateScales() {
+        // اگر مقیاس‌ها قبلاً محاسبه شده‌اند، دوباره محاسبه نکن
+        if (this._scalesCalculated) {
+            return;
+        }
+        
         const profileData = this.projectData.profile_data;
         if (!profileData.land_points || profileData.land_points.length === 0) {
             return;
@@ -318,19 +372,13 @@ export class ProjectDashboard {
         }
 
         // استفاده از محدوده واقعی داده‌ها برای محور X
-        // اعمال زوم - نمودار باید دقیقاً از originalXMin شروع شود
-        const originalXRange = this.originalXMax - this.originalXMin;
-        const zoomedXRange = originalXRange / this.zoomLevel;
-        // نمودار باید دقیقاً از originalXMin شروع شود (بدون استفاده از center)
+        // همیشه کل محدوده را نمایش بده (zoomLevel را نادیده می‌گیریم)
+        // این باعث می‌شود که نمودار ثابت بماند و زوم خودکار نداشته باشیم
         this.xMin = this.originalXMin;
-        this.xMax = this.originalXMin + zoomedXRange;
+        this.xMax = this.originalXMax;
         
         // محاسبه محدوده Y از داده‌ها - دقیقاً از پروفیل
-        // استفاده مستقیم از originalYMin و originalYMax (بدون center)
-        const originalYRange = this.originalYMax - this.originalYMin;
-        const zoomedYRange = originalYRange / this.zoomLevel;
-        // محدوده Y باید دقیقاً از originalYMin شروع شود
-        // اما برای transformY، باید از originalYMin و originalYMax استفاده کنیم
+        // همیشه کل محدوده Y را نمایش بده
         this.yMin = this.originalYMin;
         this.yMax = this.originalYMax;
         
@@ -348,6 +396,9 @@ export class ProjectDashboard {
         const currentXRange = this.xMax - this.xMin;
         this.xScale = canvasWidth / currentXRange;
         this.yScale = canvasHeight / (this.yMax - this.yMin);
+        
+        // علامت‌گذاری که مقیاس‌ها محاسبه شده‌اند
+        this._scalesCalculated = true;
     }
 
     drawAxes() {
@@ -1072,6 +1123,13 @@ export class ProjectDashboard {
         }
         
         // بروزرسانی نمایش مختصات
+        // اطمینان از اینکه مقیاس‌ها محاسبه شده‌اند
+        if (this.xScale === undefined || this.yScale === undefined || this.xMin === undefined || this.xMax === undefined) {
+            if (!this._scalesCalculated) {
+                this.calculateScales();
+            }
+        }
+        
         const realX = this.xMin + (this.mouseX - this.margin) / this.xScale;
         const realY = this.yMax - (this.mouseY - this.margin) / this.yScale;
         if (document.getElementById('xinput')) {
@@ -1081,8 +1139,14 @@ export class ProjectDashboard {
             document.getElementById('yinput').value = realY.toFixed(3);
         }
         
-        // render برای نمایش crosshair
-        this.render();
+        // فقط tooltip را به‌روزرسانی کن - بدون render کامل
+        // این باعث می‌شود که مقیاس‌ها تغییر نکنند و زوم خودکار نداشته باشیم
+        // crosshair در render اصلی رسم می‌شود (که فقط یک بار فراخوانی می‌شود)
+        this.showProfileTooltip(this.mouseX, this.mouseY);
+        this.showTooltip(this.mouseX, this.mouseY);
+        
+        // render را حذف کردیم - فقط tooltip را به‌روزرسانی می‌کنیم
+        // این باعث می‌شود که مقیاس‌ها تغییر نکنند و زوم خودکار نداشته باشیم
     }
 
     showProfileTooltip(x, y) {
@@ -1293,6 +1357,18 @@ export class ProjectDashboard {
         ctx.stroke();
         
         ctx.restore();
+    }
+
+    drawCrosshairOnly() {
+        // فقط crosshair و tooltip را رسم کن بدون render کامل
+        // این باعث می‌شود که مقیاس‌ها تغییر نکنند
+        if (this.mouseX !== null && this.mouseY !== null) {
+            // فقط crosshair را رسم کن
+            this.drawCrosshair(this.mouseX, this.mouseY);
+            // tooltip را نمایش بده
+            this.showProfileTooltip(this.mouseX, this.mouseY);
+            this.showTooltip(this.mouseX, this.mouseY);
+        }
     }
 
     // --- SHADING BETWEEN LAND AND ROAD PROFILES ---
