@@ -146,6 +146,7 @@ export class ProjectDashboard {
 
         // ذخیره مقادیر اصلی برای reset zoom
         if (this.originalXMin === null) {
+            // محور X باید از start_kilometer شروع شود نه از صفر
             this.originalXMin = this.projectData.start_kilometer;
             this.originalXMax = this.projectData.end_kilometer;
             
@@ -160,13 +161,14 @@ export class ProjectDashboard {
         }
 
         // استفاده از محدوده پروژه برای محور X - این مهم است!
-        // محور X باید از start_kilometer شروع شود (مثل عکس قبلی)
+        // محور X باید از start_kilometer شروع شود (مثل اکسل - از 6300 شروع می‌شود نه از صفر)
         // اعمال زوم
         const originalXRange = this.originalXMax - this.originalXMin;
         const xCenter = (this.originalXMin + this.originalXMax) / 2;
         const zoomedXRange = originalXRange / this.zoomLevel;
-        this.xMin = xCenter - zoomedXRange / 2;
-        this.xMax = xCenter + zoomedXRange / 2;
+        // اطمینان از اینکه xMin از start_kilometer شروع می‌شود
+        this.xMin = Math.max(this.projectData.start_kilometer, xCenter - zoomedXRange / 2);
+        this.xMax = Math.min(this.projectData.end_kilometer, xCenter + zoomedXRange / 2);
         
         // محاسبه محدوده Y از داده‌ها
         const originalYRange = this.originalYMax - this.originalYMin;

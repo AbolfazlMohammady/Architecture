@@ -70,21 +70,6 @@
     </div>
     
 
-    <!-- نمودار توزیع ضرایب -->
-    <div class="card shadow-lg">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
-          <i class="bi bi-bar-chart me-2"></i>توزیع ضرایب پرداخت
-        </h6>
-        <span class="badge bg-light text-dark">تحلیل آماری</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-container">
-          <canvas id="coefficientDistribution"></canvas>
-        </div>
-      </div>
-    </div>
-
     <!-- نمودارهای ضرایب بر اساس پروژه برای هر لایه -->
     <div class="card shadow-lg mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -128,47 +113,6 @@
 
 {% block script %}
 <script>
-  // نمودار توزیع ضرایب
-  const ctx1 = document.getElementById('coefficientDistribution');
-  if (ctx1) {
-    new Chart(ctx1, {
-      type: 'bar',
-      data: {
-        labels: {{ distribution_labels|safe }},
-        datasets: [{
-          label: 'تعداد ضرایب',
-          data: {{ distribution_data|safe }},
-          backgroundColor: 'rgba(25, 118, 210, 0.8)',
-          borderColor: 'rgba(25, 118, 210, 1)',
-          borderWidth: 2,
-          borderRadius: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0,0,0,0.1)'
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
-        }
-      }
-    });
-  }
-
   // نمودارهای ضرایب بر اساس پروژه برای هر لایه
   const lineChartOptions = {
     responsive: true,

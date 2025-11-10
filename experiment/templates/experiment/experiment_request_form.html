@@ -42,7 +42,7 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label class="form-label">نام و نام خانوادگی</label>
-                                    <input type="text" class="form-control" value="{{ user.get_full_name }}" readonly>
+                                    <input type="text" class="form-control" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}" readonly>
                                     <small class="form-text text-muted">نام کاربر به صورت پیشفرض ثبت شده است</small>
                                 </div>
                                 

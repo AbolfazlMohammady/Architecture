@@ -121,45 +121,6 @@ body, html {
         <h1 class="welcome-title">سامانه کنترل کیفیت</h1>
         <p class="welcome-subtitle">مدیریت هوشمند پروژه‌های عمرانی</p>
     </div>
-    <div class="charts-container">
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-12 mb-4">
-          <div class="chart-card h-100">
-            <h3 class="chart-title" style="color:#2196F3;">وضعیت کلی پروژه‌ها</h3>
-            <div class="chart-container">
-              <canvas id="projectsStatusChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-12 mb-4">
-          <div class="chart-card h-100">
-            <h3 class="chart-title" style="color:#4CAF50;">پیشرفت پروژه‌ها</h3>
-            <div class="chart-container">
-              <canvas id="projectsProgressChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-12 mb-4">
-          <div class="chart-card h-100">
-            <h3 class="chart-title" style="color:#FF5722;">وضعیت مالی</h3>
-            <div class="chart-container">
-              <canvas id="financialStatusChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-12 mb-4">
-          <div class="card h-100">
-            <div class="card-header">
-              <h3 class="card-title">کیفیت آزمایشات</h3>
-            </div>
-            <div class="card-body">
-              <canvas id="experimentQualityChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <!-- نمودارهای ضرایب پرداخت -->
     <div class="charts-container">
       <div class="row justify-content-center">
@@ -213,262 +174,95 @@ body, html {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تنظیمات مشترک برای همه نمودارها
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-            duration: 2000,
-            easing: 'easeInOutQuart'
-        },
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    font: {
-                        family: 'IRANSans',
-                        size: 12
-                    }
-                }
+    // نمودارهای ضرایب پرداخت - استفاده از نمودار Gauge برای نمایش بهتر
+    const maxCoefficient = 1.2;
+    
+    // ذخیره اطلاعات نمودارها برای استفاده در پلاگین
+    const chartData = {};
+    
+    // پلاگین برای نمایش متن در مرکز نمودار
+    const gaugeTextPlugin = {
+        id: 'gaugeText',
+        afterDraw: function(chart) {
+            const canvasId = chart.canvas.id;
+            if (chartData[canvasId]) {
+                const { value, color, maxValue } = chartData[canvasId];
+                const ctx = chart.ctx;
+                const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                
+                ctx.save();
+                ctx.font = 'bold 28px IRANSans';
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value.toFixed(2), centerX, centerY - 8);
+                
+                ctx.font = '14px IRANSans';
+                ctx.fillStyle = '#666';
+                ctx.fillText('از ' + maxValue, centerX, centerY + 18);
+                ctx.restore();
             }
         }
     };
-
-    // نمودار وضعیت کلی پروژه‌ها
-    new Chart(document.getElementById('projectsStatusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['در حال اجرا', 'تکمیل شده', 'متوقف شده'],
-            datasets: [{
-                data: [
-                    {{ project_status.active }},
-                    {{ project_status.completed }},
-                    {{ project_status.stopped }}
-                ],
-                backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            ...commonOptions,
-            cutout: '70%'
-        }
-    });
-
-    // نمودار پیشرفت پروژه‌ها
-    new Chart(document.getElementById('projectsProgressChart'), {
-        type: 'bar',
-        data: {
-            labels: [
-                {% for project in project_progress %}
-                    '{{ project.name }}'{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ],
-            datasets: [{
-                label: 'درصد پیشرفت',
-                data: [
-                    {% for project in project_progress %}
-                        {{ project.progress }}{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                backgroundColor: '#2196F3',
-                borderRadius: 5
-            }]
-        },
-        options: {
-            ...commonOptions,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: value => value + '%'
-                    }
-                }
-            }
-        }
-    });
-
-    // نمودار کیفیت آزمایشات
-    var experimentQualityCtx = document.getElementById('experimentQualityChart').getContext('2d');
-    var experimentQualityData = {
-        labels: [{% for item in experiment_quality %}'{{ item.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'تعداد آزمایشات تایید شده',
-            data: [{% for item in experiment_quality %}{{ item.approved_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-            type: 'bar'
-        }, {
-            label: 'درصد قبولی',
-            data: [{% for item in experiment_quality %}{{ item.approval_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1,
-            type: 'line',
-            yAxisID: 'percentage'
-        }]
-    };
-    var experimentQualityConfig = {
-        type: 'bar',
-        data: experimentQualityData,
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'تعداد آزمایشات'
-                    }
-                },
-                percentage: {
-                    position: 'right',
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'درصد قبولی'
+    
+    // ثبت پلاگین
+    Chart.register(gaugeTextPlugin);
+    
+    function createGaugeChart(canvasId, value, color, maxValue) {
+        const percentage = (value / maxValue) * 100;
+        const remaining = 100 - percentage;
+        
+        // ذخیره اطلاعات برای استفاده در پلاگین
+        chartData[canvasId] = { value, color, maxValue };
+        
+        const chart = new Chart(document.getElementById(canvasId), {
+            type: 'doughnut',
+            data: {
+                labels: ['مقدار', 'باقیمانده تا حداکثر'],
+                datasets: [{
+                    data: [percentage, remaining],
+                    backgroundColor: [color, '#E0E0E0'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
                     },
-                    grid: {
-                        drawOnChartArea: false
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            var label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataIndex === 0) {
+                                    return 'مقدار: ' + value.toFixed(2) + ' (' + percentage.toFixed(1) + '%)';
+                                }
+                                return 'باقیمانده: ' + (maxValue - value).toFixed(2);
                             }
-                            if (context.dataset.type === 'bar') {
-                                label += context.raw + ' آزمایش';
-                            } else {
-                                label += context.raw + '%';
-                            }
-                            return label;
                         }
                     }
                 }
             }
-        }
-    };
-    new Chart(experimentQualityCtx, experimentQualityConfig);
-
-    // نمودار وضعیت مالی
-    new Chart(document.getElementById('financialStatusChart'), {
-        type: 'pie',
-        data: {
-            labels: ['بودجه مصرف شده', 'بودجه باقیمانده', 'هزینه‌های پیش‌بینی نشده'],
-            datasets: [{
-                data: [
-                    {{ financial_status.spent }},
-                    {{ financial_status.remaining }},
-                    {{ financial_status.unexpected }}
-                ],
-                backgroundColor: ['#FF5722', '#2196F3', '#FFC107'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            ...commonOptions,
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + context.raw + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    // نمودارهای ضرایب پرداخت
-    const paymentCoefficientOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                enabled: false
-            }
-        }
-    };
+        });
+        
+        return chart;
+    }
 
     // نمودار ضریب پرداخت خاکریزی
-    new Chart(document.getElementById('embankmentCoefficientChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['میانگین', 'باقیمانده'],
-            datasets: [{
-                data: [
-                    {{ payment_coefficients.embankment.avg }},
-                    {{ payment_coefficients.embankment.remaining }}
-                ],
-                backgroundColor: ['#9C27B0', '#E1BEE7'],
-                borderWidth: 0
-            }]
-        },
-        options: paymentCoefficientOptions
-    });
+    createGaugeChart('embankmentCoefficientChart', {{ payment_coefficients.embankment.avg }}, '#9C27B0', maxCoefficient);
 
     // نمودار ضریب پرداخت زیر اساس
-    new Chart(document.getElementById('subbaseCoefficientChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['میانگین', 'باقیمانده'],
-            datasets: [{
-                data: [
-                    {{ payment_coefficients.subbase.avg }},
-                    {{ payment_coefficients.subbase.remaining }}
-                ],
-                backgroundColor: ['#FF9800', '#FFE0B2'],
-                borderWidth: 0
-            }]
-        },
-        options: paymentCoefficientOptions
-    });
+    createGaugeChart('subbaseCoefficientChart', {{ payment_coefficients.subbase.avg }}, '#FF9800', maxCoefficient);
 
     // نمودار ضریب پرداخت اساس
-    new Chart(document.getElementById('baseCoefficientChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['میانگین', 'باقیمانده'],
-            datasets: [{
-                data: [
-                    {{ payment_coefficients.base.avg }},
-                    {{ payment_coefficients.base.remaining }}
-                ],
-                backgroundColor: ['#4CAF50', '#C8E6C9'],
-                borderWidth: 0
-            }]
-        },
-        options: paymentCoefficientOptions
-    });
+    createGaugeChart('baseCoefficientChart', {{ payment_coefficients.base.avg }}, '#4CAF50', maxCoefficient);
 
     // نمودار ضریب پرداخت آسفالت گرم
-    new Chart(document.getElementById('asphaltCoefficientChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['میانگین', 'باقیمانده'],
-            datasets: [{
-                data: [
-                    {{ payment_coefficients.asphalt.avg }},
-                    {{ payment_coefficients.asphalt.remaining }}
-                ],
-                backgroundColor: ['#2196F3', '#BBDEFB'],
-                borderWidth: 0
-            }]
-        },
-        options: paymentCoefficientOptions
-    });
+    createGaugeChart('asphaltCoefficientChart', {{ payment_coefficients.asphalt.avg }}, '#2196F3', maxCoefficient);
 });
 </script>
 {% endblock %}

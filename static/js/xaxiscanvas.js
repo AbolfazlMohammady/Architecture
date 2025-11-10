@@ -66,6 +66,8 @@ export class XAxisCanvas {
       }
     }
     labels.forEach((km) => {
+      // محاسبه موقعیت X بر اساس start_km (نه صفر)
+      // این باعث می‌شود نمودار از start_km شروع شود نه از صفر
       const x = ((km - this.start_km) / range) * this.width;
       // تبدیل عدد به فارسی
       let kmLabel = km.toString().replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
@@ -76,14 +78,17 @@ export class XAxisCanvas {
       ctx.textBaseline = 'top';
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 2;
-      ctx.fillText(kmLabel, x, this.height - 18);
+      // فقط اگر x در محدوده canvas است، لیبل را رسم کن
+      if (x >= 0 && x <= this.width) {
+        ctx.fillText(kmLabel, x, this.height - 18);
+        // خط کوچک زیر لیبل
+        ctx.beginPath();
+        ctx.moveTo(x, this.height - 19 - this.margin);
+        ctx.lineTo(x, this.height - 14 - this.margin);
+        ctx.stroke();
+      }
       ctx.shadowBlur = 0;
       ctx.restore();
-      // خط کوچک زیر لیبل
-      ctx.beginPath();
-      ctx.moveTo(x, this.height - 19 - this.margin);
-      ctx.lineTo(x, this.height - 14 - this.margin);
-      ctx.stroke();
     });
   }
 }
