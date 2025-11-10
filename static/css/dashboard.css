@@ -458,6 +458,7 @@ html, body {
   padding: 0;
   background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
   position: relative;
+  overflow: hidden; /* جلوگیری از overflow در این سطح */
 }
 
 /* ============================================
@@ -469,7 +470,9 @@ html, body {
   width: 100%;
   background: #fff;
   min-height: 520px;
+  height: 520px; /* ارتفاع ثابت */
   direction: ltr;
+  overflow: hidden; /* جلوگیری از overflow در این سطح */
 }
 
 .y-axis-wrapper {
@@ -497,31 +500,33 @@ html, body {
 
 .chart-main-wrapper {
   flex: 1 1 auto;
-  overflow-x: auto;
-  overflow-y: hidden; /* اسکرول عمودی فقط در chart-scroll-container */
-  min-width: 1200px;
+  overflow: hidden; /* اسکرول در chart-scroll-container انجام می‌شود */
+  min-width: 0; /* اجازه فشرده شدن برای flex */
   position: relative;
-  white-space: nowrap;
   background: #fff;
   direction: ltr; /* جهت از چپ به راست */
-  /* حذف max-height از اینجا */
 }
 
 .chart-scroll-container {
-  overflow-x: auto;
-  overflow-y: auto; /* اسکرول عمودی فعال */
+  overflow-x: auto !important;
+  overflow-y: hidden !important; /* فقط اسکرول افقی */
   width: 100%;
+  height: 520px; /* ارتفاع ثابت */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
   direction: ltr; /* جهت اسکرول از چپ به راست */
   text-align: left; /* تراز به سمت چپ */
   scroll-behavior: smooth; /* اسکرول نرم */
   -webkit-overflow-scrolling: touch; /* اسکرول نرم در موبایل */
-  height: 600px; /* ارتفاع ثابت برای فعال کردن اسکرول */
   /* اطمینان از اسکرول کامل */
   position: relative;
   /* اطمینان از اینکه اسکرول روی محتوا می‌افتد نه روی Y-axis */
   margin-left: 0;
+  /* اطمینان از اینکه container فشرده نمی‌شود */
+  min-height: 520px;
+  max-height: 520px;
+  /* اطمینان از اینکه اسکرول کار می‌کند */
+  display: block;
 }
 
 .chart-scroll-container::-webkit-scrollbar {
@@ -550,7 +555,10 @@ html, body {
   direction: ltr; /* جهت از چپ به راست */
   overflow: visible; /* اجازه اسکرول */
   min-width: 1200px; /* حداقل عرض */
-  /* عرض به صورت داینامیک تنظیم می‌شود */
+  /* عرض به صورت داینامیک تنظیم می‌شود - نباید 100% باشد */
+  /* اطمینان از اینکه container فشرده نمی‌شود */
+  box-sizing: border-box;
+  /* عرض باید دقیقاً برابر با dynamicWidth باشد که در JS تنظیم می‌شود */
 }
 
 /* ============================================
@@ -653,23 +661,27 @@ html, body {
    Canvas های نمودار
    ============================================ */
 .main-canvas-modern {
-  width: 100%;
-  min-width: 1200px;
+  min-width: 0;
   height: 470px;
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   cursor: crosshair;
   display: block;
   border-bottom: 1px solid #e8ecf1;
+  /* اطمینان از اینکه canvas فشرده نمی‌شود */
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .x-axis-canvas-modern {
-  width: 100%;
-  min-width: 1200px;
+  min-width: 0;
   height: 50px;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   pointer-events: none;
   display: block;
   border-top: 2px solid #e8ecf1;
+  /* اطمینان از اینکه canvas فشرده نمی‌شود */
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 /* ============================================

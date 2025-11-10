@@ -30,6 +30,20 @@ export class YAxisCanvas {
     this.yMax = yMax;
     this.draw();
   }
+  
+  getYPosition(value) {
+    // محاسبه موقعیت Y برای یک مقدار مشخص
+    // این برای هماهنگی با transformY در dashboard استفاده می‌شود
+    const paddingTop = this.margin;
+    const paddingBottom = this.margin + 30; // فضای محور X در پایین
+    const canvasHeight = this.height - paddingTop - paddingBottom;
+    const yRange = this.yMax - this.yMin;
+    if (yRange > 0) {
+      const normalizedY = (value - this.yMin) / yRange;
+      return paddingTop + (1 - normalizedY) * canvasHeight;
+    }
+    return this.height / 2;
+  }
   fittext(text){
     while(text.length < 5){
         text = " " + text
@@ -45,19 +59,20 @@ export class YAxisCanvas {
   ctx.strokeStyle = '#666';
   ctx.lineWidth = 1.5;
 
-  // خط عمودی ثابت سمت راست y-axis
+  const paddingTop = this.margin;
+  const paddingBottom = this.margin + 30; // فضای محور X در پایین
+  const usableHeight = this.height - paddingTop - paddingBottom;
+
+  // خط عمودی ثابت سمت راست y-axis که فقط در محدوده نمودار اصلی رسم می‌شود
   ctx.beginPath();
-  ctx.moveTo(this.width - 1 - this.margin, 0);
-  ctx.lineTo(this.width - 1 - this.margin, this.height);
+  ctx.moveTo(this.width - 1 - this.margin, paddingTop);
+  ctx.lineTo(this.width - 1 - this.margin, paddingTop + usableHeight);
   ctx.stroke();
 
   ctx.fillStyle = '#222';
   ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'right';
-
-  const paddingY = 10;
-  const canvasHeight = this.height - paddingY * 2;
 
   // محاسبه موقعیت Y هر لیبل بر اساس مقدار واقعی آن
   // yMin در پایین (نزدیک محور X) و yMax در بالا است
@@ -71,14 +86,14 @@ export class YAxisCanvas {
     let y;
     if (this.yMin !== undefined && this.yMax !== undefined) {
       // تبدیل مقدار Y به موقعیت پیکسل
-      // yMin در پایین (height - paddingY) و yMax در بالا (paddingY)
+      // yMin در پایین (paddingTop + usableHeight) و yMax در بالا (paddingTop)
       const yRange = this.yMax - this.yMin;
       if (yRange > 0) {
         // نرمال‌سازی: (value - yMin) / (yMax - yMin)
         // سپس تبدیل به موقعیت پیکسل: پایین = height - paddingY, بالا = paddingY
         const normalizedY = (value - this.yMin) / yRange;
         // محاسبه دقیق موقعیت Y (yMin در پایین، yMax در بالا)
-        y = this.height - paddingY - (normalizedY * canvasHeight);
+        y = paddingTop + (1 - normalizedY) * usableHeight;
       } else {
         y = this.height / 2; // اگر range صفر است، در وسط قرار بده
       }
@@ -86,11 +101,11 @@ export class YAxisCanvas {
       // fallback: استفاده از روش قبلی (فاصله مساوی)
       const index = this.data.indexOf(label);
       const stepY = this.yunit || 43;
-      y = this.height - paddingY - stepY * index;
+      y = paddingTop + usableHeight - stepY * index;
     }
     
     // اطمینان از اینکه y در محدوده canvas است (با حاشیه بیشتر)
-    if (y < paddingY - 5 || y > this.height - paddingY + 5) return;
+    if (y < paddingTop - 5 || y > paddingTop + usableHeight + 5) return;
     
     // تبدیل به فارسی و نمایش با فرمت بهتر
     let labelStr = value.toFixed(1).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);

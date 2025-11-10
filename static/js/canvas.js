@@ -62,7 +62,6 @@ export class Canvas {
   clear() {
     // پاک کردن canvas - چون ctx.scale(dpr, dpr) تنظیم شده، از width و height منطقی استفاده می‌کنیم
     // اما باید مطمئن شویم که کل canvas پاک می‌شود
-    const dpr = window.devicePixelRatio || 1;
     // ذخیره transform فعلی
     this.ctx.save();
     // بازنشانی transform
@@ -71,8 +70,6 @@ export class Canvas {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // بازگرداندن transform
     this.ctx.restore();
-    // تنظیم مجدد scale
-    this.ctx.scale(dpr, dpr);
 }
 
 }

@@ -36,31 +36,50 @@ export class XAxisCanvas {
     this.end_km = end_km;
     this.xScale = xScale;
     this.xMin = xMin;
+    
+    // به‌روزرسانی عرض canvas از style.width
+    const canvasElement = this.canvas;
+    if (canvasElement && canvasElement.style.width) {
+      const newWidth = parseInt(canvasElement.style.width);
+      if (newWidth && newWidth > 0) {
+        // همیشه canvas را با عرض جدید تنظیم کن
+        this.width = newWidth;
+        const dpr = Math.max(window.devicePixelRatio || 1, 2);
+        this.canvas.width = this.width * dpr;
+        this.canvas.style.width = this.width + 'px';
+        // تنظیم مجدد context
+        this.ctx = this.canvas.getContext('2d', {
+          alpha: true,
+          desynchronized: false,
+          willReadFrequently: false
+        });
+        this.ctx.scale(dpr, dpr);
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.textRenderingOptimization = 'optimizeQuality';
+      }
+    }
+    
     this.draw();
   }
 
   draw() {
     const ctx = this.ctx;
-    // پاک کردن canvas با در نظر گیری devicePixelRatio
+    // پاک کردن canvas
     const dpr = Math.max(window.devicePixelRatio || 1, 2);
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.restore();
-    // scale قبلاً در constructor تنظیم شده است
+
+    // استفاده از عرض واقعی canvas
+    const actualCanvasWidth = this.canvas ? parseInt(this.canvas.style.width) || this.width : this.width;
 
     ctx.strokeStyle = '#666';
     ctx.lineWidth = 1.5;
-
-    // خط افقی محور X
-    ctx.beginPath();
-    ctx.moveTo(0, this.height - 19 - this.margin);
-    ctx.lineTo(this.width, this.height - 19 - this.margin);
-    ctx.stroke();
-
     ctx.fillStyle = '#000';
-    ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
-    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+    ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
 
     // لیبل‌گذاری پویا بر اساس طول بازه
@@ -68,7 +87,6 @@ export class XAxisCanvas {
     // استفاده از data که از drawAxes می‌آید (اگر موجود باشد)
     let labels = [];
     if (this.data && this.data.length > 0) {
-      // استفاده از data که قبلاً در drawAxes تنظیم شده
       labels = this.data;
     } else {
       // fallback: تنظیم step بر اساس طول پروژه
@@ -89,20 +107,25 @@ export class XAxisCanvas {
         labels.push(label);
       }
     }
+    
+    // رسم همه لیبل‌ها - بدون محدودیت
+    const baselineY = this.height - 12;
+    const labelY = baselineY - 18;
+
     labels.forEach((km) => {
       // محاسبه موقعیت X بر اساس xScale و xMin (مثل transformX)
-      // اگر xScale و xMin موجود باشند، از آنها استفاده کن
       let x;
       if (this.xScale !== null && this.xScale !== undefined && this.xMin !== null && this.xMin !== undefined) {
         // استفاده از همان فرمول transformX
         x = this.margin + (km - this.xMin) * this.xScale;
       } else {
         // fallback: استفاده از روش قبلی
-        x = this.margin + ((km - this.start_km) / range) * (this.width - this.margin * 2);
+        x = this.margin + ((km - this.start_km) / range) * (actualCanvasWidth - this.margin * 2);
       }
       
       // تبدیل عدد به فارسی
       let kmLabel = km.toString().replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      
       ctx.save();
       ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
       ctx.fillStyle = '#000';
@@ -110,18 +133,24 @@ export class XAxisCanvas {
       ctx.textBaseline = 'top';
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 2;
-      // رسم لیبل اگر x در محدوده canvas است (حتی اگر منفی باشد، برای اسکرول)
-      // اما فقط اگر x در محدوده منطقی است (نه خیلی دور)
-      if (x >= -100 && x <= this.width + 100) {
-        ctx.fillText(kmLabel, x, this.height - 18);
-        // خط کوچک زیر لیبل
-        ctx.beginPath();
-        ctx.moveTo(x, this.height - 19 - this.margin);
-        ctx.lineTo(x, this.height - 14 - this.margin);
-        ctx.stroke();
-      }
+      
+      // رسم لیبل - همه لیبل‌ها را نمایش بده (بدون محدودیت)
+      ctx.fillText(kmLabel, x, labelY);
+      
+      // خط کوچک زیر لیبل
+      ctx.beginPath();
+      ctx.moveTo(x, baselineY - 4);
+      ctx.lineTo(x, baselineY + 4);
+      ctx.stroke();
+      
       ctx.shadowBlur = 0;
       ctx.restore();
     });
+    
+    // رسم خط افقی محور X در کل عرض canvas
+    ctx.beginPath();
+    ctx.moveTo(this.margin, baselineY);
+    ctx.lineTo(actualCanvasWidth - this.margin, baselineY);
+    ctx.stroke();
   }
 }

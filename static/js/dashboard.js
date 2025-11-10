@@ -174,32 +174,29 @@ export class ProjectDashboard {
         // Set the inner div width to match canvas for full scroll
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
+            // عرض دقیق - نه 100%
             chartInner.style.width = this.dynamicWidth + 'px';
             chartInner.style.minWidth = this.dynamicWidth + 'px';
+            chartInner.style.maxWidth = this.dynamicWidth + 'px';
+            chartInner.style.display = 'block';
+            chartInner.style.position = 'relative';
         }
         this.chartScrollContainer = document.getElementById('chart-scroll-x');
         if (this.chartScrollContainer) {
-            // فعال کردن اسکرول افقی
-            this.chartScrollContainer.style.overflowX = 'auto';
-            this.chartScrollContainer.style.overflowY = 'hidden';
+            // فعال کردن اسکرول افقی - با !important
+            this.chartScrollContainer.style.setProperty('overflow-x', 'auto', 'important');
+            this.chartScrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
             this.chartScrollContainer.style.width = '100%';
+            this.chartScrollContainer.style.height = '100%';
             this.chartScrollContainer.scrollLeft = 0;
             this.chartScrollContainer.scrollTop = 0;
+            // اطمینان از اینکه اسکرول کار می‌کند
+            console.log('Chart scroll container width:', this.chartScrollContainer.offsetWidth);
+            console.log('Chart inner container width:', chartInner ? chartInner.offsetWidth : 'N/A');
+            console.log('Dynamic width:', this.dynamicWidth);
         }
         
-        // تنظیم عرض canvas و محور X برای اسکرول
-        const mainCanvas = document.getElementById('mainCanvas');
-        if (mainCanvas) {
-            mainCanvas.style.width = this.dynamicWidth + 'px';
-            mainCanvas.style.minWidth = this.dynamicWidth + 'px';
-        }
-        const xAxisCanvas = document.getElementById('xAxisCanvas');
-        if (xAxisCanvas) {
-            xAxisCanvas.style.width = (this.dynamicWidth - 50) + 'px';
-            xAxisCanvas.style.minWidth = (this.dynamicWidth - 50) + 'px';
-        }
-
-        // ایجاد canvas اصلی
+        // ایجاد canvas اصلی - باید قبل از تنظیم style باشد
         // استفاده از actualXMin و actualXMax از پروفیل (نه از projectData)
         this.canvas = new Canvas({
             containerId: this.containerId,
@@ -209,6 +206,28 @@ export class ProjectDashboard {
             start_kilometer: actualXMin || 0,
             end_kilometer: actualXMax || 10
         });
+        
+        // تنظیم عرض canvas و محور X برای اسکرول - اطمینان از اینکه فشرده نمی‌شود
+        // این تنظیمات باید بعد از ایجاد Canvas باشد تا canvas.js بتواند canvas را تنظیم کند
+        const mainCanvas = document.getElementById('mainCanvas');
+        if (mainCanvas) {
+            mainCanvas.style.width = this.dynamicWidth + 'px';
+            mainCanvas.style.minWidth = this.dynamicWidth + 'px';
+            mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
+            mainCanvas.style.display = 'block';
+            mainCanvas.style.flexShrink = '0';
+            console.log('Main canvas width set to:', this.dynamicWidth);
+        }
+        const xAxisCanvas = document.getElementById('xAxisCanvas');
+        if (xAxisCanvas) {
+            const xAxisWidth = this.dynamicWidth;
+            xAxisCanvas.style.width = xAxisWidth + 'px';
+            xAxisCanvas.style.minWidth = xAxisWidth + 'px';
+            xAxisCanvas.style.maxWidth = xAxisWidth + 'px';
+            xAxisCanvas.style.display = 'block';
+            xAxisCanvas.style.flexShrink = '0';
+            console.log('X axis canvas width set to:', xAxisWidth);
+        }
 
         // ایجاد محور Y
         this.yAxis = new YAxisCanvas({
@@ -222,7 +241,7 @@ export class ProjectDashboard {
         // ایجاد محور X
         this.xAxis = new XAxisCanvas({
             canvasId: 'xAxisCanvas',
-            width: this.dynamicWidth - 50, // کم کردن عرض محور Y
+            width: this.dynamicWidth,
             height: 30,
             margin: this.margin,
             xunit: 100
@@ -257,6 +276,11 @@ export class ProjectDashboard {
         const beforeXScale = this.xScale;
         const beforeYScale = this.yScale;
         
+        // اطمینان از اینکه مقیاس‌ها محاسبه شده‌اند
+        if (!this._scalesCalculated) {
+            this.calculateScales();
+        }
+        
         this.canvas.clear();
         this.profileTooltipData = [];
         this.tooltipData = [];
@@ -268,6 +292,7 @@ export class ProjectDashboard {
         
         // بررسی تغییر مقیاس‌ها بعد از drawAxes
         this.drawAxes();
+        this.drawZeroAxisLine();
         
         // لاگ برای دیباگ - بررسی تغییر مقیاس‌ها بعد از drawAxes
         if (beforeXScale !== undefined && beforeYScale !== undefined) {
@@ -318,99 +343,141 @@ export class ProjectDashboard {
         
         const profileData = this.projectData.profile_data;
         if (!profileData.land_points || profileData.land_points.length === 0) {
+            console.error('هیچ داده‌ای از پروفیل وجود ندارد!');
             return;
         }
 
-        // ذخیره مقادیر اصلی برای reset zoom
-        if (this.originalXMin === null) {
-            // محاسبه محدوده X بر اساس پروفیل و آزمایش‌ها
-            const xValues = [];
+        // محاسبه محدوده X مستقیماً از داده‌های پروفیل
+        const xValues = [];
+        if (profileData.land_points && profileData.land_points.length > 0) {
+            profileData.land_points.forEach(p => {
+                if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
+                    xValues.push(p.x);
+                }
+            });
+        }
+        if (profileData.road_points && profileData.road_points.length > 0) {
+            profileData.road_points.forEach(p => {
+                if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
+                    xValues.push(p.x);
+                }
+            });
+        }
+        
+        if (xValues.length === 0) {
+            console.error('هیچ داده X از پروفیل وجود ندارد!');
+            this.originalXMin = 0;
+            this.originalXMax = 10;
+        } else {
+            this.originalXMin = Math.min(...xValues);
+            this.originalXMax = Math.max(...xValues);
+        }
+        
+        // محاسبه محدوده Y مستقیماً از داده‌های پروفیل
+        const yValues = profileData.land_points
+            .map(p => p.y)
+            .filter(y => y !== null && y !== undefined && isFinite(y));
+        
+        if (yValues.length === 0) {
+            console.error('هیچ داده Y از پروفیل وجود ندارد!');
+            this.originalYMin = -10;
+            this.originalYMax = 10;
+        } else {
+            let yMinFromData = Math.min(...yValues);
+            let yMaxFromData = Math.max(...yValues);
             
-            // اضافه کردن نقاط پروفیل
-            if (profileData.land_points && profileData.land_points.length > 0) {
-                profileData.land_points.forEach(p => {
-                    if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
-                        xValues.push(p.x);
-                    }
-                });
-            }
-            if (profileData.road_points && profileData.road_points.length > 0) {
-                profileData.road_points.forEach(p => {
-                    if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
-                        xValues.push(p.x);
-                    }
-                });
+            // اطمینان از اینکه صفر در محدوده است
+            if (yMinFromData > 0) {
+                yMinFromData = 0;
+            } else if (yMaxFromData < 0) {
+                yMaxFromData = 0;
             }
             
-            // محاسبه محدوده X - دقیقاً از داده‌های پروفیل (بدون هاردکد و بدون آزمایش‌ها)
-            // محدوده X باید فقط از پروفیل خوانده شود، نه از آزمایش‌ها
-            if (xValues.length > 0) {
-                // استفاده دقیق از داده‌های پروفیل (بدون استفاده از project.start_kilometer و بدون آزمایش‌ها)
-                this.originalXMin = Math.min(...xValues);
-                this.originalXMax = Math.max(...xValues);
-            } else {
-                // اگر داده‌ای از پروفیل وجود ندارد، خطا نمایش می‌دهیم (نه هاردکد)
-                console.error('هیچ داده‌ای از پروفیل برای محاسبه محدوده X وجود ندارد. لطفاً پروفیل را بررسی کنید.');
-                // استفاده از مقادیر پیش‌فرض منطقی (اما نه هاردکد)
-                this.originalXMin = 0;
-                this.originalXMax = 10;
-            }
-            
-            // محاسبه محدوده Y - دقیقاً از داده‌های پروفیل (بدون margin و بدون هاردکد)
-            const yValues = profileData.land_points.map(p => p.y).filter(y => y !== null && y !== undefined && isFinite(y));
-            if (yValues.length > 0) {
-                // استفاده دقیق از داده‌های پروفیل (بدون margin)
-                this.originalYMin = Math.min(...yValues);
-                this.originalYMax = Math.max(...yValues);
-            } else {
-                // اگر داده‌ای از پروفیل وجود ندارد، از داده‌های پروژه استفاده می‌کنیم (نه هاردکد)
-                console.warn('هیچ داده‌ای از پروفیل برای محاسبه محدوده Y وجود ندارد. استفاده از مقادیر پیش‌فرض.');
-                // استفاده از مقادیر پیش‌فرض منطقی (اما نه هاردکد)
-                this.originalYMin = -10;
-                this.originalYMax = 10;
-            }
+            // اضافه کردن margin کوچک (5% از هر طرف)
+            const yRange = yMaxFromData - yMinFromData;
+            const yMargin = Math.max(yRange * 0.05, 0.5);
+            this.originalYMin = yMinFromData - yMargin;
+            this.originalYMax = yMaxFromData + yMargin;
         }
 
-        // استفاده از محدوده واقعی داده‌ها برای محور X
-        // همیشه کل محدوده را نمایش بده (zoomLevel را نادیده می‌گیریم)
-        // این باعث می‌شود که نمودار ثابت بماند و زوم خودکار نداشته باشیم
+        // تنظیم محدوده‌های نهایی
         this.xMin = this.originalXMin;
         this.xMax = this.originalXMax;
         
-        // محاسبه محدوده Y از داده‌ها - دقیقاً از پروفیل
-        // همیشه کل محدوده Y را نمایش بده
+        // برای محور Y، باید مطمئن شویم که صفر دقیقاً در مرکز محدوده است
+        // یا حداقل در محدوده باشد
         this.yMin = this.originalYMin;
         this.yMax = this.originalYMax;
         
-        // محاسبه مقیاس‌ها
-        // استفاده از dynamicWidth که در setupCanvas محاسبه شده
-        // transformX = margin + (x - xMin) * xScale
-        // پس xScale باید بر اساس عرض قابل استفاده محاسبه شود
-        // canvas.style.width = dynamicWidth است
-        // اما باید عرض قابل استفاده را در نظر بگیریم (dynamicWidth - margin - 50 برای محور Y)
-        const canvasWidth = (this.dynamicWidth || this.width) - this.margin - 50; // کم کردن margin و عرض محور Y
-        const canvasHeight = this.height - this.margin * 2 - 30; // کم کردن ارتفاع محور X
+        // اطمینان از اینکه صفر در محدوده Y است
+        if (this.yMin > 0) {
+            this.yMin = 0;
+        } else if (this.yMax < 0) {
+            this.yMax = 0;
+        }
         
-        // اطمینان از اینکه xMin دقیقاً برابر با originalXMin است (برای شروع از 6.3)
-        this.xMin = this.originalXMin;
-        const currentXRange = this.xMax - this.xMin;
-        this.xScale = canvasWidth / currentXRange;
-        this.yScale = canvasHeight / (this.yMax - this.yMin);
+        // اطمینان از اینکه محدوده Y متقارن حول صفر است (یا حداقل صفر در آن است)
+        // این باعث می‌شود که transformY(0) دقیقاً روی خط 0.0 محور Y قرار بگیرد
+        if (this.yMin < 0 && this.yMax > 0) {
+            // اگر هر دو طرف صفر وجود دارد، محدوده را متقارن کنیم
+            const maxAbs = Math.max(Math.abs(this.yMin), Math.abs(this.yMax));
+            this.yMin = -maxAbs;
+            this.yMax = maxAbs;
+        }
+        
+        // اطمینان از اعتبار محدوده‌ها
+        if (this.xMin >= this.xMax) {
+            console.error('محدوده X نامعتبر است!', { xMin: this.xMin, xMax: this.xMax });
+            this.xMin = 0;
+            this.xMax = 10;
+        }
+        if (this.yMin >= this.yMax) {
+            console.error('محدوده Y نامعتبر است!', { yMin: this.yMin, yMax: this.yMax });
+            this.yMin = -10;
+            this.yMax = 10;
+        }
+        
+        // محاسبه مقیاس‌ها
+        const canvasWidth = (this.dynamicWidth || this.width) - this.margin - 50;
+        const canvasHeight = this.height - this.margin * 2 - 30;
+        
+        const xRange = this.xMax - this.xMin;
+        const yRange = this.yMax - this.yMin;
+        
+        this.xScale = canvasWidth / xRange;
+        this.yScale = canvasHeight / yRange;
+        
+        // لاگ برای دیباگ
+        console.log('✅ مقیاس‌ها از پروفیل محاسبه شدند:', {
+            xMin: this.xMin,
+            xMax: this.xMax,
+            yMin: this.yMin,
+            yMax: this.yMax,
+            xScale: this.xScale,
+            yScale: this.yScale,
+            transformY0: this.transformY(0),
+            canvasWidth: canvasWidth,
+            canvasHeight: canvasHeight
+        });
         
         // علامت‌گذاری که مقیاس‌ها محاسبه شده‌اند
         this._scalesCalculated = true;
     }
 
     drawAxes() {
-        // بروزرسانی محور X - دقیقاً از داده‌های پروفیل (بدون هاردکد)
+        // اطمینان از اینکه مقیاس‌ها محاسبه شده‌اند
+        if (!this._scalesCalculated) {
+            this.calculateScales();
+        }
+        
+        // بروزرسانی محور X - مستقیماً از this.xMin و this.xMax
         const xLabels = [];
-        // استفاده مستقیم از originalXMin و originalXMax از پروفیل (نه از projectData)
-        if (!this.originalXMin || !this.originalXMax) {
-            console.warn('محدوده X از پروفیل محاسبه نشده است. لطفاً پروفیل را بررسی کنید.');
+        if (!this.xMin || !this.xMax) {
+            console.warn('محدوده X محاسبه نشده است. لطفاً پروفیل را بررسی کنید.');
             return;
         }
-        const start = this.originalXMin; // دقیقاً از پروفیل
-        const end = this.originalXMax; // دقیقاً از پروفیل
+        const start = this.xMin; // مستقیماً از this.xMin
+        const end = this.xMax; // مستقیماً از this.xMax
         const projectLength = end - start;
         
         // تنظیم step بر اساس طول پروژه - برای پروژه‌های بزرگ step بزرگتر
@@ -432,11 +499,11 @@ export class ProjectDashboard {
         }
         this.xAxis.update(xLabels, start, end, this.xScale, this.xMin);
         
-        // بروزرسانی محور Y - دقیقاً از داده‌های پروفیل (بدون هاردکد)
+        // بروزرسانی محور Y - مستقیماً از this.yMin و this.yMax
         const yLabels = [];
-        // استفاده مستقیم از originalYMin و originalYMax از پروفیل
-        const dataYMin = this.originalYMin;
-        const dataYMax = this.originalYMax;
+        // استفاده مستقیم از this.yMin و this.yMax
+        const dataYMin = this.yMin;
+        const dataYMax = this.yMax;
         const yRange = dataYMax - dataYMin;
         
         // محاسبه step داینامیک بر اساس محدوده Y (از پروفیل)
@@ -450,24 +517,116 @@ export class ProjectDashboard {
         } else if (yRange <= 50) {
             yStep = 5; // برای محدوده خیلی بزرگ، step 5
         } else {
-            yStep = 10; // برای محدوده خیلی خیلی بزرگ، step 10
+            yStep = 10; // برای محدوده خیلی خیلی بزرگ， step 10
         }
         
         // گرد کردن به مضرب‌های step برای نمایش بهتر (اما بر اساس داده‌های پروفیل)
-        const yMinRounded = Math.floor(dataYMin / yStep) * yStep;
-        const yMaxRounded = Math.ceil(dataYMax / yStep) * yStep;
+        // اطمینان از اینکه صفر در لیبل‌ها باشد
+        let yMinRounded = Math.floor(dataYMin / yStep) * yStep;
+        let yMaxRounded = Math.ceil(dataYMax / yStep) * yStep;
+        
+        // اطمینان از اینکه صفر در محدوده باشد
+        if (yMinRounded > 0) {
+            yMinRounded = 0;
+        } else if (yMaxRounded < 0) {
+            yMaxRounded = 0;
+        }
         
         // محدوده Y را بر اساس داده‌های واقعی پروفیل تنظیم می‌کنیم (با step داینامیک)
         const finalYMin = yMinRounded;
         const finalYMax = yMaxRounded;
         
+        // اطمینان از اینکه yMin و yMax در dashboard با yAxis یکسان هستند
+        // این مهم است چون transformY از this.yMin و this.yMax استفاده می‌کند
+        this.yMin = finalYMin;
+        this.yMax = finalYMax;
+        
+        // محاسبه مجدد yScale بر اساس finalYMin و finalYMax
+        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const currentYRange = this.yMax - this.yMin;
+        if (currentYRange > 0) {
+            this.yScale = mainCanvasHeight / currentYRange;
+        }
+        
         // ایجاد لیبل‌ها با فرمت عددی (بدون "m" برای سازگاری با yaxiscanvas)
         for (let value = finalYMin; value <= finalYMax + 0.0001; value += yStep) {
             yLabels.push(value.toFixed(1));
         }
+
+        // اطمینان از اینکه مقدار صفر همیشه در لیست لیبل‌ها وجود دارد
+        if (this.yMin < 0 && this.yMax > 0) {
+            const hasZero = yLabels.some(label => Math.abs(parseFloat(label)) < 1e-6);
+            if (!hasZero) {
+                yLabels.push('0.0');
+                yLabels.sort((a, b) => parseFloat(a) - parseFloat(b));
+            }
+        }
+        
         // استفاده از finalYMin و finalYMax برای yAxis.update
         // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
         this.yAxis.update(yLabels, finalYMin, finalYMax);
+        
+        // بررسی اینکه transformY(0) دقیقاً روی خط 0.0 محور Y قرار می‌گیرد
+        const transformY0 = this.transformY(0);
+        const yAxis0 = this.yAxis.getYPosition(0); // موقعیت 0.0 در محور Y
+        
+        // بررسی هماهنگی بین transformY و yAxis
+        const paddingY = 10;
+        const yAxisCanvasHeightUsable = this.height - paddingY * 2;
+        const normalizedY0 = (0 - this.yMin) / (this.yMax - this.yMin);
+        
+        // محاسبه موقعیت 0.0 در canvas اصلی - باید با transformY0 یکسان باشد
+        const expectedY0 = this.margin + mainCanvasHeight - (normalizedY0 * mainCanvasHeight);
+        
+        const diff = Math.abs(transformY0 - expectedY0);
+        if (diff > 0.1) {
+            console.warn('⚠️ transformY و yAxis هماهنگ نیستند!', {
+                transformY0: transformY0,
+                expectedY0: expectedY0,
+                yAxis0: yAxis0,
+                margin: this.margin,
+                mainCanvasHeight: mainCanvasHeight,
+                yAxisCanvasHeightUsable: yAxisCanvasHeightUsable,
+                normalizedY0: normalizedY0,
+                diff: diff
+            });
+        }
+        
+        // لاگ برای دیباگ
+        console.log('✅ محور Y تنظیم شد:', {
+            finalYMin: finalYMin,
+            finalYMax: finalYMax,
+            yMin: this.yMin,
+            yMax: this.yMax,
+            yScale: this.yScale,
+            transformY0: transformY0,
+            expectedY0: expectedY0,
+            yAxis0: yAxis0,
+            margin: this.margin,
+            mainCanvasHeight: mainCanvasHeight,
+            yRange: currentYRange,
+            diff: diff
+        });
+    }
+
+    drawZeroAxisLine() {
+        // تنها زمانی که صفر در محدوده Y قرار دارد، خط پایه را رسم کن
+        if (!(this.yMin <= 0 && this.yMax >= 0)) {
+            return;
+        }
+        const ctx = this.canvas.ctx;
+        const yZero = this.transformY(0);
+        ctx.save();
+        ctx.strokeStyle = '#d1d5db'; // رنگ خنثی برای خط پایه
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 4]);
+        const startX = this.margin;
+        const endX = (this.dynamicWidth || this.width) - this.margin;
+        ctx.beginPath();
+        ctx.moveTo(startX, yZero);
+        ctx.lineTo(endX, yZero);
+        ctx.stroke();
+        ctx.restore();
     }
 
     drawLandProfile() {
@@ -539,9 +698,19 @@ export class ProjectDashboard {
     drawRoadProfile() {
         const profileData = this.projectData.profile_data;
         if (!profileData.road_points || profileData.road_points.length === 0) return;
+        
+        // اطمینان از اینکه transformY(0) درست کار می‌کند
+        const yZero = this.transformY(0);
+        console.log('رسم خط جاده - transformY(0):', yZero, {
+            yMin: this.yMin,
+            yMax: this.yMax,
+            yScale: this.yScale,
+            margin: this.margin
+        });
+        
         const points = profileData.road_points.map(point => ({
             x: this.transformX(point.x),
-            y: this.transformY(0) // همه نقاط جاده روی ارتفاع صفر
+            y: yZero // همه نقاط جاده روی ارتفاع صفر - استفاده از مقدار محاسبه شده
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
@@ -1099,7 +1268,31 @@ export class ProjectDashboard {
     }
 
     transformY(y) {
-        return this.margin + (this.yMax - y) * this.yScale;
+        // فرمول تبدیل Y: باید دقیقاً با yAxis هماهنگ باشد
+        if (this.yScale === undefined || this.yMax === undefined || this.yMin === undefined) {
+            console.error('yScale, yMax, or yMin is undefined!', {
+                yScale: this.yScale,
+                yMax: this.yMax,
+                yMin: this.yMin
+            });
+            return this.margin + this.height / 2; // fallback
+        }
+        
+        const yRange = this.yMax - this.yMin;
+        if (yRange <= 0) {
+            return this.margin + this.height / 2; // fallback
+        }
+        
+        // محاسبه normalizedY
+        const normalizedY = (y - this.yMin) / yRange;
+        
+        // استفاده از همان فرمول yAxis اما با mainCanvasHeight
+        // yAxis: y = height - paddingY - (normalizedY * (height - paddingY * 2))
+        // transformY: y = margin + mainCanvasHeight - (normalizedY * mainCanvasHeight)
+        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const yPosition = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
+        
+        return yPosition;
     }
 
     handleMouseMove(e) {
@@ -1387,8 +1580,9 @@ export class ProjectDashboard {
             const x2 = this.transformX(landB.x);
             const yLand1 = this.transformY(landA.y);
             const yLand2 = this.transformY(landB.y);
-            const yRoad1 = this.transformY(roadA.y);
-            const yRoad2 = this.transformY(roadB.y);
+            // خط جاده باید روی صفر باشد، نه roadA.y
+            const yRoad1 = this.transformY(0);
+            const yRoad2 = this.transformY(0);
 
             // تعیین نوع (خاکبرداری یا خاکریزی)
             const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده
