@@ -517,7 +517,7 @@ html, body {
   text-align: left; /* تراز به سمت چپ */
   scroll-behavior: smooth; /* اسکرول نرم */
   -webkit-overflow-scrolling: touch; /* اسکرول نرم در موبایل */
-  max-height: 80vh; /* حداکثر ارتفاع برای اسکرول عمودی */
+  height: 600px; /* ارتفاع ثابت برای فعال کردن اسکرول */
   /* اطمینان از اسکرول کامل */
   position: relative;
   /* اطمینان از اینکه اسکرول روی محتوا می‌افتد نه روی Y-axis */

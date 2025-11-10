@@ -48,18 +48,145 @@ export class ProjectDashboard {
         this.setupCanvas();
         this.setupEventListeners();
         this.render();
+        // نمایش اطلاعات در کنسول
+        this.logChartInfo();
+    }
+    
+    logChartInfo() {
+        console.group('📊 اطلاعات نمودار داشبورد');
+        const profileData = this.projectData.profile_data;
+        
+        // محاسبه محدوده X از داده‌های پروفیل
+        let xMinFromProfile = null;
+        let xMaxFromProfile = null;
+        if (profileData && profileData.land_points && profileData.land_points.length > 0) {
+            const xValues = profileData.land_points
+                .map(p => p && p.x !== undefined && p.x !== null && isFinite(p.x) ? p.x : null)
+                .filter(x => x !== null);
+            if (xValues.length > 0) {
+                xMinFromProfile = Math.min(...xValues);
+                xMaxFromProfile = Math.max(...xValues);
+            }
+        }
+        
+        // محاسبه محدوده Y از داده‌های پروفیل
+        let yMinFromProfile = null;
+        let yMaxFromProfile = null;
+        if (profileData && profileData.land_points && profileData.land_points.length > 0) {
+            const yValues = profileData.land_points
+                .map(p => p && p.y !== undefined && p.y !== null && isFinite(p.y) ? p.y : null)
+                .filter(y => y !== null);
+            if (yValues.length > 0) {
+                yMinFromProfile = Math.min(...yValues);
+                yMaxFromProfile = Math.max(...yValues);
+            }
+        }
+        
+        console.log('محدوده X (از پروفیل):', {
+            min: xMinFromProfile,
+            max: xMaxFromProfile,
+            range: xMaxFromProfile && xMinFromProfile ? xMaxFromProfile - xMinFromProfile : null
+        });
+        console.log('محدوده Y (از پروفیل):', {
+            min: yMinFromProfile,
+            max: yMaxFromProfile,
+            range: yMaxFromProfile && yMinFromProfile ? yMaxFromProfile - yMinFromProfile : null
+        });
+        console.log('محدوده X (محاسبه شده):', {
+            min: this.originalXMin || this.projectData.start_kilometer,
+            max: this.originalXMax || this.projectData.end_kilometer,
+            range: (this.originalXMax || this.projectData.end_kilometer) - (this.originalXMin || this.projectData.start_kilometer)
+        });
+        console.log('محدوده Y (محاسبه شده):', {
+            min: this.originalYMin || this.yMin,
+            max: this.originalYMax || this.yMax,
+            range: (this.originalYMax || this.yMax) - (this.originalYMin || this.yMin)
+        });
+        console.log('مقیاس‌ها:', {
+            xScale: this.xScale,
+            yScale: this.yScale,
+            dynamicWidth: this.dynamicWidth
+        });
+        console.log('لایه‌ها:', this.projectData.layers?.map(l => ({
+            name: l.name,
+            experiments: l.experiments?.length || 0,
+            executed_ranges: l.executed_ranges?.length || 0
+        })));
+        console.log('نقاط پروفیل:', {
+            land_points: this.projectData.profile_data?.land_points?.length || 0,
+            road_points: this.projectData.profile_data?.road_points?.length || 0,
+            first_land_point: this.projectData.profile_data?.land_points?.[0],
+            last_land_point: this.projectData.profile_data?.land_points?.[this.projectData.profile_data?.land_points?.length - 1]
+        });
+        console.groupEnd();
     }
 
     setupCanvas() {
-        // Calculate dynamic width based on project length
-        const projectLength = this.projectData.end_kilometer - this.projectData.start_kilometer;
+        // Calculate dynamic width based on actual data range (including experiments)
+        // ابتدا محدوده واقعی را از داده‌های پروفیل محاسبه می‌کنیم
+        const profileData = this.projectData.profile_data;
+        let actualXMin = null;
+        let actualXMax = null;
+        
+        // محاسبه محدوده X از داده‌های پروفیل
+        if (profileData && profileData.land_points && profileData.land_points.length > 0) {
+            const xValues = profileData.land_points
+                .map(p => p && p.x !== undefined && p.x !== null && isFinite(p.x) ? p.x : null)
+                .filter(x => x !== null);
+            if (xValues.length > 0) {
+                actualXMin = Math.min(...xValues);
+                actualXMax = Math.max(...xValues);
+            }
+        }
+        
+        // اگر از پروفیل چیزی پیدا نشد، از project استفاده کن
+        if (actualXMin === null || actualXMax === null) {
+            actualXMin = this.projectData.start_kilometer;
+            actualXMax = this.projectData.end_kilometer;
+        }
+        
+        // بررسی آزمایش‌ها برای پیدا کردن محدوده واقعی (به صورت نسبی از start_kilometer)
+        if (this.projectData.layers && Array.isArray(this.projectData.layers)) {
+            this.projectData.layers.forEach(layer => {
+                if (layer && layer.experiments && Array.isArray(layer.experiments)) {
+                    layer.experiments.forEach(experiment => {
+                        if (experiment && experiment.kilometer_start !== undefined && experiment.kilometer_start !== null) {
+                            const kmRaw = parseFloat(experiment.kilometer_start);
+                            if (isFinite(kmRaw)) {
+                                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
+                                const km = this.projectData.start_kilometer + kmRaw;
+                                actualXMin = Math.min(actualXMin, km);
+                                actualXMax = Math.max(actualXMax, km);
+                            }
+                        }
+                        if (experiment && experiment.kilometer_end !== undefined && experiment.kilometer_end !== null) {
+                            const kmRaw = parseFloat(experiment.kilometer_end);
+                            if (isFinite(kmRaw)) {
+                                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
+                                const km = this.projectData.start_kilometer + kmRaw;
+                                actualXMin = Math.min(actualXMin, km);
+                                actualXMax = Math.max(actualXMax, km);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        const actualLength = actualXMax - actualXMin;
         const pxPerKm = 50; // 50px per km - نمودار بازتر با کیفیت بهتر
         const minWidth = 1200;
-        this.dynamicWidth = Math.max(minWidth, Math.ceil(projectLength * pxPerKm));
+        this.dynamicWidth = Math.max(minWidth, Math.ceil(actualLength * pxPerKm));
+        
         // Set the inner div width to match canvas for full scroll
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             chartInner.style.width = this.dynamicWidth + 'px';
+        }
+        this.chartScrollContainer = document.getElementById('chart-scroll-x');
+        if (this.chartScrollContainer) {
+            this.chartScrollContainer.scrollLeft = 0;
+            this.chartScrollContainer.scrollTop = 0;
         }
 
         // ایجاد canvas اصلی
@@ -102,6 +229,16 @@ export class ProjectDashboard {
         // رویدادهای لمسی
         mainCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
         mainCanvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+
+        const scrollContainer = document.getElementById('chart-scroll-x');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('wheel', (e) => {
+                if (!e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    scrollContainer.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        }
     }
 
     render() {
@@ -146,31 +283,83 @@ export class ProjectDashboard {
 
         // ذخیره مقادیر اصلی برای reset zoom
         if (this.originalXMin === null) {
-            // محور X باید از start_kilometer شروع شود نه از صفر
-            this.originalXMin = this.projectData.start_kilometer;
-            this.originalXMax = this.projectData.end_kilometer;
+            // محاسبه محدوده X بر اساس پروفیل و آزمایش‌ها
+            const xValues = [];
             
-            const yValues = [...profileData.land_points.map(p => p.y), ...profileData.road_points.map(p => p.y)];
-            const originalYMin = Math.min(...yValues);
-            const originalYMax = Math.max(...yValues);
-            const yRange = originalYMax - originalYMin;
-            const yMargin = yRange * 0.1;
+            // اضافه کردن نقاط پروفیل
+            if (profileData.land_points && profileData.land_points.length > 0) {
+                profileData.land_points.forEach(p => {
+                    if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
+                        xValues.push(p.x);
+                    }
+                });
+            }
+            if (profileData.road_points && profileData.road_points.length > 0) {
+                profileData.road_points.forEach(p => {
+                    if (p && p.x !== undefined && p.x !== null && isFinite(p.x)) {
+                        xValues.push(p.x);
+                    }
+                });
+            }
             
-            this.originalYMin = originalYMin - yMargin;
-            this.originalYMax = originalYMax + yMargin;
+            // اضافه کردن کیلومتراژ آزمایش‌ها (به صورت نسبی از start_kilometer)
+            if (this.projectData.layers && Array.isArray(this.projectData.layers)) {
+                this.projectData.layers.forEach(layer => {
+                    if (layer && layer.experiments && Array.isArray(layer.experiments)) {
+                        layer.experiments.forEach(experiment => {
+                            if (experiment && experiment.kilometer_start !== undefined && experiment.kilometer_start !== null) {
+                                const kmRaw = parseFloat(experiment.kilometer_start);
+                                if (isFinite(kmRaw)) {
+                                    // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
+                                    const km = this.projectData.start_kilometer + kmRaw;
+                                    xValues.push(km);
+                                }
+                            }
+                            if (experiment && experiment.kilometer_end !== undefined && experiment.kilometer_end !== null) {
+                                const kmRaw = parseFloat(experiment.kilometer_end);
+                                if (isFinite(kmRaw)) {
+                                    // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
+                                    const km = this.projectData.start_kilometer + kmRaw;
+                                    xValues.push(km);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // محاسبه محدوده X - دقیقاً از داده‌های پروفیل
+            if (xValues.length > 0) {
+                // استفاده دقیق از داده‌های پروفیل (بدون استفاده از project.start_kilometer)
+                this.originalXMin = Math.min(...xValues);
+                this.originalXMax = Math.max(...xValues);
+            } else {
+                // fallback به محدوده پروژه
+                this.originalXMin = this.projectData.start_kilometer;
+                this.originalXMax = this.projectData.end_kilometer;
+            }
+            
+            // محاسبه محدوده Y - دقیقاً از داده‌های پروفیل (بدون margin)
+            const yValues = profileData.land_points.map(p => p.y).filter(y => y !== null && y !== undefined && isFinite(y));
+            if (yValues.length > 0) {
+                // استفاده دقیق از داده‌های پروفیل (بدون margin)
+                this.originalYMin = Math.min(...yValues);
+                this.originalYMax = Math.max(...yValues);
+            } else {
+                this.originalYMin = -5;
+                this.originalYMax = 5;
+            }
         }
 
-        // استفاده از محدوده پروژه برای محور X - این مهم است!
-        // محور X باید از start_kilometer شروع شود (مثل اکسل - از 6300 شروع می‌شود نه از صفر)
-        // اعمال زوم
+        // استفاده از محدوده واقعی داده‌ها برای محور X
+        // اعمال زوم - نمودار باید دقیقاً از originalXMin شروع شود
         const originalXRange = this.originalXMax - this.originalXMin;
-        const xCenter = (this.originalXMin + this.originalXMax) / 2;
         const zoomedXRange = originalXRange / this.zoomLevel;
-        // اطمینان از اینکه xMin از start_kilometer شروع می‌شود
-        this.xMin = Math.max(this.projectData.start_kilometer, xCenter - zoomedXRange / 2);
-        this.xMax = Math.min(this.projectData.end_kilometer, xCenter + zoomedXRange / 2);
+        // نمودار باید دقیقاً از originalXMin شروع شود (بدون استفاده از center)
+        this.xMin = this.originalXMin;
+        this.xMax = this.originalXMin + zoomedXRange;
         
-        // محاسبه محدوده Y از داده‌ها
+        // محاسبه محدوده Y از داده‌ها - دقیقاً از پروفیل
         const originalYRange = this.originalYMax - this.originalYMin;
         const yCenter = (this.originalYMin + this.originalYMax) / 2;
         const zoomedYRange = originalYRange / this.zoomLevel;
@@ -194,8 +383,10 @@ export class ProjectDashboard {
     drawAxes() {
         // بروزرسانی محور X
         const xLabels = [];
-        const start = this.projectData.start_kilometer; // محور X باید از start_kilometer شروع شود
-        const end = this.projectData.end_kilometer;
+        // استفاده از محدوده واقعی (شامل آزمایش‌ها) - دقیقاً از داده‌های پروفیل
+        // نمودار باید دقیقاً از originalXMin شروع شود (که از پروفیل خوانده شده)
+        const start = this.originalXMin || this.projectData.start_kilometer;
+        const end = this.originalXMax || this.projectData.end_kilometer;
         const projectLength = end - start;
         
         // تنظیم step بر اساس طول پروژه - برای پروژه‌های بزرگ step بزرگتر
@@ -215,16 +406,31 @@ export class ProjectDashboard {
         for (let km = start; km <= end + 0.0001; km += step) {
             xLabels.push(km);
         }
-        this.xAxis.update(xLabels, start, end);
+        this.xAxis.update(xLabels, start, end, this.xScale, this.xMin);
         
-        // بروزرسانی محور Y
+        // بروزرسانی محور Y - مثل اکسل با step 5
         const yLabels = [];
-        const yStep = (this.yMax - this.yMin) / 10;
-        for (let i = 0; i <= 10; i++) {
-            const value = this.yMin + yStep * i;
-            yLabels.push(`${value.toFixed(1)}m`);
+        // محاسبه محدوده Y با step 5 (مثل اکسل)
+        // استفاده از محدوده واقعی داده‌ها اما با step 5
+        const yStep = 5; // step ثابت 5 مثل اکسل
+        // گرد کردن به مضرب‌های 5 برای نمایش بهتر
+        // استفاده از originalYMin و originalYMax برای محدوده واقعی داده‌ها
+        const dataYMin = this.originalYMin || this.yMin;
+        const dataYMax = this.originalYMax || this.yMax;
+        const yMinRounded = Math.floor(dataYMin / yStep) * yStep;
+        const yMaxRounded = Math.ceil(dataYMax / yStep) * yStep;
+        
+        // محدوده Y را بر اساس داده‌های واقعی تنظیم می‌کنیم (با step 5)
+        // اگر داده‌ها در محدوده -20 تا 15 باشند، از همان استفاده می‌کنیم
+        // در غیر این صورت، محدوده را گسترش می‌دهیم
+        const finalYMin = yMinRounded;
+        const finalYMax = yMaxRounded;
+        
+        // ایجاد لیبل‌ها با فرمت عددی (بدون "m" برای سازگاری با yaxiscanvas)
+        for (let value = finalYMin; value <= finalYMax + 0.0001; value += yStep) {
+            yLabels.push(value.toFixed(1));
         }
-        this.yAxis.update(yLabels);
+        this.yAxis.update(yLabels, finalYMin, finalYMax);
     }
 
     drawLandProfile() {
@@ -238,7 +444,12 @@ export class ProjectDashboard {
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
-        // سایه ضخیم زیر پروفیل
+        
+        // بهبود کیفیت رندرینگ
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // سایه ضخیم زیر پروفیل - بهبود کیفیت
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 0; i < points.length - 1; i++) {
@@ -250,18 +461,24 @@ export class ProjectDashboard {
             const cp2y = p1.y;
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
         }
-        ctx.strokeStyle = 'rgba(56,249,215,0.12)';
-        ctx.lineWidth = 10;
-        ctx.shadowColor = '#38f9d7';
-        ctx.shadowBlur = 12; // کاهش هاله آبی
+        ctx.strokeStyle = 'rgba(56,249,215,0.15)';
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = 'rgba(56,249,215,0.3)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.stroke();
-        // خط اصلی پروفیل - بهبود کیفیت
+        
+        // خط اصلی پروفیل - کیفیت حرفه‌ای
         ctx.shadowBlur = 0;
         const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
         grad.addColorStop(0, '#43e97b');
+        grad.addColorStop(0.5, '#3de8a8');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4; // افزایش ضخامت برای وضوح بیشتر
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -291,16 +508,23 @@ export class ProjectDashboard {
         }));
         const ctx = this.canvas.ctx;
         ctx.save();
-        // گرادینت آبی-بنفش برای پروفیل جاده - بهبود کیفیت
+        // بهبود کیفیت رندرینگ
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // گرادینت آبی-بنفش برای پروفیل جاده - کیفیت حرفه‌ای
         const grad = ctx.createLinearGradient(points[0].x, 0, points[points.length-1].x, 0);
         grad.addColorStop(0, '#00c6ff');
+        grad.addColorStop(0.5, '#0099ff');
         grad.addColorStop(1, '#0072ff');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3.5; // افزایش ضخامت برای وضوح بیشتر
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowColor = '#00c6ff';
-        ctx.shadowBlur = 6;
+        ctx.shadowColor = 'rgba(0,198,255,0.4)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length; i++) {
@@ -699,127 +923,57 @@ export class ProjectDashboard {
 
     drawExperiments() {
         const profileData = this.projectData.profile_data;
-        if (!profileData.road_points || profileData.road_points.length === 0) return;
+        if (!profileData || !profileData.road_points || profileData.road_points.length === 0) {
+            return;
+        }
         
-        const layers = this.projectData.layers;
-        this.projectData.layers.forEach(layer => {
+        if (!this.projectData.layers || !Array.isArray(this.projectData.layers)) {
+            return;
+        }
+        
+        const layers = [...this.projectData.layers].sort((a, b) => (a.order_from_top || 0) - (b.order_from_top || 0));
+        
+        layers.forEach(layer => {
+            if (!layer.experiments || !Array.isArray(layer.experiments)) {
+                return;
+            }
+            
             layer.experiments.forEach(experiment => {
-                if (this.isExperimentInDateRange(experiment)) {
-                    const x = this.transformX(experiment.kilometer_start);
-                    
-                    // پیدا کردن موقعیت دقیق Y برای آزمایش - استفاده از executed_ranges
-                    let yLayer = null;
-                    
-                    // اگر لایه executed_ranges دارد، از آن استفاده کن
-                    if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
-                        // پیدا کردن بازه‌ای که آزمایش در آن قرار دارد
-                        for (const range of layer.executed_ranges) {
-                            if (experiment.kilometer_start >= range.start && experiment.kilometer_start <= range.end) {
-                                // interpolate برای موقعیت دقیق Y
-                                let yRoad = null;
-                                for (let p = 0; p < profileData.road_points.length - 1; p++) {
-                                    const p1 = profileData.road_points[p];
-                                    const p2 = profileData.road_points[p + 1];
-                                    if (experiment.kilometer_start >= p1.x && experiment.kilometer_start <= p2.x) {
-                                        const t = (experiment.kilometer_start - p1.x) / (p2.x - p1.x);
-                                        yRoad = p1.y + (p2.y - p1.y) * t;
-                                        break;
-                                    }
-                                }
-                                if (yRoad === null) {
-                                    let minDist = Infinity;
-                                    for (let p = 0; p < profileData.road_points.length; p++) {
-                                        const point = profileData.road_points[p];
-                                        const dist = Math.abs(point.x - experiment.kilometer_start);
-                                        if (dist < minDist) {
-                                            minDist = dist;
-                                            yRoad = point.y;
-                                        }
-                                    }
-                                }
-                                
-                                // محاسبه موقعیت Y لایه بر اساس order_from_top
-                                yLayer = this.transformY(yRoad);
-                                const canvasHeight = this.height - this.margin * 2 - 30;
-                                const maxLayerThicknessPx = canvasHeight * 0.12;
-                                const minLayerThicknessPx = 2;
-                                
-                                // جمع کردن ضخامت لایه‌های قبلی
-                                for (let l = 0; l < layers.length; l++) {
-                                    const tempLayer = layers[l];
-                                    if (tempLayer.order_from_top < layer.order_from_top) {
-                                        let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                                        if (tempLayer.state !== 1) {
-                                            tempThickness = Math.max(tempThickness * 0.25, 1);
-                                        }
-                                        yLayer += tempThickness;
-                                    } else if (tempLayer.order_from_top === layer.order_from_top) {
-                                        // اضافه کردن نصف ضخامت لایه فعلی برای قرار دادن آزمایش در وسط لایه
-                                        let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                                        if (tempLayer.state !== 1) {
-                                            tempThickness = Math.max(tempThickness * 0.25, 1);
-                                        }
-                                        yLayer += tempThickness / 2;
-                                        break;
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // اگر executed_ranges نداشت یا آزمایش در هیچ بازه‌ای نبود، از روش قبلی استفاده کن
-                    if (yLayer === null) {
-                        let yRoad = null;
-                        for (let p = 0; p < profileData.road_points.length - 1; p++) {
-                            const p1 = profileData.road_points[p];
-                            const p2 = profileData.road_points[p + 1];
-                            if (experiment.kilometer_start >= p1.x && experiment.kilometer_start <= p2.x) {
-                                const t = (experiment.kilometer_start - p1.x) / (p2.x - p1.x);
-                                yRoad = p1.y + (p2.y - p1.y) * t;
-                                break;
-                            }
-                        }
-                        if (yRoad === null) {
-                            let minDist = Infinity;
-                            for (let p = 0; p < profileData.road_points.length; p++) {
-                                const point = profileData.road_points[p];
-                                const dist = Math.abs(point.x - experiment.kilometer_start);
-                                if (dist < minDist) {
-                                    minDist = dist;
-                                    yRoad = point.y;
-                                }
-                            }
-                        }
-                        
-                        yLayer = this.transformY(yRoad);
-                        const canvasHeight = this.height - this.margin * 2 - 30;
-                        const maxLayerThicknessPx = canvasHeight * 0.12;
-                        const minLayerThicknessPx = 2;
-                        
-                        for (let l = 0; l < layers.length; l++) {
-                            const tempLayer = layers[l];
-                            if (tempLayer.order_from_top < layer.order_from_top) {
-                                let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                                if (tempLayer.state !== 1) {
-                                    tempThickness = Math.max(tempThickness * 0.25, 1);
-                                }
-                                yLayer += tempThickness;
-                            } else if (tempLayer.order_from_top === layer.order_from_top) {
-                                let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                                if (tempLayer.state !== 1) {
-                                    tempThickness = Math.max(tempThickness * 0.25, 1);
-                                }
-                                yLayer += tempThickness / 2;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (yLayer !== null) {
-                        this.drawExperimentPixel(experiment, x, yLayer, layer);
-                    }
+                if (!experiment || !this.isExperimentInDateRange(experiment)) {
+                    return;
                 }
+                
+                const kmStartRaw = parseFloat(experiment.kilometer_start);
+                if (isNaN(kmStartRaw)) {
+                    return;
+                }
+                
+                // کیلومتراژ آزمایش باید به start_kilometer اضافه شود
+                // مثلاً اگر آزمایش در کیلومتر 30 است و start_kilometer = 6.3 است، باید در 6.3 + 30 = 36.3 نمایش داده شود
+                const kmStart = this.projectData.start_kilometer + kmStartRaw;
+                
+                const x = this.transformX(kmStart);
+                
+                // آزمایش‌ها باید روی صفر محور Y باشند (روی خط جاده)
+                const y = this.transformY(0);
+                
+                // بررسی اینکه x و y معتبر هستند
+                if (!isFinite(x) || !isFinite(y)) {
+                    return;
+                }
+                
+                // بررسی اینکه x در محدوده قابل مشاهده است
+                const canvasWidth = this.dynamicWidth || this.width;
+                if (x < -200 || x > canvasWidth + 200) {
+                    return;
+                }
+                
+                // بررسی اینکه y در محدوده قابل مشاهده است
+                if (y < -50 || y > this.height + 50) {
+                    return;
+                }
+                
+                this.drawExperimentPixel(experiment, x, y, layer);
             });
         });
     }

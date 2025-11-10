@@ -1,14 +1,31 @@
 export class XAxisCanvas {
   constructor({canvasId, width, height, margin = 5,xunit}) {
     this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext('2d');
     this.width = width;
     this.height = height;
     this.margin = margin;
     this.xunit = xunit
 
-    this.canvas.width = width;
-    this.canvas.height = height;
+    // افزایش کیفیت canvas با devicePixelRatio (حداقل 2)
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
+    
+    this.ctx = this.canvas.getContext('2d', {
+      alpha: true,
+      desynchronized: false,
+      willReadFrequently: false
+    });
+    
+    // تنظیم scale برای کیفیت بالا
+    this.ctx.scale(dpr, dpr);
+    
+    // بهبود کیفیت رندرینگ - حرفه‌ای
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+    this.ctx.textRenderingOptimization = 'optimizeQuality';
 
     this.data = [];
   }
@@ -19,16 +36,21 @@ export class XAxisCanvas {
     this.end_km = end_km;
     this.xScale = xScale;
     this.xMin = xMin;
-    console.log('XAxisCanvas.update:', { data, start_km, end_km, xScale, xMin });
     this.draw();
   }
 
   draw() {
     const ctx = this.ctx;
-    ctx.clearRect(0, 0, this.width, this.height);
+    // پاک کردن canvas با در نظر گیری devicePixelRatio
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.restore();
+    // scale قبلاً در constructor تنظیم شده است
 
-    ctx.strokeStyle = '#bbb';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 1.5;
 
     // خط افقی محور X
     ctx.beginPath();
@@ -82,7 +104,7 @@ export class XAxisCanvas {
       // تبدیل عدد به فارسی
       let kmLabel = km.toString().replace('.', '٫').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
       ctx.save();
-      ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
+      ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
       ctx.fillStyle = '#000';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';

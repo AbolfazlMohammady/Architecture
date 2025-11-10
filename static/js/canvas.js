@@ -14,19 +14,23 @@ export class Canvas {
     
     this.canvas = document.getElementById('mainCanvas');
     
-    // افزایش کیفیت canvas با devicePixelRatio
-    const dpr = window.devicePixelRatio || 1;
+    // افزایش کیفیت canvas با devicePixelRatio (حداقل 2 برای کیفیت بالا)
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
     this.canvas.width = width * dpr;
     this.canvas.height = height * dpr;
     this.canvas.style.width = width + 'px';
     this.canvas.style.height = height + 'px';
 
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', {
+      alpha: true,
+      desynchronized: false,
+      willReadFrequently: false
+    });
     
     // تنظیم scale برای کیفیت بالا
     this.ctx.scale(dpr, dpr);
     
-    // بهبود کیفیت رندرینگ
+    // بهبود کیفیت رندرینگ - حرفه‌ای
     this.ctx.imageSmoothingEnabled = true;
     this.ctx.imageSmoothingQuality = 'high';
     
@@ -56,8 +60,19 @@ export class Canvas {
     this.landLine.update(points);
   }
   clear() {
-    // پاک کردن canvas - چون scale تنظیم شده، از width و height اصلی استفاده می‌کنیم
-    this.ctx.clearRect(0, 0, this.width, this.height);
+    // پاک کردن canvas - چون ctx.scale(dpr, dpr) تنظیم شده، از width و height منطقی استفاده می‌کنیم
+    // اما باید مطمئن شویم که کل canvas پاک می‌شود
+    const dpr = window.devicePixelRatio || 1;
+    // ذخیره transform فعلی
+    this.ctx.save();
+    // بازنشانی transform
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // پاک کردن کل canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // بازگرداندن transform
+    this.ctx.restore();
+    // تنظیم مجدد scale
+    this.ctx.scale(dpr, dpr);
 }
 
 }
