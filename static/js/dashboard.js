@@ -170,10 +170,11 @@ export class ProjectDashboard {
         const pxPerKm = 50; // 50px per km - نمودار بازتر با کیفیت بهتر
         const minWidth = 1200;
         const baseDrawingWidth = Math.max(minWidth, Math.ceil(actualLength * pxPerKm));
+        this.drawingWidth = baseDrawingWidth;
         
         // padding اضافی برای حاشیه‌های چپ/راست و کمی فضای باز در انتهای نمودار
         this.extraScrollPadding = Math.max(this.margin, 200);
-        this.dynamicWidth = baseDrawingWidth + this.margin * 2;
+        this.dynamicWidth = this.drawingWidth + this.margin * 2 + this.extraScrollPadding;
         
         // Set the inner div width to match canvas for full scroll
         const chartInner = document.getElementById('chart-canvas-inner');
@@ -443,13 +444,13 @@ export class ProjectDashboard {
         }
         
         // محاسبه مقیاس‌ها
-        const canvasWidth = (this.dynamicWidth || this.width) - this.margin * 2;
+        const effectiveDrawingWidth = this.drawingWidth || ((this.dynamicWidth || this.width) - this.margin * 2);
         const canvasHeight = this.height - this.margin * 2 - 30;
         
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
         
-        this.xScale = canvasWidth / xRange;
+        this.xScale = effectiveDrawingWidth / xRange;
         this.yScale = canvasHeight / yRange;
         
         // لاگ برای دیباگ
@@ -461,7 +462,7 @@ export class ProjectDashboard {
             xScale: this.xScale,
             yScale: this.yScale,
             transformY0: this.transformY(0),
-            canvasWidth: canvasWidth,
+            canvasWidth: effectiveDrawingWidth,
             canvasHeight: canvasHeight
         });
         
