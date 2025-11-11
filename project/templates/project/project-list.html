@@ -15,50 +15,62 @@
     </button>
   </div>
   <section class="project-list mb-5">
-    <h5 class="mb-4 fw-bold">لیست پروژه‌ها</h5>
-    {% if error_message %}
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-      <i class="fas fa-exclamation-triangle me-2"></i>{{ error_message }}
-      <a href="{% url 'login' %}" class="btn btn-sm btn-primary ms-3">ورود به حساب کاربری</a>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endif %}
-    <div class="row g-4">
-      {% for project in projects %}
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden">
-          <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
-            <h6 class="mb-0">{{ project.name }}</h6>
-            <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
-          </div>
-          <div class="card-body">
-            <label class="form-label fw-bold mb-1">پیشرفت پروژه</label>
-            <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
-              <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:project.id }}%;" aria-valuenow="{{ project_progress|get_item:project.id }}" aria-valuemin="0" aria-valuemax="100" title="{{ project_progress|get_item:project.id }} درصد">
-                {{ project_progress|get_item:project.id }}%
+    <div class="card project-list-card border-0 shadow-lg rounded-5 overflow-hidden">
+      <div class="card-header bg-white text-center py-4">
+        <h3 class="mb-0 text-dark fw-bold">لیست پروژه‌ها</h3>
+      </div>
+      <div class="card-body p-4 p-lg-5">
+        {% if error_message %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+          <i class="fas fa-exclamation-triangle me-2"></i>{{ error_message }}
+          <a href="{% url 'login' %}" class="btn btn-sm btn-primary ms-3">ورود به حساب کاربری</a>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        <div class="row g-4">
+          {% for project in projects %}
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden">
+              <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">{{ project.name }}</h6>
+                <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+              </div>
+              <div class="card-body">
+                <label class="form-label fw-bold mb-1">پیشرفت پروژه</label>
+                <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+                  <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:project.id }}%;" aria-valuenow="{{ project_progress|get_item:project.id }}" aria-valuemin="0" aria-valuemax="100" title="{{ project_progress|get_item:project.id }} درصد">
+                    {{ project_progress|get_item:project.id }}%
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <span class="badge bg-outline-primary border text-dark fw-light">مدیر: {{ project.project_manager }}</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{% url 'project-detail' pk=project.pk %}">جزئیات</a>
+                  <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">لایه‌های پروژه</a>
+                  <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">ابنیه‌های پروژه</a>
+                  <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3">داشبورد</a>
+                </div>
               </div>
             </div>
-            <div class="mb-3">
-              <span class="badge bg-outline-primary border text-dark fw-light">مدیر: {{ project.project_manager }}</span>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{% url 'project-detail' pk=project.pk %}">جزئیات</a>
-              <a href="{% url 'project-layer-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">لایه‌های پروژه</a>
-              <a href="{% url 'project-structure-list' pk=project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">ابنیه‌های پروژه</a>
-              <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3">داشبورد</a>
-            </div>
           </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="alert alert-warning text-center">پروژه‌ای برای شما تعریف نشده است.</div>
+          </div>
+          {% endfor %}
         </div>
       </div>
-      {% empty %}
-      <div class="col-12">
-        <div class="alert alert-warning text-center">پروژه‌ای برای شما تعریف نشده است.</div>
-      </div>
-      {% endfor %}
     </div>
   </section>
 </div>
 <style>
+.project-list-card .card-header {
+  border-bottom: 1px solid rgba(25, 118, 210, 0.08);
+}
+.project-list-card .card-body {
+  background-color: #f8fafc;
+}
 .bg-gradient {
   background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
 }

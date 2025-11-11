@@ -176,6 +176,24 @@ body, html {
     margin-bottom: 2rem;
 }
 
+.page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.page-title {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+    margin-top: 0.75rem;
+}
+
 .page-back-btn {
     display: inline-flex;
     align-items: center;
