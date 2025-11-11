@@ -1283,16 +1283,12 @@ export class ProjectDashboard {
             return this.margin + this.height / 2; // fallback
         }
         
-        // محاسبه normalizedY
         const normalizedY = (y - this.yMin) / yRange;
-        
-        // استفاده از همان فرمول yAxis اما با mainCanvasHeight
-        // yAxis: y = height - paddingY - (normalizedY * (height - paddingY * 2))
-        // transformY: y = margin + mainCanvasHeight - (normalizedY * mainCanvasHeight)
         const mainCanvasHeight = this.height - this.margin * 2 - 30;
-        const yPosition = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
+        const rawY = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
+        const alignedY = Math.round(rawY) + 0.5;
         
-        return yPosition;
+        return alignedY;
     }
 
     handleMouseMove(e) {

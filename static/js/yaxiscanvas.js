@@ -40,9 +40,10 @@ export class YAxisCanvas {
     const yRange = this.yMax - this.yMin;
     if (yRange > 0) {
       const normalizedY = (value - this.yMin) / yRange;
-      return paddingTop + (1 - normalizedY) * canvasHeight;
+      const rawY = paddingTop + (1 - normalizedY) * canvasHeight;
+      return Math.round(rawY) + 0.5;
     }
-    return this.height / 2;
+    return (paddingTop + (this.height - paddingBottom)) / 2;
   }
   fittext(text){
     while(text.length < 5){
@@ -93,15 +94,17 @@ export class YAxisCanvas {
         // سپس تبدیل به موقعیت پیکسل: پایین = height - paddingY, بالا = paddingY
         const normalizedY = (value - this.yMin) / yRange;
         // محاسبه دقیق موقعیت Y (yMin در پایین، yMax در بالا)
-        y = paddingTop + (1 - normalizedY) * usableHeight;
+        const rawY = paddingTop + (1 - normalizedY) * usableHeight;
+        y = Math.round(rawY) + 0.5;
       } else {
-        y = this.height / 2; // اگر range صفر است، در وسط قرار بده
+        y = Math.round((paddingTop + paddingBottom) / 2) + 0.5; // اگر range صفر است، در وسط قرار بده
       }
     } else {
       // fallback: استفاده از روش قبلی (فاصله مساوی)
       const index = this.data.indexOf(label);
       const stepY = this.yunit || 43;
-      y = paddingTop + usableHeight - stepY * index;
+      const rawY = paddingTop + usableHeight - stepY * index;
+      y = Math.round(rawY) + 0.5;
     }
     
     // اطمینان از اینکه y در محدوده canvas است (با حاشیه بیشتر)
