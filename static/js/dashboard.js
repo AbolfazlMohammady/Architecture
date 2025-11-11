@@ -174,15 +174,16 @@ export class ProjectDashboard {
         
         // padding اضافی برای حاشیه‌های چپ/راست و کمی فضای باز در انتهای نمودار
         this.extraScrollPadding = Math.max(this.margin, 200);
-        this.dynamicWidth = this.drawingWidth + this.margin * 2 + this.extraScrollPadding;
+        this.dynamicWidth = this.drawingWidth + this.margin * 2;
         
         // Set the inner div width to match canvas for full scroll
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             // عرض دقیق - نه 100%
-            chartInner.style.width = this.dynamicWidth + 'px';
-            chartInner.style.minWidth = this.dynamicWidth + 'px';
-            chartInner.style.maxWidth = this.dynamicWidth + 'px';
+            const innerWidth = this.dynamicWidth + this.extraScrollPadding;
+            chartInner.style.width = innerWidth + 'px';
+            chartInner.style.minWidth = innerWidth + 'px';
+            chartInner.style.maxWidth = innerWidth + 'px';
             chartInner.style.paddingRight = this.extraScrollPadding + 'px';
             chartInner.style.display = 'block';
             chartInner.style.position = 'relative';
