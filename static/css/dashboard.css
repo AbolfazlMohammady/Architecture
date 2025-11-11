@@ -630,20 +630,28 @@ html, body {
   padding: 1px;
 }
 
-.legend-icon-green {
-  background: rgba(126, 217, 87, 0.1);
+.legend-icon-layer-fixed {
+  background: rgba(55, 71, 79, 0.12);
 }
 
-.legend-icon-orange {
-  background: rgba(255, 193, 7, 0.1);
+.legend-icon-layer-variable {
+  background: rgba(55, 71, 79, 0.12);
 }
 
-.legend-icon-gray {
-  background: rgba(148, 163, 184, 0.12);
+.legend-icon-exp-pending {
+  background: rgba(203, 213, 245, 0.25);
 }
 
-.legend-icon-variable {
-  background: rgba(255, 152, 0, 0.1);
+.legend-icon-exp-progress {
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.legend-icon-exp-approved {
+  background: rgba(52, 211, 153, 0.2);
+}
+
+.legend-icon-exp-rejected {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 .legend-icon-natural {
@@ -787,6 +795,12 @@ html, body {
   background: #e0f2fe;
   color: #0369a1;
   border-color: #bae6fd;
+}
+
+.layer-badge-muted {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5f5;
 }
 
 /* ============================================

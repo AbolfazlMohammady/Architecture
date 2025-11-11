@@ -91,15 +91,11 @@
                                             <span class="badge {% if layer.state == 0 %}bg-info text-dark{% else %}bg-success{% endif %} me-1">
                                                 {{ layer.get_state_display }}
                                             </span>
-                                            <span class="badge {% if layer.status == 0 %}bg-warning text-dark{% elif layer.status == 1 %}bg-primary{% elif layer.status == 2 %}bg-success{% else %}bg-danger{% endif %}">
-                                                {{ layer.get_status_display }}
-                                            </span>
                                         </div>
                                         <button type="button" class="btn btn-outline-success btn-sm w-100 mt-2 fw-bold copy-layer-btn rounded-3"
                                             data-layer_type="{{ layer.layer_type.id }}"
                                             data-thickness_cm="{{ layer.thickness_cm }}"
-                                            data-state="{{ layer.state }}"
-                                            data-status="{{ layer.status }}">
+                                            data-state="{{ layer.state }}">
                                             <i class="fas fa-copy me-1"></i> استفاده از این لایه
                                         </button>
                                     </div>
@@ -176,7 +172,6 @@
                 document.getElementById('id_layer_type').value = btn.getAttribute('data-layer_type');
                 document.getElementById('id_thickness_cm').value = btn.getAttribute('data-thickness_cm');
                 document.getElementById('id_state').value = btn.getAttribute('data-state');
-                document.getElementById('id_status').value = btn.getAttribute('data-status');
                 // ترتیب را خالی بگذار تا کاربر وارد کند
                 document.getElementById('id_order_from_top').value = '';
             });

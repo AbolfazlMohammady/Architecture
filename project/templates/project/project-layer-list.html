@@ -66,11 +66,8 @@
                         <span class="badge bg-secondary">ضخامت: {{ layer.thickness_cm }} سانتی‌متر</span>
                       </div>
                       <div class="mb-2">
-                        <span class="badge {% if layer.state == 0 %}bg-info text-dark{% else %}bg-success{% endif %} me-1">
+                        <span class="badge {% if layer.state == 0 %}bg-info text-dark{% else %}bg-success{% endif %}">
                           {{ layer.get_state_display }}
-                        </span>
-                        <span class="badge {% if layer.status == 0 %}bg-warning text-dark{% elif layer.status == 1 %}bg-primary{% elif layer.status == 2 %}bg-success{% else %}bg-danger{% endif %}">
-                          {{ layer.get_status_display }}
                         </span>
                       </div>
                     </div>

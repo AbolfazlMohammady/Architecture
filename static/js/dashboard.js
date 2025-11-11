@@ -39,7 +39,9 @@ export class ProjectDashboard {
         // داده‌های تولتیپ
         this.profileTooltipData = [];
         this.tooltipData = [];
-        this._hoveredExperiment = null;
+        this.layerLayout = null;
+        this.layerIndexMap = new Map();
+        this.hoveredTooltipItem = null;
         
         // فلگ برای جلوگیری از محاسبه مجدد مقیاس‌ها
         this._scalesCalculated = false;
@@ -291,7 +293,9 @@ export class ProjectDashboard {
         this.canvas.clear();
         this.profileTooltipData = [];
         this.tooltipData = [];
-        this._hoveredExperiment = null;
+        this.layerLayout = null;
+        this.layerIndexMap = new Map();
+        this.hoveredTooltipItem = null;
         
         // محاسبه مقیاس‌ها را از render حذف کردیم
         // مقیاس‌ها فقط یک بار در init() محاسبه می‌شوند
@@ -780,254 +784,164 @@ export class ProjectDashboard {
         ctx.restore();
     }
 
-    drawLayers() {
-        const ctx = this.canvas.ctx;
+    buildLayerLayout() {
+        const layout = {
+            layers: [],
+            lines: [],
+            thicknessPx: []
+        };
+
         const profileData = this.projectData.profile_data;
-        if (!profileData.road_points || profileData.road_points.length === 0) return;
-        const layers = [...this.projectData.layers].sort((a, b) => a.order_from_top - b.order_from_top);
-        if (!this.tooltipData) this.tooltipData = [];
-        // فقط یکبار نام هر لایه را وسط بازه کل لایه یا وسط اولین executed_range بنویس
-        for (let l = 0; l < layers.length; l++) {
-            const layer = layers[l];
-            let xLabel, yLabel;
-            if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
-                const range = layer.executed_ranges[0];
-                xLabel = (this.transformX(range.start) + this.transformX(range.end)) / 2;
-            } else {
-                const x1 = this.transformX(profileData.road_points[0].x);
-                const x2 = this.transformX(profileData.road_points[profileData.road_points.length - 1].x);
-                xLabel = (x1 + x2) / 2;
-            }
-            yLabel = this.transformY(profileData.road_points[0].y) + l * 24 - 10;
-            ctx.save();
-            ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-            ctx.fillStyle = '#222';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            // ctx.fillText(layer.name, xLabel, yLabel); // حذف نمایش اسم لایه
-            ctx.restore();
+        if (!profileData || !profileData.road_points || profileData.road_points.length === 0) {
+            this.layerIndexMap = new Map();
+            return layout;
         }
-        for (let i = 0; i < profileData.road_points.length - 1; i++) {
-            const x1 = this.transformX(profileData.road_points[i].x);
-            const x2 = this.transformX(profileData.road_points[i + 1].x);
-            let yTop1 = this.transformY(profileData.road_points[i].y);
-            let yTop2 = this.transformY(profileData.road_points[i + 1].y);
-            let yBase1 = yTop1;
-            let yBase2 = yTop2;
-            for (let l = 0; l < layers.length; l++) {
-                const layer = layers[l];
-                // ضخامت لایه‌ها را به صورت نسبی و با حداقل و حداکثر معقول محدود کن
-                const canvasHeight = this.height - this.margin * 2 - 30;
-                const maxLayerThicknessPx = canvasHeight * 0.12; // حداکثر 12 درصد ارتفاع نمودار برای نمایش بهتر
-                const minLayerThicknessPx = 2;
-                let thicknessPx1 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                let thicknessPx2 = Math.max(Math.min(layer.thickness_cm * this.yScale / 100, maxLayerThicknessPx), minLayerThicknessPx);
-                let yBottom1 = yBase1 + thicknessPx1;
-                let yBottom2 = yBase2 + thicknessPx2;
-                if (layer.status === 0) {
-                    ctx.save();
-                    ctx.strokeStyle = '#888';
-                    ctx.beginPath();
-                    ctx.moveTo(x1, yBase1);
-                    ctx.lineTo(x2, yBase2);
-                    ctx.lineTo(x2, yBottom2);
-                    ctx.lineTo(x1, yBottom1);
-                    ctx.closePath();
-                    ctx.stroke();
-                    ctx.restore();
-                } else {
-                    let fillColor = '#ffc107';
-                    let borderColor = '#222';
-                    let opacity = 0.7;
-                    if (layer.status === 2) { fillColor = '#7ed957'; borderColor = 'transparent'; opacity = 0.85; } // حذف خط سبز دور هاشورها
-                    else if (layer.status === 1) { fillColor = '#ffc107'; borderColor = '#ff9800'; opacity = 0.8; }
-                    if (layer.state !== 1) {
-                        fillColor = '#ff9800';
-                        opacity = 0.08; // کاهش بیشتر opacity برای خط نارنجی (لایه متغیر) تا نازک‌تر دیده شود
-                        // کاهش ضخامت لایه برای لایه‌های متغیر
-                        const thicknessReduction = 0.25; // کاهش 75% ضخامت
-                        thicknessPx1 = Math.max(thicknessPx1 * thicknessReduction, 1);
-                        thicknessPx2 = Math.max(thicknessPx2 * thicknessReduction, 1);
-                        // به‌روزرسانی yBottom بعد از کاهش ضخامت
-                        yBottom1 = yBase1 + thicknessPx1;
-                        yBottom2 = yBase2 + thicknessPx2;
-                    }
-                    let isNatural = layer.name.includes('بستر') || layer.name.includes('طبیعی');
-                    ctx.save();
-                    ctx.globalAlpha = opacity;
-                    ctx.beginPath();
-                    ctx.moveTo(x1, yBase1);
-                    ctx.lineTo(x2, yBase2);
-                    ctx.lineTo(x2, yBottom2);
-                    ctx.lineTo(x1, yBottom1);
-                    ctx.closePath();
-                    if (layer.executed_ranges && Array.isArray(layer.executed_ranges) && layer.executed_ranges.length > 0) {
-                        // رسم لایه‌ها در موقعیت دقیق خودشان (بر اساس executed_ranges)
-                        for (const range of layer.executed_ranges) {
-                            const xr1 = this.transformX(range.start);
-                            const xr2 = this.transformX(range.end);
-                            
-                            // پیدا کردن yTop و yBottom برای این بازه - استفاده از interpolate
-                            // interpolate برای موقعیت دقیق‌تر
-                            let yTopStart, yTopEnd;
-                            let yBottomStart, yBottomEnd;
-                            
-                            // interpolate برای range.start
-                            let yStart = null;
-                            for (let p = 0; p < profileData.road_points.length - 1; p++) {
-                                const p1 = profileData.road_points[p];
-                                const p2 = profileData.road_points[p + 1];
-                                if (range.start >= p1.x && range.start <= p2.x) {
-                                    // interpolate linear
-                                    const t = (range.start - p1.x) / (p2.x - p1.x);
-                                    yStart = p1.y + (p2.y - p1.y) * t;
-                                    break;
-                                }
-                            }
-                            if (yStart === null) {
-                                // اگر خارج از محدوده بود، از نزدیک‌ترین نقطه استفاده کن
-                                let minDist = Infinity;
-                                for (let p = 0; p < profileData.road_points.length; p++) {
-                                    const point = profileData.road_points[p];
-                                    const dist = Math.abs(point.x - range.start);
-                                    if (dist < minDist) {
-                                        minDist = dist;
-                                        yStart = point.y;
-                                    }
-                                }
-                            }
-                            yTopStart = this.transformY(yStart);
-                            
-                            // interpolate برای range.end
-                            let yEnd = null;
-                            for (let p = 0; p < profileData.road_points.length - 1; p++) {
-                                const p1 = profileData.road_points[p];
-                                const p2 = profileData.road_points[p + 1];
-                                if (range.end >= p1.x && range.end <= p2.x) {
-                                    // interpolate linear
-                                    const t = (range.end - p1.x) / (p2.x - p1.x);
-                                    yEnd = p1.y + (p2.y - p1.y) * t;
-                                    break;
-                                }
-                            }
-                            if (yEnd === null) {
-                                // اگر خارج از محدوده بود، از نزدیک‌ترین نقطه استفاده کن
-                                let minDist = Infinity;
-                                for (let p = 0; p < profileData.road_points.length; p++) {
-                                    const point = profileData.road_points[p];
-                                    const dist = Math.abs(point.x - range.end);
-                                    if (dist < minDist) {
-                                        minDist = dist;
-                                        yEnd = point.y;
-                                    }
-                                }
-                            }
-                            yTopEnd = this.transformY(yEnd);
-                            
-                            // محاسبه yBottom بر اساس yTop و لایه‌های قبلی
-                            const canvasHeight = this.height - this.margin * 2 - 30;
-                            let tempYBaseStart = yTopStart;
-                            let tempYBaseEnd = yTopEnd;
-                            for (let tempL = 0; tempL <= l; tempL++) {
-                                const tempLayer = layers[tempL];
-                                let tempThickness = Math.max(Math.min(tempLayer.thickness_cm * this.yScale / 100, canvasHeight * 0.12), 2);
-                                // کاهش ضخامت برای لایه‌های متغیر
-                                if (tempLayer.state !== 1) {
-                                    tempThickness = Math.max(tempThickness * 0.25, 1); // کاهش 75% ضخامت
-                                }
-                                tempYBaseStart += tempThickness;
-                                tempYBaseEnd += tempThickness;
-                            }
-                            yBottomStart = tempYBaseStart;
-                            yBottomEnd = tempYBaseEnd;
-                            
-                            // رسم لایه در موقعیت دقیق
-                            ctx.beginPath();
-                            ctx.moveTo(xr1, yTopStart);
-                            ctx.lineTo(xr2, yTopEnd);
-                            ctx.lineTo(xr2, yBottomEnd);
-                            ctx.lineTo(xr1, yBottomStart);
-                            ctx.closePath();
-                            ctx.fillStyle = fillColor;
-                            ctx.fill();
-                            
-                            // stroke برای لایه - فقط اگر borderColor transparent نباشد
-                            if (borderColor !== 'transparent') {
-                                ctx.globalAlpha = 1;
-                                ctx.lineWidth = 0.8;
-                                ctx.strokeStyle = borderColor;
-                                ctx.stroke();
-                            }
-                            
-                            // --- اضافه کردن tooltipData برای لایه ---
-                            if (!this.tooltipData) this.tooltipData = [];
-                            this.tooltipData.push({
-                                x: (xr1 + xr2) / 2,
-                                y: (yTopStart + yBottomStart + yTopEnd + yBottomEnd) / 4,
-                                width: Math.abs(xr2 - xr1),
-                                height: Math.abs((yBottomStart + yBottomEnd) / 2 - (yTopStart + yTopEnd) / 2),
-                                data: { type: 'layer', layer }
-                            });
-                        }
-                        ctx.restore();
-                    } else {
-                        // رسم لایه کامل (بدون executed_ranges) - در موقعیت دقیق
-                        ctx.fillStyle = fillColor;
-                        ctx.fill();
-                        ctx.globalAlpha = 1;
-                        ctx.lineWidth = 0.8; // کاهش ضخامت خط
-                        ctx.strokeStyle = borderColor;
-                        ctx.stroke();
-                        ctx.restore();
-                    }
-                }
-                yBase1 = yBottom1;
-                yBase2 = yBottom2;
+
+        const sortedLayers = [...(this.projectData.layers || [])].sort(
+            (a, b) => (a.order_from_top || 0) - (b.order_from_top || 0)
+        );
+
+        if (!sortedLayers.length) {
+            this.layerIndexMap = new Map();
+            return layout;
+        }
+
+        const canvasHeight = this.height - this.margin * 2 - 30;
+        const maxLayerThicknessPx = canvasHeight * 0.12;
+        const minLayerThicknessPx = 2;
+
+        const thicknessPx = sortedLayers.map(layer =>
+            Math.max(
+                Math.min((layer.thickness_cm || 0) * (this.yScale || 0) / 100, maxLayerThicknessPx),
+                minLayerThicknessPx
+            )
+        );
+
+        const lines = sortedLayers.map(() => []);
+        const roadPoints = profileData.road_points;
+
+        for (let i = 0; i < roadPoints.length; i++) {
+            const point = roadPoints[i];
+            const km = point.x;
+            const x = this.transformX(km);
+            const roadY = this.transformY(point.y);
+            let cumulative = 0;
+
+            for (let l = 0; l < sortedLayers.length; l++) {
+                cumulative += thicknessPx[l];
+                lines[l].push({
+                    x,
+                    y: roadY + cumulative,
+                    km
+                });
             }
         }
+
+        this.layerIndexMap = new Map(sortedLayers.map((layer, index) => [layer.id, index]));
+
+        layout.layers = sortedLayers;
+        layout.lines = lines;
+        layout.thicknessPx = thicknessPx;
+        return layout;
     }
 
-    drawLayerSymbol(layer, y) {
+    drawLayers() {
+        const layout = this.buildLayerLayout();
         const ctx = this.canvas.ctx;
-        const x = this.margin + 50;
-        
-        ctx.save();
-        
-        // انتخاب رنگ بر اساس وضعیت
-        const colors = {
-            0: '#6c757d', // شروع نشده
-            1: '#ffc107', // در حال انجام
-            2: '#28a745'  // تکمیل شده
-        };
-        
-        ctx.fillStyle = colors[layer.status] || '#6c757d';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        
-        // رسم نماد بر اساس نوع لایه
-        if (layer.state === 1) { // ثابت
-            // مستطیل
-            ctx.fillRect(x - 20, y - 5, 40, 10);
-            ctx.strokeRect(x - 20, y - 5, 40, 10);
-        } else { // متغیر
-            // متوازی‌الاضلاع
-            ctx.beginPath();
-            ctx.moveTo(x - 20, y - 5);
-            ctx.lineTo(x + 20, y - 5);
-            ctx.lineTo(x + 15, y + 5);
-            ctx.lineTo(x - 25, y + 5);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+        const { layers, lines, thicknessPx } = layout;
+        if (!layers.length) {
+            this.layerLayout = layout;
+            return;
         }
-        
-        // نوشتن نام لایه
-        ctx.fillStyle = '#000';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(layer.name, x, y - 10);
-        
-        ctx.restore();
+
+        if (!this.tooltipData) {
+            this.tooltipData = [];
+        }
+
+        for (let index = 0; index < layers.length; index++) {
+            const layer = layers[index];
+            const points = lines[index];
+            if (!points || points.length < 2) {
+                continue;
+            }
+
+            const isFixed = layer.state === 1;
+            const executedRanges = (layer.executed_ranges || [])
+                .map(range => ({
+                    start: parseFloat(range.start),
+                    end: parseFloat(range.end)
+                }))
+                .filter(range => isFinite(range.start) && isFinite(range.end) && range.end > range.start)
+                .sort((a, b) => a.start - b.start);
+
+            const shouldRenderSegment = (segmentStart, segmentEnd) => {
+                if (isFixed || executedRanges.length === 0) {
+                    return true;
+                }
+                return executedRanges.some(range => range.end > segmentStart && range.start < segmentEnd);
+            };
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash(isFixed ? [] : [12, 8]);
+            ctx.strokeStyle = '#37474f';
+            ctx.lineWidth = 2.4;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.globalAlpha = 0.95;
+
+            let pathOpen = false;
+            let hasSegment = false;
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+
+            for (let i = 0; i < points.length - 1; i++) {
+                const current = points[i];
+                const next = points[i + 1];
+                const segmentStart = Math.min(current.km, next.km);
+                const segmentEnd = Math.max(current.km, next.km);
+
+                if (shouldRenderSegment(segmentStart, segmentEnd)) {
+                    if (!pathOpen) {
+                        ctx.moveTo(current.x, current.y);
+                        pathOpen = true;
+                    }
+                    ctx.lineTo(next.x, next.y);
+                    hasSegment = true;
+
+                    minX = Math.min(minX, current.x, next.x);
+                    maxX = Math.max(maxX, current.x, next.x);
+                    minY = Math.min(minY, current.y, next.y);
+                    maxY = Math.max(maxY, current.y, next.y);
+                } else {
+                    pathOpen = false;
+                }
+            }
+
+            if (hasSegment) {
+                ctx.stroke();
+                const paddingX = 16;
+                const paddingY = Math.max(thicknessPx[index] * 0.6, 10);
+                this.tooltipData.push({
+                    x: (minX + maxX) / 2,
+                    y: (minY + maxY) / 2,
+                    width: (maxX - minX) + paddingX,
+                    height: (maxY - minY) + paddingY,
+                    geometry: {
+                        type: 'polyline',
+                        points,
+                        thickness: Math.max(thicknessPx[index], 6)
+                    },
+                    data: { type: 'layer', layer }
+                });
+            }
+
+            ctx.restore();
+        }
+
+        this.layerLayout = layout;
     }
 
     drawStructures() {
@@ -1105,6 +1019,13 @@ export class ProjectDashboard {
                     y: yBridge + bridgeHeight / 2,
                     width: Math.abs(x2 - x1),
                     height: bridgeHeight + archHeight,
+                    geometry: {
+                        type: 'rect',
+                        x1,
+                        y1: yBridge,
+                        x2,
+                        y2: yBridge + bridgeHeight + archHeight
+                    },
                     data: { type: 'bridge', structure }
                 });
             } else {
@@ -1165,137 +1086,223 @@ export class ProjectDashboard {
     }
 
     drawExperiments() {
-        const profileData = this.projectData.profile_data;
-        if (!profileData || !profileData.road_points || profileData.road_points.length === 0) {
-            return;
-        }
-        
         if (!this.projectData.layers || !Array.isArray(this.projectData.layers)) {
             return;
         }
-        
-        const layers = [...this.projectData.layers].sort((a, b) => (a.order_from_top || 0) - (b.order_from_top || 0));
-        
-        layers.forEach(layer => {
+
+        if (!this.layerLayout) {
+            this.layerLayout = this.buildLayerLayout();
+        }
+
+        const { layers, thicknessPx } = this.layerLayout;
+        if (!layers.length) {
+            return;
+        }
+
+        const ctx = this.canvas.ctx;
+        const projectStart = parseFloat(this.projectData.start_kilometer) || 0;
+        const projectEnd = parseFloat(this.projectData.end_kilometer) || projectStart;
+
+        this.projectData.layers.forEach(layer => {
             if (!layer.experiments || !Array.isArray(layer.experiments)) {
                 return;
             }
-            
+
+            const layerIndex = this.layerIndexMap.get(layer.id);
+            if (layerIndex === undefined) {
+                return;
+            }
+
             layer.experiments.forEach(experiment => {
                 if (!experiment || !this.isExperimentInDateRange(experiment)) {
                     return;
                 }
-                
-                const kmStartRaw = parseFloat(experiment.kilometer_start);
-                if (isNaN(kmStartRaw)) {
+
+                let kmStart = parseFloat(experiment.kilometer_start);
+                let kmEnd = parseFloat(experiment.kilometer_end);
+                if (!isFinite(kmStart) || !isFinite(kmEnd)) {
                     return;
                 }
-                
-                // کیلومتراژ آزمایش باید به originalXMin اضافه شود (از پروفیل)
-                // مثلاً اگر آزمایش در کیلومتر 30 است و originalXMin = 6.3 است، باید در 6.3 + 30 = 36.3 نمایش داده شود
-                const kmStart = (this.originalXMin || 0) + kmStartRaw;
-                
-                const x = this.transformX(kmStart);
-                
-                // آزمایش‌ها باید روی صفر محور Y باشند (روی خط جاده)
-                const y = this.transformY(0);
-                
-                // بررسی اینکه x و y معتبر هستند
-                if (!isFinite(x) || !isFinite(y)) {
+
+                if (kmEnd < kmStart) {
+                    [kmStart, kmEnd] = [kmEnd, kmStart];
+                }
+
+                const withinProject =
+                    kmStart >= projectStart - 0.001 &&
+                    kmEnd <= projectEnd + 0.001;
+
+                if (!withinProject) {
+                    const offset = this.originalXMin || 0;
+                    kmStart = offset + kmStart;
+                    kmEnd = offset + kmEnd;
+                }
+
+                const xStart = this.transformX(kmStart);
+                const xEnd = this.transformX(kmEnd);
+                if (!isFinite(xStart) || !isFinite(xEnd)) {
                     return;
                 }
-                
-                // بررسی اینکه x در محدوده قابل مشاهده است
-                const canvasWidth = this.dynamicWidth || this.width;
-                if (x < -200 || x > canvasWidth + 200) {
+
+                const yStart = this.getLayerYPosition(layerIndex, kmStart);
+                const yEnd = this.getLayerYPosition(layerIndex, kmEnd);
+                if (yStart === null || yEnd === null) {
                     return;
                 }
-                
-                // بررسی اینکه y در محدوده قابل مشاهده است
-                if (y < -50 || y > this.height + 50) {
-                    return;
+
+                const color = this.getExperimentColor(experiment);
+                const lineWidth = Math.max(thicknessPx[layerIndex] * 0.9, 6);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = lineWidth;
+                ctx.globalAlpha = 0.85;
+                ctx.moveTo(xStart, yStart);
+                ctx.lineTo(xEnd, yEnd);
+                ctx.stroke();
+                ctx.restore();
+
+                if (!this.tooltipData) {
+                    this.tooltipData = [];
                 }
-                
-                this.drawExperimentPixel(experiment, x, y, layer);
+                this.tooltipData.push({
+                    x: (xStart + xEnd) / 2,
+                    y: (yStart + yEnd) / 2,
+                    width: Math.abs(xEnd - xStart) + 14,
+                    height: Math.max(lineWidth + 12, 12),
+                    geometry: {
+                        type: 'segment',
+                        x1: xStart,
+                        y1: yStart,
+                        x2: xEnd,
+                        y2: yEnd,
+                        thickness: lineWidth
+                    },
+                    data: {
+                        type: 'experiment',
+                        experiment,
+                        layer,
+                        color
+                    }
+                });
             });
         });
     }
 
-    drawExperimentPixel(experiment, x, y, layer) {
-        const ctx = this.canvas.ctx;
-        ctx.save();
-        // انتخاب رنگ بر اساس وضعیت
-        const colors = {
-            0: '#ffc107', // در انتظار
-            1: '#17a2b8', // در حال انجام
-            2: '#28a745', // تکمیل شده
-            3: '#dc3545'  // رد شده
-        };
-        ctx.fillStyle = colors[experiment.status] || '#ffc107';
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2.5;
-        // افکت glow
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 18;
-        // رسم پیکسل آزمایش
-        const pixelSize = 16;
-        ctx.beginPath();
-        ctx.arc(x, y, pixelSize / 2, 0, 2 * Math.PI);
-        ctx.globalAlpha = 0.98;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
-        ctx.stroke();
-        // افکت hover (اگر موس روی این نقطه است)
-        if (this._hoveredExperiment && this._hoveredExperiment.x === x && this._hoveredExperiment.y === y) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x, y, pixelSize / 2 + 4, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#1976d2';
-            ctx.lineWidth = 3.5;
-            ctx.shadowColor = '#1976d2';
-            ctx.shadowBlur = 16;
-            ctx.globalAlpha = 0.7;
-            ctx.stroke();
-            ctx.restore();
+    getLayerYPosition(layerIndex, kilometer) {
+        if (!this.layerLayout || !this.layerLayout.lines) {
+            return null;
         }
-        // اضافه کردن نشانگر برای آزمایش‌های تایید شده
-        if (experiment.approval_status === 1) {
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
-            ctx.fillStyle = '#28a745';
-            ctx.fill();
+        const points = this.layerLayout.lines[layerIndex];
+        if (!points || points.length === 0) {
+            return null;
         }
-        ctx.restore();
-        // ذخیره اطلاعات برای تولتیپ
-        if (!this.tooltipData) this.tooltipData = [];
-        this.tooltipData.push({
-            x: x,
-            y: y,
-            width: pixelSize,
-            height: pixelSize,
-            data: {
-                experiment: experiment,
-                layer: layer
+
+        if (kilometer <= points[0].km) {
+            return points[0].y;
+        }
+        if (kilometer >= points[points.length - 1].km) {
+            return points[points.length - 1].y;
+        }
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            if (kilometer >= p1.km && kilometer <= p2.km) {
+                const span = p2.km - p1.km;
+                const t = span === 0 ? 0 : (kilometer - p1.km) / span;
+                return p1.y + (p2.y - p1.y) * t;
             }
-        });
+        }
+        return points[points.length - 1].y;
     }
 
-    addTooltipData(x, y, experiment, layer) {
-        if (!this.tooltipData) {
-            this.tooltipData = [];
-        }
-        
-        this.tooltipData.push({
-            x: x,
-            y: y,
-            width: 8,
-            height: 8,
-            data: {
-                experiment: experiment,
-                layer: layer
+    getExperimentColor(experiment) {
+        const status = Number(experiment.status);
+        const approval = Number(experiment.approval_status);
+
+        if (status === 2) { // completed
+            if (approval === 2) {
+                return '#ef4444'; // rejected
             }
-        });
+            if (approval === 1) {
+                return '#34d399'; // approved
+            }
+            return '#10b981'; // completed but awaiting approval
+        }
+        if (status === 1) {
+            return '#f59e0b'; // in progress
+        }
+        if (status === 3) {
+            return '#ef4444'; // rejected
+        }
+        return '#cbd5f5'; // pending
+    }
+
+    getDistanceToTooltipItem(x, y, item) {
+        const geom = item.geometry;
+        if (!geom) {
+            const halfW = (item.width || 0) / 2;
+            const halfH = (item.height || 0) / 2;
+            const dx = Math.max(Math.abs(x - (item.x || 0)) - halfW, 0);
+            const dy = Math.max(Math.abs(y - (item.y || 0)) - halfH, 0);
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        const thickness = (geom.thickness || 0) / 2;
+
+        if (geom.type === 'segment') {
+            const distance = this.pointToSegmentDistance(x, y, geom.x1, geom.y1, geom.x2, geom.y2);
+            return Math.max(distance - thickness, 0);
+        }
+
+        if (geom.type === 'polyline' && Array.isArray(geom.points)) {
+            let minDist = Infinity;
+            for (let i = 0; i < geom.points.length - 1; i++) {
+                const p1 = geom.points[i];
+                const p2 = geom.points[i + 1];
+                const distance = this.pointToSegmentDistance(x, y, p1.x, p1.y, p2.x, p2.y);
+                if (distance < minDist) {
+                    minDist = distance;
+                }
+            }
+            return Math.max(minDist - thickness, 0);
+        }
+
+        if (geom.type === 'rect') {
+            const cx = (geom.x1 + geom.x2) / 2;
+            const cy = (geom.y1 + geom.y2) / 2;
+            const dx = Math.max(Math.abs(x - cx) - Math.abs(geom.x2 - geom.x1) / 2, 0);
+            const dy = Math.max(Math.abs(y - cy) - Math.abs(geom.y2 - geom.y1) / 2, 0);
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        return null;
+    }
+
+    pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const lengthSquared = dx * dx + dy * dy;
+
+        if (lengthSquared === 0) {
+            const distX = px - x1;
+            const distY = py - y1;
+            return Math.sqrt(distX * distX + distY * distY);
+        }
+
+        let t = ((px - x1) * dx + (py - y1) * dy) / lengthSquared;
+        t = Math.max(0, Math.min(1, t));
+
+        const projX = x1 + t * dx;
+        const projY = y1 + t * dy;
+        const distX = px - projX;
+        const distY = py - projY;
+
+        return Math.sqrt(distX * distX + distY * distY);
     }
 
     transformX(x) {
@@ -1409,27 +1416,39 @@ export class ProjectDashboard {
 
     showTooltip(x, y) {
         const tooltip = document.getElementById('tooltip');
-        if (!this.tooltipData) return;
-        const hoveredItem = this.tooltipData.find(item =>
-            x >= item.x - item.width/2 &&
-            x <= item.x + item.width/2 &&
-            y >= item.y - item.height/2 &&
-            y <= item.y + item.height/2
-        );
-        if (hoveredItem) {
+        if (!tooltip || !this.tooltipData) {
+            return;
+        }
+
+        let hoveredItem = null;
+        let minDistance = Infinity;
+        const threshold = 18;
+
+        for (const item of this.tooltipData) {
+            const distance = this.getDistanceToTooltipItem(x, y, item);
+            if (distance !== null && distance < minDistance) {
+                minDistance = distance;
+                hoveredItem = item;
+            }
+        }
+
+        if (hoveredItem && minDistance <= threshold) {
             let html = '';
             const d = hoveredItem.data;
             if (d.type === 'layer') {
                 const layer = d.layer;
-                const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
                 const stateMap = {0:'متغیر',1:'ثابت'};
-                let statusColor = layer.status === 2 ? '#7ed957' : layer.status === 1 ? '#ffc107' : '#bdbdbd';
-                let icon = layer.status === 2 ? '✔' : layer.status === 1 ? '⏳' : '⏺';
-                html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">${icon}</span> <span>${layer.name}</span></div>`;
-                html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[layer.status]}</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">نوع: <b>${stateMap[layer.state]}</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">ضخامت: <b>${layer.thickness_cm}cm</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">تعداد آزمایش: <b>${layer.experiments?.length||0}</b></div>`;
+                const stateColor = layer.state === 1 ? '#2563eb' : '#f97316';
+                html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;">
+                    <span style="font-size:18px;color:${stateColor}">▭</span>
+                    <span>${layer.name}</span>
+                </div>`;
+                html += `<div style="font-size:12px;color:#555;">نوع لایه: <b style='color:${stateColor}'>${stateMap[layer.state] || 'نامشخص'}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">ضخامت اسمی: <b>${layer.thickness_cm} cm</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">تعداد آزمایش ثبت‌شده: <b>${layer.experiments?.length || 0}</b></div>`;
+                if (layer.executed_ranges && layer.executed_ranges.length > 0) {
+                    html += `<div style="font-size:12px;color:#555;">بازه‌های فعال: <b>${layer.executed_ranges.length}</b></div>`;
+                }
             } else if (d.type === 'bridge') {
                 const s = d.structure;
                 const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
@@ -1439,29 +1458,37 @@ export class ProjectDashboard {
                 html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
                 html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
                 html += `<div style="font-size:12px;color:#555;">طول پل: <b>${(s.end_kilometer-s.start_kilometer).toFixed(2)} km</b></div>`;
-            } else if (d.experiment && d.layer) {
-                // آزمایش
+            } else if (d.type === 'experiment') {
                 const experiment = d.experiment;
                 const layer = d.layer;
-                const statusColors = {0:'#ffc107',1:'#17a2b8',2:'#28a745',3:'#dc3545'};
+                const color = d.color || '#94a3b8';
                 const statusMap = {0:'در انتظار',1:'در حال انجام',2:'تکمیل شده',3:'رد شده'};
-                html = `<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:18px;">🧪</span><span style="font-weight:bold;color:${statusColors[experiment.status]}">آزمایش ${experiment.experiment_type}</span></div>`;
+                const approvalMap = {1:'تایید شده',2:'رد شده'};
+                html = `<div style="display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};"></span>
+                    <span style="font-weight:bold;color:${color}">آزمایش ${experiment.experiment_type}</span>
+                </div>`;
                 html += `<div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>`;
-                html += `<div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} - ${experiment.kilometer_end}</b></div>`;
-                html += `<div style="font-size:13px;color:#555;">تاریخ: <b>${experiment.request_date || 'نامشخص'}</b></div>`;
-                html += `<div style="font-size:13px;color:#555;">وضعیت: <b>${statusMap[experiment.status]}</b></div>`;
-                if (experiment.description) html += `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>`;
+                html += `<div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} تا ${experiment.kilometer_end}</b></div>`;
+                html += `<div style="font-size:13px;color:#555;">تاریخ درخواست: <b>${experiment.request_date || 'نامشخص'}</b></div>`;
+                html += `<div style="font-size:13px;color:#555;">وضعیت: <b>${statusMap[experiment.status] || 'نامشخص'}</b></div>`;
+                if (experiment.approval_status) {
+                    const approvalText = approvalMap[experiment.approval_status] || 'در انتظار تایید';
+                    html += `<div style="font-size:13px;color:#555;">وضعیت تایید: <b>${approvalText}</b></div>`;
+                }
+                if (experiment.description) {
+                    html += `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>`;
+                }
             }
+
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
-            // --- موقعیت‌دهی دقیق تولتیپ زیر موس و زیر علامت + ---
             const canvas = document.getElementById('mainCanvas');
             const rect = canvas.getBoundingClientRect();
-            const pageX = rect.left + hoveredItem.x + window.scrollX;
-            const pageY = rect.top + hoveredItem.y + window.scrollY;
-            // تولتیپ را دقیقاً زیر نقطه hover و علامت + قرار بده
-            tooltip.style.left = (pageX - tooltip.offsetWidth / 2) + 'px';
-            tooltip.style.top = (pageY + 16) + 'px'; // 16px پایین‌تر از مرکز علامت +
+            const pageX = rect.left + window.scrollX + x;
+            const pageY = rect.top + window.scrollY + y;
+            tooltip.style.left = (pageX + 14) + 'px';
+            tooltip.style.top = (pageY + 14) + 'px';
             tooltip.style.background = 'rgba(255,255,255,0.7)';
             tooltip.style.backdropFilter = 'blur(8px)';
             tooltip.style.borderRadius = '8px';
@@ -1470,8 +1497,10 @@ export class ProjectDashboard {
             tooltip.style.padding = '10px 14px';
             tooltip.style.fontSize = '13px';
             tooltip.style.pointerEvents = 'none';
+            this.hoveredTooltipItem = hoveredItem;
         } else {
             tooltip.style.display = 'none';
+            this.hoveredTooltipItem = null;
         }
     }
 

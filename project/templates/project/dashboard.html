@@ -200,28 +200,52 @@
                     <span class="legend-text">پل</span>
                   </div>
                   <div class="legend-item">
-                    <div class="legend-icon legend-icon-green">
-                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#7ed957" stroke="#388e3c" stroke-width="2.2" rx="1" /><text x="19" y="14" font-size="12" fill="#43a047">✔</text></svg>
+                    <div class="legend-icon legend-icon-layer-fixed">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#37474f" stroke-width="3" stroke-linecap="round" />
+                      </svg>
                     </div>
-                    <span class="legend-text">لایه تکمیل‌شده</span>
+                    <span class="legend-text">لایه ثابت</span>
                   </div>
                   <div class="legend-item">
-                    <div class="legend-icon legend-icon-orange">
-                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#ffc107" stroke="#ff9800" stroke-width="2.2" rx="1" /></svg>
-                    </div>
-                    <span class="legend-text">لایه در حال انجام</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-icon legend-icon-gray">
-                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#eef2f8" stroke="#94a3b8" stroke-width="1.4" rx="1" /></svg>
-                    </div>
-                    <span class="legend-text">بازه در انتظار نتیجه آزمایش</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-icon legend-icon-variable">
-                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#ff9800" stroke="#ff9800" stroke-width="2.2" rx="1" opacity="0.3" /></svg>
+                    <div class="legend-icon legend-icon-layer-variable">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#37474f" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round" />
+                      </svg>
                     </div>
                     <span class="legend-text">لایه متغیر</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-exp-pending">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#cbd5f5" stroke-width="6" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <span class="legend-text">در انتظار آزمایش</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-exp-progress">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#f59e0b" stroke-width="6" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <span class="legend-text">آزمایش در حال انجام</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-exp-approved">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#34d399" stroke-width="6" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <span class="legend-text">نتیجه تایید شده</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-icon legend-icon-exp-rejected">
+                      <svg width="40" height="16">
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#ef4444" stroke-width="6" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <span class="legend-text">نتیجه رد شده</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-natural">
@@ -327,33 +351,36 @@
     function displayLayersInfo(layers) {
       const container = document.getElementById('layers-info');
       container.innerHTML = '';
-      
       layers.forEach(layer => {
-        const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'pending';
-        const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'در انتظار آزمایش';
-        const stateText = layer.state === 1 ? 'ثابت' : 'متغیر';
-        const statusIcon = layer.status === 2 ? 'bi-check-circle-fill' : layer.status === 1 ? 'bi-clock-history' : 'bi-hourglass-split';
-        const statusColor = layer.status === 2 ? '#28a745' : layer.status === 1 ? '#ffc107' : '#94a3b8';
-        
+        const isFixed = layer.state === 1;
+        const stateText = isFixed ? 'لایه ثابت' : 'لایه متغیر';
+        const stateIcon = isFixed ? 'bi-diagram-3' : 'bi-diagram-3-fill';
+        const stateAccent = isFixed ? '#2563eb' : '#f97316';
+        const experimentsCount = layer.experiments.length;
+        const executedRanges = (layer.executed_ranges || []).length;
+
         const layerCard = document.createElement('div');
         layerCard.className = 'layer-card-modern';
         layerCard.innerHTML = `
           <div class="layer-card-header">
-            <div class="layer-icon" style="background: linear-gradient(135deg, ${statusColor}15, ${statusColor}25);">
-              <i class="bi ${statusIcon}" style="color: ${statusColor};"></i>
+            <div class="layer-icon" style="background: linear-gradient(135deg, ${stateAccent}10, ${stateAccent}15);">
+              <i class="bi ${stateIcon}" style="color: ${stateAccent};"></i>
             </div>
             <div class="layer-info">
               <h6 class="layer-name">${layer.name}</h6>
-              <span class="layer-details">${stateText} - ${layer.thickness_cm}cm</span>
+              <span class="layer-details">${stateText}</span>
             </div>
           </div>
           <div class="layer-card-body">
-            <div class="layer-badge-modern" style="background: ${statusColor}15; color: ${statusColor}; border-color: ${statusColor}40;">
-              <i class="bi ${statusIcon} me-1"></i>${statusText}
+            <div class="layer-badge-modern" style="background: ${stateAccent}12; color: ${stateAccent}; border-color: ${stateAccent}30;">
+              <i class="bi bi-rulers me-1"></i>ضخامت: ${layer.thickness_cm}cm
             </div>
             <div class="layer-badge-modern layer-badge-info">
-              <i class="bi bi-flask me-1"></i>${layer.experiments.length} آزمایش
+              <i class="bi bi-flask me-1"></i>${experimentsCount} آزمایش ثبت‌شده
             </div>
+            ${!isFixed ? `<div class="layer-badge-modern layer-badge-muted">
+              <i class="bi bi-shuffle me-1"></i>${executedRanges} بازه فعال
+            </div>` : ''}
           </div>
         `;
         container.appendChild(layerCard);

@@ -143,9 +143,7 @@ class ProjectLayerForm(forms.ModelForm):
         self.fields["project"].widget.attrs["class"] = "form-select"
         self.fields["project"].disabled = True
         
-        self.fields["status"].widget.attrs["class"] = "form-select"
         self.fields["state"].widget.attrs["class"] = "form-select"
-        
         self.fields["layer_type"].widget.attrs["class"] = "form-select"
         
         # اگر لایه جدید است، شماره ترتیب را به صورت خودکار تنظیم کن
@@ -173,7 +171,7 @@ class ProjectLayerForm(forms.ModelForm):
 
     class Meta:
         model = project_models.ProjectLayer
-        fields = ['project', 'layer_type', 'thickness_cm', 'order_from_top', 'state', 'status']
+        fields = ['project', 'layer_type', 'thickness_cm', 'order_from_top', 'state']
         widgets = {
             'state': forms.Select(choices=project_models.ProjectLayer.LAYER_STATE),
         }
