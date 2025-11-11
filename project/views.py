@@ -3,6 +3,7 @@ from . import models as project_models
 from django.views import generic
 from django.db.models import Q
 from django.urls import reverse_lazy,reverse
+from django.contrib import messages
 from . import forms as project_forms
 from django.forms.models import model_to_dict
 import pandas as pd
@@ -135,18 +136,24 @@ class CreateProjectLayerView(generic.CreateView):
     def form_valid(self, form):
         # Ensure it's saved even if the field is disabled in the form
         form.instance.project = project_models.Project.objects.get(pk=self.kwargs['pk'])
+
+        if getattr(form, 'order_auto_assigned', False):
+            messages.warning(
+                self.request,
+                f"ترتیب انتخاب شده ({form.order_original_value}) قبلاً استفاده شده بود. ترتیب جدید {form.cleaned_data.get('order_from_top')} به‌صورت خودکار تنظیم شد."
+            )
         # Additional validation to ensure no duplicates
-        if form.is_valid():
-            existing_layer = project_models.ProjectLayer.objects.filter(
-                project=form.instance.project,
-                layer_type=form.instance.layer_type,
-                thickness_cm=form.instance.thickness_cm,
-                state=form.instance.state,
-                status=form.instance.status
-            ).exclude(pk=form.instance.pk if form.instance.pk else None)
-            if existing_layer.exists():
-                form.add_error(None, "لایه‌ای با این مشخصات قبلاً وجود دارد. لطفاً مشخصات را تغییر دهید یا ترتیب را تغییر دهید.")
-                return self.form_invalid(form)
+        existing_layer = project_models.ProjectLayer.objects.filter(
+            project=form.instance.project,
+            layer_type=form.instance.layer_type,
+            thickness_cm=form.instance.thickness_cm,
+            state=form.instance.state,
+            status=form.instance.status,
+            order_from_top=form.cleaned_data.get('order_from_top'),
+        ).exclude(pk=form.instance.pk if form.instance.pk else None)
+        if existing_layer.exists():
+            form.add_error(None, "لایه‌ای با این مشخصات و ترتیب قبلاً وجود دارد. لطفاً ترتیب را تغییر دهید یا مشخصات متفاوتی وارد کنید.")
+            return self.form_invalid(form)
         return super().form_valid(form)
 
 class ProjectLayerDetailView(generic.DetailView):

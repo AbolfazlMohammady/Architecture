@@ -134,6 +134,8 @@ class ProjectForm(forms.ModelForm):
 class ProjectLayerForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProjectLayerForm, self).__init__(*args, **kwargs)
+        self.order_auto_assigned = False
+        self.order_original_value = None
         
         self.fields["thickness_cm"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["order_from_top"].widget.attrs["class"] = "form-control form-control-sm"
@@ -158,15 +160,19 @@ class ProjectLayerForm(forms.ModelForm):
         project = cleaned_data.get('project')
         order_from_top = cleaned_data.get('order_from_top')
         if project and order_from_top is not None:
-            # فقط ترتیب باید یکتا باشد
-            existing_layer = project_models.ProjectLayer.objects.filter(
-                project=project,
-                order_from_top=order_from_top
-            ).exclude(pk=self.instance.pk if self.instance.pk else None)
-            if existing_layer.exists():
-                raise forms.ValidationError(
-                    "در هر پروژه، ترتیب لایه‌ها نباید تکراری باشد. لطفاً ترتیب دیگری انتخاب کنید."
-                )
+            existing_orders = set(
+                project_models.ProjectLayer.objects.filter(
+                    project=project
+                ).exclude(pk=self.instance.pk if self.instance.pk else None)
+                 .values_list('order_from_top', flat=True)
+            )
+            if order_from_top in existing_orders:
+                next_order = 1
+                while next_order in existing_orders:
+                    next_order += 1
+                cleaned_data['order_from_top'] = next_order
+                self.order_auto_assigned = True
+                self.order_original_value = order_from_top
         return cleaned_data
 
     class Meta:
