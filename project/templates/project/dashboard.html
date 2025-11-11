@@ -72,17 +72,6 @@
       <h5 class="controls-title">
         <i class="bi bi-sliders me-2"></i>کنترل‌های نمودار
       </h5>
-      <div class="zoom-controls-modern">
-        <button class="btn-icon-modern" id="zoomIn" title="زوم این">
-          <i class="bi bi-zoom-in"></i>
-        </button>
-        <button class="btn-icon-modern" id="zoomOut" title="زوم اوت">
-          <i class="bi bi-zoom-out"></i>
-        </button>
-        <button class="btn-icon-modern" id="resetZoom" title="بازنشانی">
-          <i class="bi bi-arrows-fullscreen"></i>
-        </button>
-      </div>
     </div>
     
     <div class="controls-body">
@@ -202,7 +191,7 @@
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-layer-fixed">
                       <svg width="40" height="16">
-                        <line x1="4" y1="8" x2="36" y2="8" stroke="#37474f" stroke-width="3" stroke-linecap="round" />
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#1f2937" stroke-width="3" stroke-linecap="round" />
                       </svg>
                     </div>
                     <span class="legend-text">لایه ثابت</span>
@@ -210,7 +199,7 @@
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-layer-variable">
                       <svg width="40" height="16">
-                        <line x1="4" y1="8" x2="36" y2="8" stroke="#37474f" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round" />
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#fb923c" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round" />
                       </svg>
                     </div>
                     <span class="legend-text">لایه متغیر</span>
@@ -218,7 +207,7 @@
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-exp-pending">
                       <svg width="40" height="16">
-                        <line x1="4" y1="8" x2="36" y2="8" stroke="#cbd5f5" stroke-width="6" stroke-linecap="round" />
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round" />
                       </svg>
                     </div>
                     <span class="legend-text">در انتظار آزمایش</span>
@@ -226,7 +215,7 @@
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-exp-progress">
                       <svg width="40" height="16">
-                        <line x1="4" y1="8" x2="36" y2="8" stroke="#f59e0b" stroke-width="6" stroke-linecap="round" />
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#f97316" stroke-width="6" stroke-linecap="round" />
                       </svg>
                     </div>
                     <span class="legend-text">آزمایش در حال انجام</span>
@@ -234,7 +223,7 @@
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-exp-approved">
                       <svg width="40" height="16">
-                        <line x1="4" y1="8" x2="36" y2="8" stroke="#34d399" stroke-width="6" stroke-linecap="round" />
+                        <line x1="4" y1="8" x2="36" y2="8" stroke="#22c55e" stroke-width="6" stroke-linecap="round" />
                       </svg>
                     </div>
                     <span class="legend-text">نتیجه تایید شده</span>
@@ -326,11 +315,6 @@
       dashboard.toggleExperiments();
       updateButtonState('toggleExperiments', dashboard.showExperiments);
     });
-    
-    // کنترل‌های زوم
-    document.getElementById('zoomIn').addEventListener('click', () => dashboard.zoomIn());
-    document.getElementById('zoomOut').addEventListener('click', () => dashboard.zoomOut());
-    document.getElementById('resetZoom').addEventListener('click', () => dashboard.resetZoom());
     
     // کنترل‌های فیلتر زمانی
     document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());

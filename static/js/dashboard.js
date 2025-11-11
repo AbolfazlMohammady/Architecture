@@ -169,8 +169,8 @@ export class ProjectDashboard {
         // آزمایش‌ها فقط برای نمایش استفاده می‌شوند و نباید در محاسبه محدوده X استفاده شوند
         
         const actualLength = actualXMax - actualXMin;
-        const pxPerKm = 50; // 50px per km - نمودار بازتر با کیفیت بهتر
-        const minWidth = 1200;
+        const pxPerKm = 180; // زوم اولیه بیشتر برای وضوح لایه‌ها
+        const minWidth = 1600;
         const baseDrawingWidth = Math.max(minWidth, Math.ceil(actualLength * pxPerKm));
         this.drawingWidth = baseDrawingWidth;
         
@@ -787,7 +787,8 @@ export class ProjectDashboard {
     buildLayerLayout() {
         const layout = {
             layers: [],
-            lines: [],
+            boundaries: [],
+            centers: [],
             thicknessPx: []
         };
 
@@ -806,18 +807,24 @@ export class ProjectDashboard {
             return layout;
         }
 
-        const canvasHeight = this.height - this.margin * 2 - 30;
-        const maxLayerThicknessPx = canvasHeight * 0.12;
-        const minLayerThicknessPx = 2;
+                const canvasHeight = this.height - this.margin * 2 - 30;
+        const maxLayerThicknessPx = canvasHeight * 0.14;
+        const minLayerThicknessPx = 1.2;
 
-        const thicknessPx = sortedLayers.map(layer =>
+        const desiredThicknessPx = sortedLayers.map(layer =>
             Math.max(
                 Math.min((layer.thickness_cm || 0) * (this.yScale || 0) / 100, maxLayerThicknessPx),
                 minLayerThicknessPx
             )
         );
 
-        const lines = sortedLayers.map(() => []);
+        const cumulativeDesiredPx = desiredThicknessPx.reduce((acc, val) => acc + val, 0);
+
+        const boundaries = Array.from({ length: sortedLayers.length + 1 }, () => []);
+        const centers = Array.from({ length: sortedLayers.length }, () => []);
+        const thicknessAccumulator = new Array(sortedLayers.length).fill(0);
+        const thicknessSamples = new Array(sortedLayers.length).fill(0);
+
         const roadPoints = profileData.road_points;
 
         for (let i = 0; i < roadPoints.length; i++) {
@@ -825,22 +832,82 @@ export class ProjectDashboard {
             const km = point.x;
             const x = this.transformX(km);
             const roadY = this.transformY(point.y);
-            let cumulative = 0;
+            const landElevation = this.getLandElevationAt(km);
+            const fallbackLandY = roadY + cumulativeDesiredPx + 40;
+            const landY = Number.isFinite(landElevation)
+                ? Math.max(this.transformY(landElevation), roadY)
+                : fallbackLandY;
+            const totalAvailable = Math.max(landY - roadY, 0);
+
+            boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
+
+            let allocatedPx = 0;
 
             for (let l = 0; l < sortedLayers.length; l++) {
-                cumulative += thicknessPx[l];
-                lines[l].push({
+                const layer = sortedLayers[l];
+                const desiredPx = desiredThicknessPx[l];
+                const isFixed = layer.state === 1;
+
+                let effectivePx = desiredPx;
+                const remaining = Math.max(totalAvailable - allocatedPx, 0);
+
+                if (!isFixed) {
+                    effectivePx = Math.min(desiredPx, remaining);
+                } else if (remaining < desiredPx && remaining > 0) {
+                    effectivePx = Math.min(desiredPx, remaining);
+                }
+
+                if (!Number.isFinite(effectivePx) || effectivePx < 0) {
+                    effectivePx = 0;
+                }
+
+                const bottomTarget = roadY + allocatedPx + effectivePx;
+                const clampedBottom = Math.min(bottomTarget, landY);
+                const actualThickness = Math.max(clampedBottom - (roadY + allocatedPx), 0);
+                const hasThickness = isFixed ? desiredPx > 0 : actualThickness > 0.6;
+
+                const bottomPoint = {
                     x,
-                    y: roadY + cumulative,
-                    km
-                });
+                    y: roadY + allocatedPx + actualThickness,
+                    km,
+                    valid: isFixed || hasThickness,
+                    index: i
+                };
+                boundaries[l + 1].push(bottomPoint);
+
+                const centerPoint = {
+                    x,
+                    y: roadY + allocatedPx + actualThickness / 2,
+                    km,
+                    valid: hasThickness,
+                    index: i
+                };
+                centers[l].push(centerPoint);
+
+                if (actualThickness > 0) {
+                    allocatedPx += actualThickness;
+                    thicknessAccumulator[l] += actualThickness;
+                    thicknessSamples[l] += 1;
+                } else if (isFixed) {
+                    allocatedPx += desiredPx;
+                    thicknessAccumulator[l] += desiredPx;
+                    thicknessSamples[l] += 1;
+                }
             }
         }
+
+        const thicknessPx = sortedLayers.map((layer, idx) => {
+            if (thicknessSamples[idx] > 0) {
+                return thicknessAccumulator[idx] / thicknessSamples[idx];
+            }
+            return desiredThicknessPx[idx];
+        });
 
         this.layerIndexMap = new Map(sortedLayers.map((layer, index) => [layer.id, index]));
 
         layout.layers = sortedLayers;
-        layout.lines = lines;
+        layout.boundaries = boundaries;
+        layout.centers = centers;
         layout.thicknessPx = thicknessPx;
         return layout;
     }
@@ -848,7 +915,7 @@ export class ProjectDashboard {
     drawLayers() {
         const layout = this.buildLayerLayout();
         const ctx = this.canvas.ctx;
-        const { layers, lines, thicknessPx } = layout;
+        const { layers, boundaries, centers, thicknessPx } = layout;
         if (!layers.length) {
             this.layerLayout = layout;
             return;
@@ -860,88 +927,154 @@ export class ProjectDashboard {
 
         for (let index = 0; index < layers.length; index++) {
             const layer = layers[index];
-            const points = lines[index];
-            if (!points || points.length < 2) {
+            const topBoundary = boundaries[index];
+            const bottomBoundary = boundaries[index + 1];
+            const centerLine = centers[index];
+            const segments = this.extractConnectedSegments(topBoundary);
+            if (!segments.length) {
                 continue;
             }
 
-            const isFixed = layer.state === 1;
-            const executedRanges = (layer.executed_ranges || [])
-                .map(range => ({
-                    start: parseFloat(range.start),
-                    end: parseFloat(range.end)
-                }))
-                .filter(range => isFinite(range.start) && isFinite(range.end) && range.end > range.start)
-                .sort((a, b) => a.start - b.start);
-
-            const shouldRenderSegment = (segmentStart, segmentEnd) => {
-                if (isFixed || executedRanges.length === 0) {
-                    return true;
-                }
-                return executedRanges.some(range => range.end > segmentStart && range.start < segmentEnd);
-            };
-
             ctx.save();
-            ctx.beginPath();
-            ctx.setLineDash(isFixed ? [] : [12, 8]);
-            ctx.strokeStyle = '#37474f';
-            ctx.lineWidth = 2.4;
-            ctx.lineJoin = 'round';
+            ctx.lineWidth = layer.state === 1 ? 1.15 : 1.6;
+            ctx.strokeStyle = layer.state === 1 ? '#1f2937' : '#fb923c';
+            ctx.setLineDash(layer.state === 1 ? [] : [5, 6]);
+            ctx.globalAlpha = layer.state === 1 ? 0.9 : 1;
             ctx.lineCap = 'round';
-            ctx.globalAlpha = 0.95;
+            ctx.lineJoin = 'round';
 
-            let pathOpen = false;
-            let hasSegment = false;
-            let minX = Infinity;
-            let maxX = -Infinity;
-            let minY = Infinity;
-            let maxY = -Infinity;
-
-            for (let i = 0; i < points.length - 1; i++) {
-                const current = points[i];
-                const next = points[i + 1];
-                const segmentStart = Math.min(current.km, next.km);
-                const segmentEnd = Math.max(current.km, next.km);
-
-                if (shouldRenderSegment(segmentStart, segmentEnd)) {
-                    if (!pathOpen) {
-                        ctx.moveTo(current.x, current.y);
-                        pathOpen = true;
-                    }
-                    ctx.lineTo(next.x, next.y);
-                    hasSegment = true;
-
-                    minX = Math.min(minX, current.x, next.x);
-                    maxX = Math.max(maxX, current.x, next.x);
-                    minY = Math.min(minY, current.y, next.y);
-                    maxY = Math.max(maxY, current.y, next.y);
-                } else {
-                    pathOpen = false;
+            segments.forEach(segment => {
+                if (segment.length < 2) {
+                    return;
                 }
-            }
-
-            if (hasSegment) {
+                ctx.beginPath();
+                ctx.moveTo(segment[0].x, segment[0].y);
+                for (let i = 1; i < segment.length; i++) {
+                    ctx.lineTo(segment[i].x, segment[i].y);
+                }
                 ctx.stroke();
-                const paddingX = 16;
-                const paddingY = Math.max(thicknessPx[index] * 0.6, 10);
-                this.tooltipData.push({
-                    x: (minX + maxX) / 2,
-                    y: (minY + maxY) / 2,
-                    width: (maxX - minX) + paddingX,
-                    height: (maxY - minY) + paddingY,
-                    geometry: {
-                        type: 'polyline',
-                        points,
-                        thickness: Math.max(thicknessPx[index], 6)
-                    },
-                    data: { type: 'layer', layer }
-                });
-            }
+            });
 
             ctx.restore();
+
+            this.generateLayerTooltips(layer, topBoundary, bottomBoundary, centerLine, thicknessPx[index]);
         }
 
         this.layerLayout = layout;
+    }
+
+    extractConnectedSegments(points) {
+        if (!Array.isArray(points)) {
+            return [];
+        }
+        const segments = [];
+        let current = [];
+        for (const pt of points) {
+            if (pt && pt.valid) {
+                current.push(pt);
+            } else if (current.length > 0) {
+                if (current.length > 1) {
+                    segments.push(current);
+                }
+                current = [];
+            }
+        }
+        if (current.length > 1) {
+            segments.push(current);
+        }
+        return segments;
+    }
+
+    generateLayerTooltips(layer, topBoundary, bottomBoundary, centerLine, approximateThickness) {
+        if (!bottomBoundary || !centerLine) {
+            return;
+        }
+
+        let activeSegment = null;
+        const segments = [];
+
+        for (let i = 0; i < bottomBoundary.length; i++) {
+            const bottom = bottomBoundary[i];
+            const top = topBoundary ? topBoundary[i] : null;
+            const center = centerLine[i];
+            const isValid = bottom && bottom.valid && center && center.valid;
+
+            if (isValid) {
+                if (!activeSegment) {
+                    activeSegment = {
+                        startIndex: i,
+                        endIndex: i,
+                        minX: bottom.x,
+                        maxX: bottom.x,
+                        minY: Math.min(top ? top.y : bottom.y, bottom.y),
+                        maxY: Math.max(top ? top.y : bottom.y, bottom.y),
+                        points: [bottom],
+                        thickness: approximateThickness || 6
+                    };
+                } else {
+                    activeSegment.endIndex = i;
+                    activeSegment.minX = Math.min(activeSegment.minX, bottom.x);
+                    activeSegment.maxX = Math.max(activeSegment.maxX, bottom.x);
+                    activeSegment.minY = Math.min(activeSegment.minY, top ? top.y : bottom.y, bottom.y);
+                    activeSegment.maxY = Math.max(activeSegment.maxY, top ? top.y : bottom.y, bottom.y);
+                    activeSegment.points.push(bottom);
+                }
+            } else if (activeSegment) {
+                segments.push(activeSegment);
+                activeSegment = null;
+            }
+        }
+
+        if (activeSegment) {
+            segments.push(activeSegment);
+        }
+
+        segments.forEach(segment => {
+            const width = Math.max(segment.maxX - segment.minX, 6);
+            const height = Math.max(segment.maxY - segment.minY, segment.thickness || 6);
+            const geometryPoints = segment.points.map(pt => ({ x: pt.x, y: pt.y }));
+
+            this.tooltipData.push({
+                x: (segment.minX + segment.maxX) / 2,
+                y: (segment.minY + segment.maxY) / 2,
+                width,
+                height,
+                geometry: {
+                    type: 'polyline',
+                    points: geometryPoints,
+                    thickness: height
+                },
+                data: { type: 'layer', layer }
+            });
+        });
+    }
+
+    getLandElevationAt(km) {
+        const landPoints = this.projectData.profile_data?.land_points;
+        if (!landPoints || landPoints.length === 0) {
+            return null;
+        }
+
+        if (km <= landPoints[0].x) {
+            return landPoints[0].y;
+        }
+        if (km >= landPoints[landPoints.length - 1].x) {
+            return landPoints[landPoints.length - 1].y;
+        }
+
+        for (let i = 0; i < landPoints.length - 1; i++) {
+            const current = landPoints[i];
+            const next = landPoints[i + 1];
+            if (km >= current.x && km <= next.x) {
+                const span = next.x - current.x;
+                if (span === 0) {
+                    return current.y;
+                }
+                const t = (km - current.x) / span;
+                return current.y + (next.y - current.y) * t;
+            }
+        }
+        return landPoints[landPoints.length - 1].y;
     }
 
     drawStructures() {
@@ -1089,7 +1222,7 @@ export class ProjectDashboard {
         if (!this.projectData.layers || !Array.isArray(this.projectData.layers)) {
             return;
         }
-
+        
         if (!this.layerLayout) {
             this.layerLayout = this.buildLayerLayout();
         }
@@ -1098,11 +1231,11 @@ export class ProjectDashboard {
         if (!layers.length) {
             return;
         }
-
+        
         const ctx = this.canvas.ctx;
         const projectStart = parseFloat(this.projectData.start_kilometer) || 0;
         const projectEnd = parseFloat(this.projectData.end_kilometer) || projectStart;
-
+        
         this.projectData.layers.forEach(layer => {
             if (!layer.experiments || !Array.isArray(layer.experiments)) {
                 return;
@@ -1112,18 +1245,18 @@ export class ProjectDashboard {
             if (layerIndex === undefined) {
                 return;
             }
-
+            
             layer.experiments.forEach(experiment => {
                 if (!experiment || !this.isExperimentInDateRange(experiment)) {
                     return;
                 }
-
+                
                 let kmStart = parseFloat(experiment.kilometer_start);
                 let kmEnd = parseFloat(experiment.kilometer_end);
                 if (!isFinite(kmStart) || !isFinite(kmEnd)) {
                     return;
                 }
-
+                
                 if (kmEnd < kmStart) {
                     [kmStart, kmEnd] = [kmEnd, kmStart];
                 }
@@ -1143,18 +1276,18 @@ export class ProjectDashboard {
                 if (!isFinite(xStart) || !isFinite(xEnd)) {
                     return;
                 }
-
+                
                 const yStart = this.getLayerYPosition(layerIndex, kmStart);
                 const yEnd = this.getLayerYPosition(layerIndex, kmEnd);
                 if (yStart === null || yEnd === null) {
                     return;
                 }
-
+                
                 const color = this.getExperimentColor(experiment);
                 const lineWidth = Math.max(thicknessPx[layerIndex] * 0.9, 6);
 
-                ctx.save();
-                ctx.beginPath();
+        ctx.save();
+        ctx.beginPath();
                 ctx.strokeStyle = color;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
@@ -1162,13 +1295,13 @@ export class ProjectDashboard {
                 ctx.globalAlpha = 0.85;
                 ctx.moveTo(xStart, yStart);
                 ctx.lineTo(xEnd, yEnd);
-                ctx.stroke();
-                ctx.restore();
+            ctx.stroke();
+            ctx.restore();
 
                 if (!this.tooltipData) {
                     this.tooltipData = [];
                 }
-                this.tooltipData.push({
+        this.tooltipData.push({
                     x: (xStart + xEnd) / 2,
                     y: (yStart + yEnd) / 2,
                     width: Math.abs(xEnd - xStart) + 14,
@@ -1181,7 +1314,7 @@ export class ProjectDashboard {
                         y2: yEnd,
                         thickness: lineWidth
                     },
-                    data: {
+            data: {
                         type: 'experiment',
                         experiment,
                         layer,
@@ -1193,53 +1326,55 @@ export class ProjectDashboard {
     }
 
     getLayerYPosition(layerIndex, kilometer) {
-        if (!this.layerLayout || !this.layerLayout.lines) {
+        if (!this.layerLayout || !this.layerLayout.centers) {
             return null;
         }
-        const points = this.layerLayout.lines[layerIndex];
+        const points = this.layerLayout.centers[layerIndex];
         if (!points || points.length === 0) {
             return null;
         }
 
-        if (kilometer <= points[0].km) {
-            return points[0].y;
-        }
-        if (kilometer >= points[points.length - 1].km) {
-            return points[points.length - 1].y;
-        }
-
-        for (let i = 0; i < points.length - 1; i++) {
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            if (kilometer >= p1.km && kilometer <= p2.km) {
-                const span = p2.km - p1.km;
-                const t = span === 0 ? 0 : (kilometer - p1.km) / span;
-                return p1.y + (p2.y - p1.y) * t;
+        let previous = null;
+        for (const point of points) {
+            if (!point.valid) {
+                continue;
             }
+            if (kilometer <= point.km) {
+                if (!previous) {
+                    return point.y;
+                }
+                const span = point.km - previous.km;
+                if (span <= 0) {
+                    return point.y;
+                }
+                const t = (kilometer - previous.km) / span;
+                return previous.y + (point.y - previous.y) * t;
+            }
+            previous = point;
         }
-        return points[points.length - 1].y;
+        return previous ? previous.y : null;
     }
 
     getExperimentColor(experiment) {
         const status = Number(experiment.status);
         const approval = Number(experiment.approval_status);
 
-        if (status === 2) { // completed
+        if (status === 2) {
             if (approval === 2) {
-                return '#ef4444'; // rejected
+                return '#ef4444';
             }
             if (approval === 1) {
-                return '#34d399'; // approved
+                return '#22c55e';
             }
-            return '#10b981'; // completed but awaiting approval
+            return '#4ade80';
         }
         if (status === 1) {
-            return '#f59e0b'; // in progress
+            return '#f97316';
         }
         if (status === 3) {
-            return '#ef4444'; // rejected
+            return '#ef4444';
         }
-        return '#cbd5f5'; // pending
+        return '#e2e8f0';
     }
 
     getDistanceToTooltipItem(x, y, item) {
@@ -1680,9 +1815,12 @@ export class ProjectDashboard {
             ctx.clip();
 
             // پرکردن خیلی ملایم به عنوان پس‌زمینه
-            let baseFill = 'rgba(148, 163, 184, 0.18)';
-            if (isExcavation) baseFill = 'rgba(220, 53, 69, 0.25)'; // قرمز ملایم‌تر برای خاکبرداری
-            if (isEmbankment) baseFill = 'rgba(13, 110, 253, 0.22)'; // آبی ملایم‌تر برای خاکریزی
+            const isNeutral = !isExcavation && !isEmbankment;
+            if (isNeutral) {
+                ctx.restore();
+                continue;
+            }
+            let baseFill = isExcavation ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
             const minX = Math.min(x1, x2);
             const maxX = Math.max(x1, x2);
             const minY = Math.min(yLand1, yRoad1, yLand2, yRoad2);
