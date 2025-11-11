@@ -13,11 +13,16 @@
 {% endblock %}
 
 {% block main %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header text-center">
                     <h3 class="card-title">تایید آزمایش</h3>
                 </div>
                 <div class="card-body">
@@ -81,7 +86,6 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">ثبت تایید</button>
-                                <a href="{% url 'experiment:experiment_response_detail' experiment_response.pk %}" class="btn btn-secondary">بازگشت</a>
                             </div>
                         </div>
                     </form>

@@ -6,16 +6,15 @@
 {% block main %}
 <div class="container py-5">
   <section class="payment-coefficients mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div class="d-flex align-items-center">
-        <button type="button" class="btn btn-outline-secondary rounded-pill me-3" onclick="history.back()">
-          <i class="bi bi-arrow-right me-2"></i>بازگشت
-        </button>
-        <h5 class="mb-0 fw-bold">ضرایب پرداخت</h5>
+    <div class="page-toolbar">
+      <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+        <i class="bi bi-arrow-right me-2"></i>بازگشت
+      </button>
+      <div class="page-toolbar-actions">
+        <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-primary rounded-pill px-4">
+          <i class="bi bi-plus-circle me-2"></i>افزودن ضریب پرداخت
+        </a>
       </div>
-      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn btn-primary rounded-pill px-4">
-        <i class="bi bi-plus-circle me-2"></i>افزودن ضریب پرداخت
-      </a>
     </div>
 
     <!-- اطلاعات کلی -->
@@ -68,9 +67,11 @@
 
     <!-- جدول ضرایب پرداخت -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-      <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">لیست ضرایب پرداخت</h6>
-        <span class="badge bg-light text-dark">{{ coefficients|length }} ضریب</span>
+      <div class="card-header bg-gradient text-white text-center">
+        <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
+          <h6 class="mb-0">لیست ضرایب پرداخت</h6>
+          <span class="badge bg-light text-dark">{{ coefficients|length }} ضریب</span>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">

@@ -122,7 +122,7 @@ class ProjectLayer(models.Model):
     CANCELED = 4
     
     PROJECT_LAYER_STATUS = [
-        (NOT_STARTED, 'شروع نشده'),
+        (NOT_STARTED, 'در انتظار آزمایش'),
         (IN_PROGRESS, 'در حال انجام'),
         (COMPLETED, 'تکمیل شده'),
         (STOPPED, 'متوقف شده'),

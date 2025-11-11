@@ -47,7 +47,7 @@ urlpatterns = [
     path('payment-coefficients/<int:pk>/delete/', views.payment_coefficient_delete, name='payment_coefficient_delete'),
     path('payment-coefficients/<str:layer>/detail/', views.layer_coefficient_detail, name='layer_coefficient_detail'),
     
-    # نمودارهای داشبورد
+    # نمودارهای ضریب پرداخت
     path('dashboard-charts/', views.dashboard_charts, name='dashboard_charts'),
     
     # تست

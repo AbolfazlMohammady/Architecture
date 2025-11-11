@@ -23,9 +23,6 @@
         </h2>
         <p class="project-subtitle">داشبورد کنترل کیفیت پروژه</p>
       </div>
-      <a href="{% url 'experiment:payment_coefficient_create' %}" class="btn-modern btn-primary-modern">
-        <i class="bi bi-plus-circle me-2"></i>ثبت ضریب پرداخت
-      </a>
     </div>
     
     <!-- کارت‌های اطلاعات پروژه -->
@@ -216,9 +213,9 @@
                   </div>
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-gray">
-                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#bdbdbd" stroke="#757575" stroke-width="2.2" rx="1" /></svg>
+                      <svg width="24" height="16"><rect x="3" y="5" width="18" height="8" fill="#eef2f8" stroke="#94a3b8" stroke-width="1.4" rx="1" /></svg>
                     </div>
-                    <span class="legend-text">لایه شروع‌نشده</span>
+                    <span class="legend-text">بازه در انتظار نتیجه آزمایش</span>
                   </div>
                   <div class="legend-item">
                     <div class="legend-icon legend-icon-variable">
@@ -332,11 +329,11 @@
       container.innerHTML = '';
       
       layers.forEach(layer => {
-        const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'secondary';
-        const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'شروع نشده';
+        const statusClass = layer.status === 2 ? 'success' : layer.status === 1 ? 'warning' : 'pending';
+        const statusText = layer.status === 2 ? 'تکمیل شده' : layer.status === 1 ? 'در حال انجام' : 'در انتظار آزمایش';
         const stateText = layer.state === 1 ? 'ثابت' : 'متغیر';
-        const statusIcon = layer.status === 2 ? 'bi-check-circle-fill' : layer.status === 1 ? 'bi-clock-history' : 'bi-circle';
-        const statusColor = layer.status === 2 ? '#28a745' : layer.status === 1 ? '#ffc107' : '#6c757d';
+        const statusIcon = layer.status === 2 ? 'bi-check-circle-fill' : layer.status === 1 ? 'bi-clock-history' : 'bi-hourglass-split';
+        const statusColor = layer.status === 2 ? '#28a745' : layer.status === 1 ? '#ffc107' : '#94a3b8';
         
         const layerCard = document.createElement('div');
         layerCard.className = 'layer-card-modern';

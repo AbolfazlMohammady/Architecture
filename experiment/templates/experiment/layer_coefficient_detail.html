@@ -5,12 +5,19 @@
 
 {% block content %}
 <div class="container mt-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+        <div class="page-toolbar-actions">
+            <a href="{% url 'experiment:dashboard_charts' %}" class="btn btn-outline-primary rounded-pill px-4">بازگشت به داشبورد</a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header text-center">
                     <h4 class="mb-0">جزئیات ضریب پرداخت {{ layer_name }}</h4>
-                    <a href="{% url 'experiment:dashboard_charts' %}" class="btn btn-secondary">بازگشت به داشبورد</a>
                 </div>
                 <div class="card-body">
                     {% if coefficients %}

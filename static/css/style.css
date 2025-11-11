@@ -166,3 +166,33 @@ body, html {
     box-sizing: border-box;
     max-width: 100%;
 }
+
+.page-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.page-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-inline: 1.5rem;
+    border-radius: 999px;
+}
+
+.page-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+    .page-toolbar {
+        justify-content: center;
+    }
+}

@@ -196,11 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 ctx.fillStyle = color;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(value.toFixed(2), centerX, centerY - 8);
+                ctx.fillText(value.toFixed(2), centerX, centerY);
                 
-                ctx.font = '14px IRANSans';
-                ctx.fillStyle = '#666';
-                ctx.fillText('از ' + maxValue, centerX, centerY + 18);
                 ctx.restore();
             }
         }

@@ -9,11 +9,21 @@
 {% block title %}لیست درخواست‌های آزمایش{% endblock %}
 
 {% block main %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+        <div class="page-toolbar-actions">
+            <a href="{% url 'experiment:experiment_request_create' %}" class="btn btn-success rounded-pill px-4">
+                <i class="fas fa-plus"></i> ثبت درخواست جدید
+            </a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header text-center">
                     <h3 class="card-title">لیست درخواست‌های آزمایش</h3>
                 </div>
                 <div class="card-body">
@@ -132,14 +142,6 @@
                         </table>
                     </div>
 
-                    <div class="mt-3">
-                        <a href="{% url 'experiment:experiment_request_create' %}" class="btn btn-success">
-                            <i class="fas fa-plus"></i> ثبت درخواست جدید
-                        </a>
-                        <button type="button" class="btn btn-secondary ms-2" onclick="window.history.back();">
-                            <i class="fas fa-arrow-right"></i> بازگشت
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

@@ -3,6 +3,11 @@
 {% block main %}
 <div class="dashboard-overlay"></div>
 <div class="container py-5">
+  <div class="page-toolbar mb-4">
+    <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+      <i class="bi bi-arrow-right me-2"></i>بازگشت
+    </button>
+  </div>
   <!-- User Info -->
   <section class="user-info mb-5">
   <div class="card shadow-lg border-0 rounded-4 overflow-hidden position-relative">
@@ -127,11 +132,6 @@
       </div>
     </div>
   </section>
-</div>
-<div class="text-center my-4">
-    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
-        <i class="fas fa-arrow-right"></i> بازگشت
-    </button>
 </div>
 <style>
 .dashboard-overlay {

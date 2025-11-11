@@ -4,17 +4,22 @@
 {% block title %}محل‌های بتن‌ریزی{% endblock %}
 
 {% block main %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+        <div class="page-toolbar-actions">
+            <a href="{% url 'experiment:concrete_place_create' %}" class="btn btn-primary rounded-pill px-4">
+                <i class="fas fa-plus"></i> افزودن محل جدید
+            </a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">لیست محل‌های بتن‌ریزی</h3>
-                    <div class="card-tools">
-                        <a href="{% url 'experiment:concrete_place_create' %}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> افزودن محل جدید
-                        </a>
-                    </div>
+                <div class="card-header text-center">
+                    <h3 class="card-title mb-0">لیست محل‌های بتن‌ریزی</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -50,10 +55,5 @@
             </div>
         </div>
     </div>
-</div>
-<div class="text-center my-4">
-    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
-        <i class="fas fa-arrow-right"></i> بازگشت
-    </button>
 </div>
 {% endblock %} 

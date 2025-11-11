@@ -9,6 +9,11 @@
 
 {% block main %}
 <div class="container py-5">
+  <div class="page-toolbar">
+    <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+      <i class="bi bi-arrow-right me-2"></i>بازگشت
+    </button>
+  </div>
   <section class="project-list mb-5">
     <h5 class="mb-4 fw-bold">لیست پروژه‌ها</h5>
     {% if error_message %}
@@ -52,11 +57,6 @@
       {% endfor %}
     </div>
   </section>
-  <div class="text-center my-4">
-      <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
-          <i class="fas fa-arrow-right"></i> بازگشت
-      </button>
-  </div>
 </div>
 <style>
 .bg-gradient {

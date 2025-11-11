@@ -4,11 +4,16 @@
 
 {% block title %}ثبت پاسخ آزمایش{% endblock %}
 {% block main %}
-<div class="container">
+<div class="container py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header text-center">
                     <h3 class="card-title">ثبت پاسخ آزمایش</h3>
                 </div>
                 <div class="card-body">
@@ -143,9 +148,10 @@
                             </div>
                         </div>
                         <div class="row mt-4">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">ثبت پاسخ</button>
-                                <a href="{% url 'experiment:experiment_request_detail' experiment_request.pk %}" class="btn btn-secondary">بازگشت</a>
+                            <div class="col-12 text-center mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> ذخیره پاسخ
+                                </button>
                             </div>
                         </div>
                     </form>

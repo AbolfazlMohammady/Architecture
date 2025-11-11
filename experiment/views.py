@@ -438,7 +438,7 @@ def payment_coefficient_delete(request, pk):
     })
 
 def dashboard_charts(request):
-    """نمایش نمودارهای داشبورد با میانگین ضرایب پرداخت"""
+    """نمایش نمودارهای ضریب پرداخت با میانگین ضرایب پرداخت"""
     logger.info(f"Accessing dashboard_charts view by user: {request.user}")
     try:
         # محاسبه میانگین ضرایب پرداخت برای هر لایه
@@ -503,7 +503,7 @@ def dashboard_charts(request):
         return render(request, 'experiment/dashboard_charts.html', context)
     except Exception as e:
         logger.error(f"Error in dashboard_charts: {str(e)}")
-        messages.error(request, 'خطا در بارگذاری نمودارهای داشبورد')
+        messages.error(request, 'خطا در بارگذاری نمودارهای ضریب پرداخت')
         return render(request, 'experiment/dashboard_charts.html', {
             'asphalt_avg': 0,
             'base_avg': 0,

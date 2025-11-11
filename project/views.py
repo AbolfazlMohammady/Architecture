@@ -296,7 +296,7 @@ class ProjectDashboardView(generic.DetailView):
                     'thickness_cm': layer.thickness_cm,
                     'order_from_top': layer.order_from_top,
                     'state': layer.state,  # 0: متغیر, 1: ثابت
-                    'status': layer.status,  # 0: شروع نشده, 1: در حال انجام, 2: تکمیل شده
+                    'status': layer.status,  # 0: در انتظار آزمایش, 1: در حال انجام, 2: تکمیل شده
                     'experiments': experiment_data.get(layer.id, []),
                     'executed_ranges': layer_executed_ranges.get(layer.id, [])
                 } for layer in layers

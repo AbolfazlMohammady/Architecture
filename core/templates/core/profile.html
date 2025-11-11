@@ -6,12 +6,17 @@
 {% endblock title %}
 
 {% block main %}
-<div class="container">
+<div class="container py-4">
+    <div class="page-toolbar mb-3">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+    </div>
     <div class="row d-flex d-xl-flex justify-content-center justify-content-xl-center">
         <div class="col-sm-12 col-lg-10 col-xl-9 col-xxl-7 bg-white shadow-lg" style="border-radius: 5px;">
             <div class="p-5">
-                <div class="text-center">
-                    <h4 class="text-dark mb-4">پروفایل کاربر</h4>
+                <div class="text-center mb-4">
+                    <h4 class="text-dark mb-0 fw-bold">پروفایل کاربر</h4>
                 </div>
 <div class="card shadow rounded-3 mb-4 border-0">
     <div class="card-header bg-gradient bg-primary text-white d-flex align-items-center">

@@ -3,12 +3,19 @@
 {% block title %}{{ project.name }}{% endblock %}
 {% block main %}
 <div class="container py-5">
+  <div class="page-toolbar">
+    <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+      <i class="bi bi-arrow-right me-2"></i>بازگشت
+    </button>
+  </div>
   <div class="row justify-content-center">
     <div class="col-12 col-lg-10">
       <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-gradient text-white d-flex flex-column flex-md-row align-items-center justify-content-between">
-          <h4 class="fw-bold mb-0">{{ project.name }}</h4>
-          <span class="badge bg-light text-dark fw-bold fs-6 mt-2 mt-md-0">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+        <div class="card-header bg-gradient text-white text-center">
+          <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-2">
+            <h4 class="fw-bold mb-0">{{ project.name }}</h4>
+            <span class="badge bg-light text-dark fw-bold fs-6 mt-2 mt-md-0">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+          </div>
         </div>
         <div class="card-body">
           <div class="row mb-4">
@@ -85,13 +92,6 @@
             </div>
         </div>
     </div>
-</div>
-  </div>
-  <div class="text-center my-4">
-    <button type="button" class="btn btn-secondary btn-lg" onclick="window.history.back();">
-        <i class="fas fa-arrow-right"></i> بازگشت
-    </button>
-  </div>
 </div>
 <style>
 .bg-gradient {

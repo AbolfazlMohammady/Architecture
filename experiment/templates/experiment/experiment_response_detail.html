@@ -4,11 +4,21 @@
 {% block title %}جزئیات پاسخ آزمایش{% endblock %}
 
 {% block main %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+        <div class="page-toolbar-actions">
+            <a href="{% url 'experiment:experiment_response_list' %}" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-list"></i> لیست پاسخ‌ها
+            </a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header text-center">
                     <h3 class="card-title">جزئیات پاسخ آزمایش</h3>
                 </div>
                 <div class="card-body">
@@ -182,9 +192,6 @@
                             </a>
                             <a href="{% url 'experiment:experiment_response_delete' experiment_response.pk %}" class="btn btn-danger">
                                 <i class="fas fa-trash"></i> حذف
-                            </a>
-                            <a href="{% url 'experiment:experiment_response_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-right"></i> بازگشت به لیست
                             </a>
                         </div>
                     </div>

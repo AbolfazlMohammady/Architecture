@@ -5,10 +5,15 @@
 
 {% block content %}
 <div class="container mt-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header text-center">
                     <h4 class="mb-0">تایید درخواست آزمایش</h4>
                 </div>
                 <div class="card-body">
@@ -60,8 +65,7 @@
                             {% endif %}
                         </div>
                         
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'experiment:experiment_request_detail' experiment_request.pk %}" class="btn btn-secondary">بازگشت</a>
+                        <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary">ثبت تایید</button>
                         </div>
                     </form>
