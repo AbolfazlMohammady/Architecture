@@ -16,10 +16,10 @@ export class Canvas {
     
     // افزایش کیفیت canvas با devicePixelRatio (حداقل 2 برای کیفیت بالا)
     const dpr = Math.max(window.devicePixelRatio || 1, 2);
-    this.canvas.width = width * dpr;
-    this.canvas.height = height * dpr;
     this.canvas.style.width = width + 'px';
     this.canvas.style.height = height + 'px';
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
 
     this.ctx = this.canvas.getContext('2d', {
       alpha: true,

@@ -572,6 +572,36 @@ export class ProjectDashboard {
         // استفاده از finalYMin و finalYMax برای yAxis.update
         // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
         this.yAxis.update(yLabels, finalYMin, finalYMax);
+
+        const yMain0 = this.transformY(0);
+        const debugAxisZero = (typeof this.yAxis.getYPosition === 'function') ? this.yAxis.getYPosition(0) : null;
+        const debugDiff = (typeof debugAxisZero === 'number') ? (yMain0 - debugAxisZero) : null;
+
+        const mainCanvasEl = this.canvas && this.canvas.canvas ? this.canvas.canvas : null;
+        const yAxisCanvasEl = this.yAxis && this.yAxis.canvas ? this.yAxis.canvas : null;
+        let screenDiff = null;
+        if (mainCanvasEl && yAxisCanvasEl && typeof yMain0 === 'number' && typeof debugAxisZero === 'number') {
+            const mainRect = mainCanvasEl.getBoundingClientRect();
+            const axisRect = yAxisCanvasEl.getBoundingClientRect();
+            const mainScreenY = mainRect.top + yMain0;
+            const axisScreenY = axisRect.top + debugAxisZero;
+            screenDiff = axisScreenY - mainScreenY;
+        }
+
+        const shouldFix = (typeof debugDiff === 'number' && Math.abs(debugDiff) > 0.5) ||
+                          (screenDiff !== null && Math.abs(screenDiff) > 0.5);
+        if (shouldFix && screenDiff !== null) {
+            const shift = Math.round(screenDiff * 100) / 100;
+            if (yAxisCanvasEl) {
+                yAxisCanvasEl.style.transform = `translateY(${shift}px)`;
+            } else if (this.yAxis && this.yAxis.ctx && typeof this.yAxis.ctx.translate === 'function') {
+                this.yAxis.ctx.save();
+                this.yAxis.ctx.translate(0, shift);
+                this.yAxis.ctx.restore();
+            }
+        } else if (yAxisCanvasEl && Math.abs(screenDiff || 0) <= 0.5) {
+            yAxisCanvasEl.style.transform = '';
+        }
         
         // بررسی اینکه transformY(0) دقیقاً روی خط 0.0 محور Y قرار می‌گیرد
         const transformY0 = this.transformY(0);
@@ -624,9 +654,9 @@ export class ProjectDashboard {
         const ctx = this.canvas.ctx;
         const yZero = this.transformY(0);
         ctx.save();
-        ctx.strokeStyle = '#d1d5db'; // رنگ خنثی برای خط پایه
-        ctx.lineWidth = 1;
-        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#ff9800'; // رنگ واضح برای خط صفر
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
         const startX = this.margin;
         const endX = (this.dynamicWidth || this.width) - this.margin;
         ctx.beginPath();
@@ -664,12 +694,12 @@ export class ProjectDashboard {
             const cp2y = p1.y;
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
         }
-        ctx.strokeStyle = 'rgba(56,249,215,0.15)';
-        ctx.lineWidth = 12;
+        ctx.strokeStyle = 'rgba(56,249,215,0.12)';
+        ctx.lineWidth = 10;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowColor = 'rgba(56,249,215,0.3)';
-        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(56,249,215,0.25)';
+        ctx.shadowBlur = 8;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.stroke();
@@ -681,7 +711,7 @@ export class ProjectDashboard {
         grad.addColorStop(0.5, '#3de8a8');
         grad.addColorStop(1, '#38f9d7');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 4; // افزایش ضخامت برای وضوح بیشتر
+        ctx.lineWidth = 2.5; // کاهش ضخامت برای جلوگیری از پوشش خط صفر
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -731,11 +761,11 @@ export class ProjectDashboard {
         grad.addColorStop(0.5, '#0099ff');
         grad.addColorStop(1, '#0072ff');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 3.5; // افزایش ضخامت برای وضوح بیشتر
+        ctx.lineWidth = 2.5; // کمی نازک‌تر برای تمایز بهتر با خط صفر
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowColor = 'rgba(0,198,255,0.4)';
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0,198,255,0.25)';
+        ctx.shadowBlur = 3;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.beginPath();
@@ -1275,27 +1305,39 @@ export class ProjectDashboard {
     }
 
     transformY(y) {
-        // فرمول تبدیل Y: باید دقیقاً با yAxis هماهنگ باشد
         if (this.yScale === undefined || this.yMax === undefined || this.yMin === undefined) {
             console.error('yScale, yMax, or yMin is undefined!', {
                 yScale: this.yScale,
                 yMax: this.yMax,
                 yMin: this.yMin
             });
-            return this.margin + this.height / 2; // fallback
+            return this.margin + this.height / 2;
         }
-        
         const yRange = this.yMax - this.yMin;
         if (yRange <= 0) {
-            return this.margin + this.height / 2; // fallback
+            return this.margin + this.height / 2;
         }
-        
-        const normalizedY = (y - this.yMin) / yRange;
         const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const normalizedY = (y - this.yMin) / yRange;
         const rawY = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
-        const alignedY = Math.round(rawY) + 0.5;
-        
-        return alignedY;
+        return rawY;
+    }
+
+    inverseTransformY(pixelY) {
+        if (this.yScale === undefined || this.yMax === undefined || this.yMin === undefined) {
+            console.error('inverseTransformY: scale or bounds are undefined!', {
+                yScale: this.yScale,
+                yMax: this.yMax,
+                yMin: this.yMin
+            });
+            return 0;
+        }
+        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
+        const distanceFromTop = clampedPixelY - this.margin;
+        const normalized = distanceFromTop / mainCanvasHeight;
+        const value = this.yMax - normalized * (this.yMax - this.yMin);
+        return value;
     }
 
     handleMouseMove(e) {
@@ -1327,7 +1369,7 @@ export class ProjectDashboard {
         }
         
         const realX = this.xMin + (this.mouseX - this.margin) / this.xScale;
-        const realY = this.yMax - (this.mouseY - this.margin) / this.yScale;
+        const realY = this.inverseTransformY(this.mouseY);
         if (document.getElementById('xinput')) {
             document.getElementById('xinput').value = realX.toFixed(3);
         }

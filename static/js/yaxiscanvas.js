@@ -9,10 +9,10 @@ export class YAxisCanvas {
 
     // تنظیم canvas با در نظر گیری devicePixelRatio برای کیفیت بالا (حداقل 2)
     const dpr = Math.max(window.devicePixelRatio || 1, 2);
-    this.canvas.width = width * dpr;
-    this.canvas.height = height * dpr;
     this.canvas.style.width = width + 'px';
     this.canvas.style.height = height + 'px';
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
     
     // تنظیم scale برای context
     this.ctx.scale(dpr, dpr);
@@ -24,26 +24,29 @@ export class YAxisCanvas {
     this.data = [];
   }
 
-  update(data, yMin, yMax) {
+  update(data, min, max) {
     this.data = data;
-    this.yMin = yMin;
-    this.yMax = yMax;
+    this.min = min;
+    this.max = max;
     this.draw();
   }
   
   getYPosition(value) {
-    // محاسبه موقعیت Y برای یک مقدار مشخص
-    // این برای هماهنگی با transformY در dashboard استفاده می‌شود
-    const paddingTop = this.margin;
-    const paddingBottom = this.margin + 30; // فضای محور X در پایین
-    const canvasHeight = this.height - paddingTop - paddingBottom;
-    const yRange = this.yMax - this.yMin;
-    if (yRange > 0) {
-      const normalizedY = (value - this.yMin) / yRange;
-      const rawY = paddingTop + (1 - normalizedY) * canvasHeight;
-      return Math.round(rawY) + 0.5;
+    const margin = this.margin;
+    const mainCanvasHeight = this.height - margin * 2 - 30;
+    const min = parseFloat(this.min);
+    const max = parseFloat(this.max);
+
+    if (!isFinite(min) || !isFinite(max) || max <= min) {
+      return margin + mainCanvasHeight / 2;
     }
-    return (paddingTop + (this.height - paddingBottom)) / 2;
+    if (mainCanvasHeight <= 0) {
+      return margin;
+    }
+
+    const normalized = (value - min) / (max - min);
+    const y = margin + mainCanvasHeight - normalized * mainCanvasHeight;
+    return y;
   }
   fittext(text){
     while(text.length < 5){
@@ -63,6 +66,7 @@ export class YAxisCanvas {
   const paddingTop = this.margin;
   const paddingBottom = this.margin + 30; // فضای محور X در پایین
   const usableHeight = this.height - paddingTop - paddingBottom;
+  const labelOffset = 14;
 
   // خط عمودی ثابت سمت راست y-axis که فقط در محدوده نمودار اصلی رسم می‌شود
   ctx.beginPath();
@@ -72,7 +76,7 @@ export class YAxisCanvas {
 
   ctx.fillStyle = '#222';
   ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'top';
   ctx.textAlign = 'right';
 
   // محاسبه موقعیت Y هر لیبل بر اساس مقدار واقعی آن
@@ -85,20 +89,9 @@ export class YAxisCanvas {
     // محاسبه موقعیت Y بر اساس مقدار واقعی
     // اگر yMin و yMax تعریف شده باشند، از آنها استفاده کن
     let y;
-    if (this.yMin !== undefined && this.yMax !== undefined) {
-      // تبدیل مقدار Y به موقعیت پیکسل
-      // yMin در پایین (paddingTop + usableHeight) و yMax در بالا (paddingTop)
-      const yRange = this.yMax - this.yMin;
-      if (yRange > 0) {
-        // نرمال‌سازی: (value - yMin) / (yMax - yMin)
-        // سپس تبدیل به موقعیت پیکسل: پایین = height - paddingY, بالا = paddingY
-        const normalizedY = (value - this.yMin) / yRange;
-        // محاسبه دقیق موقعیت Y (yMin در پایین، yMax در بالا)
-        const rawY = paddingTop + (1 - normalizedY) * usableHeight;
-        y = Math.round(rawY) + 0.5;
-      } else {
-        y = Math.round((paddingTop + paddingBottom) / 2) + 0.5; // اگر range صفر است، در وسط قرار بده
-      }
+    if (this.min !== undefined && this.max !== undefined) {
+      const rawY = this.getYPosition(value);
+      y = Math.round(rawY) + 0.5;
     } else {
       // fallback: استفاده از روش قبلی (فاصله مساوی)
       const index = this.data.indexOf(label);
@@ -116,7 +109,7 @@ export class YAxisCanvas {
     if (value < 0) {
         labelStr = '−' + labelStr.replace('-', ''); // استفاده از علامت منفی فارسی
     }
-    ctx.fillText(this.fittext(labelStr), this.width - 12, y);
+    ctx.fillText(this.fittext(labelStr), this.width - 12, y + labelOffset);
     // خط تیک محور Y - بهبود کیفیت
     ctx.beginPath();
     ctx.moveTo(this.width - 10 - this.margin, y);
