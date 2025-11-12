@@ -99,10 +99,6 @@
             <i class="bi bi-zoom-out"></i>
             <span>زوم کمتر</span>
           </button>
-          <button type="button" class="btn-toggle-modern" id="zoomResetBtn">
-            <i class="bi bi-aspect-ratio"></i>
-            <span>بازنشانی زوم</span>
-          </button>
         </div>
       </div>
       
@@ -334,7 +330,6 @@
 
     document.getElementById('zoomInBtn').addEventListener('click', () => dashboard.zoomIn());
     document.getElementById('zoomOutBtn').addEventListener('click', () => dashboard.zoomOut());
-    document.getElementById('zoomResetBtn').addEventListener('click', () => dashboard.resetZoom());
     
     // کنترل‌های فیلتر زمانی
     document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());
