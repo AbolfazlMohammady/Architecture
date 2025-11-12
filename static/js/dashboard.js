@@ -338,6 +338,7 @@ export class ProjectDashboard {
         if (this.showExperiments) {
             this.drawExperiments();
         }
+        this.drawTooltipMarkers();
         // crosshair را فقط اینجا بکش
         if (this.mouseX !== null && this.mouseY !== null) {
             this.drawCrosshair(this.mouseX, this.mouseY);
@@ -1033,6 +1034,7 @@ export class ProjectDashboard {
             const width = Math.max(segment.maxX - segment.minX, 6);
             const height = Math.max(segment.maxY - segment.minY, segment.thickness || 6);
             const geometryPoints = segment.points.map(pt => ({ x: pt.x, y: pt.y }));
+            const markerRadius = Math.max(Math.min(height * 0.25, 6), 3);
 
             this.tooltipData.push({
                 x: (segment.minX + segment.maxX) / 2,
@@ -1044,6 +1046,8 @@ export class ProjectDashboard {
                     points: geometryPoints,
                     thickness: height
                 },
+                markerRadius,
+                hitRadius: markerRadius + 3,
                 data: { type: 'layer', layer }
             });
         });
@@ -1159,6 +1163,8 @@ export class ProjectDashboard {
                         x2,
                         y2: yBridge + bridgeHeight + archHeight
                     },
+                    markerRadius: 5,
+                    hitRadius: 8,
                     data: { type: 'bridge', structure }
                 });
             } else {
@@ -1314,6 +1320,8 @@ export class ProjectDashboard {
                         y2: yEnd,
                         thickness: lineWidth
                     },
+                    markerRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3),
+                    hitRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3) + 3,
             data: {
                         type: 'experiment',
                         experiment,
@@ -1323,6 +1331,52 @@ export class ProjectDashboard {
                 });
             });
         });
+    }
+
+    drawTooltipMarkers() {
+        if (!Array.isArray(this.tooltipData) || this.tooltipData.length === 0) {
+            return;
+        }
+
+        const ctx = this.canvas.ctx;
+        ctx.save();
+        ctx.lineWidth = 1.4;
+        this.tooltipData.forEach(item => {
+            if (!Number.isFinite(item?.x) || !Number.isFinite(item?.y)) {
+                return;
+            }
+            const radius = Math.max(item.markerRadius || 4, 3);
+            let stroke = '#2563eb';
+            let fill = 'rgba(37, 99, 235, 0.18)';
+
+            if (item.data?.type === 'layer') {
+                const layer = item.data.layer;
+                const isFixed = layer?.state === 1;
+                stroke = isFixed ? '#1f2937' : '#fb923c';
+                fill = isFixed ? 'rgba(31,41,55,0.16)' : 'rgba(251,146,60,0.18)';
+            } else if (item.data?.type === 'experiment') {
+                const color = item.data.color || '#64748b';
+                stroke = color;
+                fill = 'rgba(100,116,139,0.18)';
+                if (color.startsWith('#') && color.length === 7) {
+                    const r = parseInt(color.slice(1, 3), 16);
+                    const g = parseInt(color.slice(3, 5), 16);
+                    const b = parseInt(color.slice(5, 7), 16);
+                    fill = `rgba(${r}, ${g}, ${b}, 0.2)`;
+                }
+            } else if (item.data?.type === 'bridge') {
+                stroke = '#0ea5e9';
+                fill = 'rgba(14,165,233,0.2)';
+            }
+
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.strokeStyle = stroke;
+            ctx.stroke();
+        });
+        ctx.restore();
     }
 
     getLayerYPosition(layerIndex, kilometer) {
@@ -1557,17 +1611,23 @@ export class ProjectDashboard {
 
         let hoveredItem = null;
         let minDistance = Infinity;
-        const threshold = 18;
 
         for (const item of this.tooltipData) {
-            const distance = this.getDistanceToTooltipItem(x, y, item);
-            if (distance !== null && distance < minDistance) {
+            if (!Number.isFinite(item?.x) || !Number.isFinite(item?.y)) {
+                continue;
+            }
+            const hitRadius = Math.max(item.hitRadius || item.markerRadius || 6, 3);
+            const distance = Math.hypot(x - item.x, y - item.y);
+            if (!Number.isFinite(distance)) {
+                continue;
+            }
+            if (distance <= hitRadius && distance < minDistance) {
                 minDistance = distance;
                 hoveredItem = item;
             }
         }
 
-        if (hoveredItem && minDistance <= threshold) {
+        if (hoveredItem) {
             let html = '';
             const d = hoveredItem.data;
             if (d.type === 'layer') {
