@@ -110,7 +110,7 @@ export class XAxisCanvas {
     
     // رسم همه لیبل‌ها - بدون محدودیت
     const baselineY = this.height - 12;
-    const labelY = baselineY - 18;
+    const labelY = baselineY - 20;
 
     labels.forEach((km) => {
       // محاسبه موقعیت X بر اساس xScale و xMin (مثل transformX)
@@ -128,19 +128,19 @@ export class XAxisCanvas {
       
       ctx.save();
       ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#111827';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.shadowColor = '#fff';
-      ctx.shadowBlur = 2;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
       
       // رسم لیبل - همه لیبل‌ها را نمایش بده (بدون محدودیت)
       ctx.fillText(kmLabel, x, labelY);
       
       // خط کوچک زیر لیبل
       ctx.beginPath();
-      ctx.moveTo(x, baselineY - 4);
-      ctx.lineTo(x, baselineY + 4);
+      ctx.moveTo(x, baselineY - 2);
+      ctx.lineTo(x, baselineY + 6);
       ctx.stroke();
       
       ctx.shadowBlur = 0;

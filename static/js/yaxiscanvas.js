@@ -66,7 +66,7 @@ export class YAxisCanvas {
   const paddingTop = this.margin;
   const paddingBottom = this.margin + 30; // فضای محور X در پایین
   const usableHeight = this.height - paddingTop - paddingBottom;
-  const labelOffset = 14;
+  const labelOffset = 0;
 
   // خط عمودی ثابت سمت راست y-axis که فقط در محدوده نمودار اصلی رسم می‌شود
   ctx.beginPath();
@@ -76,7 +76,7 @@ export class YAxisCanvas {
 
   ctx.fillStyle = '#222';
   ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'middle';
   ctx.textAlign = 'right';
 
   // محاسبه موقعیت Y هر لیبل بر اساس مقدار واقعی آن
@@ -109,6 +109,7 @@ export class YAxisCanvas {
     if (value < 0) {
         labelStr = '−' + labelStr.replace('-', ''); // استفاده از علامت منفی فارسی
     }
+    ctx.fillStyle = '#111827';
     ctx.fillText(this.fittext(labelStr), this.width - 12, y + labelOffset);
     // خط تیک محور Y - بهبود کیفیت
     ctx.beginPath();
