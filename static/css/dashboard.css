@@ -279,6 +279,17 @@ html, body {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.zoom-buttons-section {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.zoom-buttons-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .toggle-buttons-section {
   width: 100%;
 }

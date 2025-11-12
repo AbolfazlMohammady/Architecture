@@ -59,6 +59,24 @@ export class Canvas {
   drawLandLine(points) {
     this.landLine.update(points);
   }
+
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.ctx = this.canvas.getContext('2d', {
+      alpha: true,
+      desynchronized: false,
+      willReadFrequently: false
+    });
+    this.ctx.scale(dpr, dpr);
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+  }
   clear() {
     // پاک کردن canvas - چون ctx.scale(dpr, dpr) تنظیم شده، از width و height منطقی استفاده می‌کنیم
     // اما باید مطمئن شویم که کل canvas پاک می‌شود

@@ -31,6 +31,7 @@ export class ProjectDashboard {
         this.originalXMax = null;
         this.originalYMin = null;
         this.originalYMax = null;
+        this.baseDrawingWidth = null;
         
         // موقعیت موس
         this.mouseX = null;
@@ -172,38 +173,15 @@ export class ProjectDashboard {
         const pxPerKm = 180; // زوم اولیه بیشتر برای وضوح لایه‌ها
         const minWidth = 1600;
         const baseDrawingWidth = Math.max(minWidth, Math.ceil(actualLength * pxPerKm));
+        this.baseDrawingWidth = baseDrawingWidth;
         this.drawingWidth = baseDrawingWidth;
         
         // padding اضافی برای حاشیه‌های چپ/راست و کمی فضای باز در انتهای نمودار
         this.extraScrollPadding = Math.max(this.margin, 200);
         this.dynamicWidth = this.drawingWidth + this.margin * 2;
         
-        // Set the inner div width to match canvas for full scroll
-        const chartInner = document.getElementById('chart-canvas-inner');
-        if (chartInner) {
-            // عرض دقیق - نه 100%
-            const innerWidth = this.dynamicWidth + this.extraScrollPadding;
-            chartInner.style.width = innerWidth + 'px';
-            chartInner.style.minWidth = innerWidth + 'px';
-            chartInner.style.maxWidth = innerWidth + 'px';
-            chartInner.style.paddingRight = this.extraScrollPadding + 'px';
-            chartInner.style.display = 'block';
-            chartInner.style.position = 'relative';
-        }
         this.chartScrollContainer = document.getElementById('chart-scroll-x');
-        if (this.chartScrollContainer) {
-            // فعال کردن اسکرول افقی - با !important
-            this.chartScrollContainer.style.setProperty('overflow-x', 'auto', 'important');
-            this.chartScrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
-            this.chartScrollContainer.style.width = '100%';
-            this.chartScrollContainer.style.height = '100%';
-            this.chartScrollContainer.scrollLeft = 0;
-            this.chartScrollContainer.scrollTop = 0;
-            // اطمینان از اینکه اسکرول کار می‌کند
-            console.log('Chart scroll container width:', this.chartScrollContainer.offsetWidth);
-            console.log('Chart inner container width:', chartInner ? chartInner.offsetWidth : 'N/A');
-            console.log('Dynamic width:', this.dynamicWidth);
-        }
+        this.updateZoomLayout({ skipCanvasResize: true });
         
         // ایجاد canvas اصلی - باید قبل از تنظیم style باشد
         // استفاده از actualXMin و actualXMax از پروفیل (نه از projectData)
@@ -215,28 +193,7 @@ export class ProjectDashboard {
             start_kilometer: actualXMin || 0,
             end_kilometer: actualXMax || 10
         });
-        
-        // تنظیم عرض canvas و محور X برای اسکرول - اطمینان از اینکه فشرده نمی‌شود
-        // این تنظیمات باید بعد از ایجاد Canvas باشد تا canvas.js بتواند canvas را تنظیم کند
-        const mainCanvas = document.getElementById('mainCanvas');
-        if (mainCanvas) {
-            mainCanvas.style.width = this.dynamicWidth + 'px';
-            mainCanvas.style.minWidth = this.dynamicWidth + 'px';
-            mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
-            mainCanvas.style.display = 'block';
-            mainCanvas.style.flexShrink = '0';
-            console.log('Main canvas width set to:', this.dynamicWidth);
-        }
-        const xAxisCanvas = document.getElementById('xAxisCanvas');
-        if (xAxisCanvas) {
-            const xAxisWidth = this.dynamicWidth;
-            xAxisCanvas.style.width = xAxisWidth + 'px';
-            xAxisCanvas.style.minWidth = xAxisWidth + 'px';
-            xAxisCanvas.style.maxWidth = xAxisWidth + 'px';
-            xAxisCanvas.style.display = 'block';
-            xAxisCanvas.style.flexShrink = '0';
-            console.log('X axis canvas width set to:', xAxisWidth);
-        }
+        this.updateZoomLayout();
 
         // ایجاد محور Y
         this.yAxis = new YAxisCanvas({
@@ -255,6 +212,55 @@ export class ProjectDashboard {
             margin: this.margin,
             xunit: 100
         });
+    }
+
+    updateZoomLayout({ skipCanvasResize = false } = {}) {
+        if (!Number.isFinite(this.drawingWidth)) {
+            return;
+        }
+        this.dynamicWidth = this.drawingWidth + this.margin * 2;
+        const padding = Number.isFinite(this.extraScrollPadding) ? this.extraScrollPadding : this.margin;
+
+        const chartInner = document.getElementById('chart-canvas-inner');
+        if (chartInner) {
+            const innerWidth = this.dynamicWidth + padding;
+            chartInner.style.width = innerWidth + 'px';
+            chartInner.style.minWidth = innerWidth + 'px';
+            chartInner.style.maxWidth = innerWidth + 'px';
+            chartInner.style.paddingRight = padding + 'px';
+            chartInner.style.display = 'block';
+            chartInner.style.position = 'relative';
+        }
+
+        const scrollContainer = this.chartScrollContainer || document.getElementById('chart-scroll-x');
+        if (scrollContainer) {
+            scrollContainer.style.setProperty('overflow-x', 'auto', 'important');
+            scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
+            scrollContainer.style.width = '100%';
+            scrollContainer.style.height = '100%';
+        }
+
+        const mainCanvas = document.getElementById('mainCanvas');
+        if (mainCanvas) {
+            mainCanvas.style.width = this.dynamicWidth + 'px';
+            mainCanvas.style.minWidth = this.dynamicWidth + 'px';
+            mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
+            mainCanvas.style.display = 'block';
+            mainCanvas.style.flexShrink = '0';
+        }
+
+        if (!skipCanvasResize && this.canvas && typeof this.canvas.resize === 'function') {
+            this.canvas.resize(this.dynamicWidth, this.height);
+        }
+
+        const xAxisCanvas = document.getElementById('xAxisCanvas');
+        if (xAxisCanvas) {
+            xAxisCanvas.style.width = this.dynamicWidth + 'px';
+            xAxisCanvas.style.minWidth = this.dynamicWidth + 'px';
+            xAxisCanvas.style.maxWidth = this.dynamicWidth + 'px';
+            xAxisCanvas.style.display = 'block';
+            xAxisCanvas.style.flexShrink = '0';
+        }
     }
 
     setupEventListeners() {
@@ -1047,7 +1053,7 @@ export class ProjectDashboard {
                     thickness: height
                 },
                 markerRadius,
-                hitRadius: markerRadius + 3,
+                hitRadius: Math.max(markerRadius, 3.2),
                 data: { type: 'layer', layer }
             });
         });
@@ -1164,7 +1170,7 @@ export class ProjectDashboard {
                         y2: yBridge + bridgeHeight + archHeight
                     },
                     markerRadius: 5,
-                    hitRadius: 8,
+                    hitRadius: 5.5,
                     data: { type: 'bridge', structure }
                 });
             } else {
@@ -1320,8 +1326,8 @@ export class ProjectDashboard {
                         y2: yEnd,
                         thickness: lineWidth
                     },
-                    markerRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3),
-                    hitRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3) + 3,
+                    markerRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3.5),
+                    hitRadius: Math.max(Math.min(lineWidth * 0.35, 6), 3.5),
             data: {
                         type: 'experiment',
                         experiment,
@@ -1339,34 +1345,51 @@ export class ProjectDashboard {
         }
 
         const ctx = this.canvas.ctx;
+        const toRGBA = (hex, alpha) => {
+            if (!hex || typeof hex !== 'string') {
+                return `rgba(37,99,235,${alpha})`;
+            }
+            if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
+                return hex;
+            }
+            if (!hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) {
+                return `rgba(37,99,235,${alpha})`;
+            }
+            let r, g, b;
+            if (hex.length === 7) {
+                r = parseInt(hex.slice(1, 3), 16);
+                g = parseInt(hex.slice(3, 5), 16);
+                b = parseInt(hex.slice(5, 7), 16);
+            } else {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+
         ctx.save();
-        ctx.lineWidth = 1.4;
+        ctx.lineWidth = 1.6;
         this.tooltipData.forEach(item => {
             if (!Number.isFinite(item?.x) || !Number.isFinite(item?.y)) {
                 return;
             }
-            const radius = Math.max(item.markerRadius || 4, 3);
+            const radius = Math.max(item.markerRadius || 4, 3.2);
             let stroke = '#2563eb';
-            let fill = 'rgba(37, 99, 235, 0.18)';
+            let fill = toRGBA('#2563eb', 0.7);
 
             if (item.data?.type === 'layer') {
                 const layer = item.data.layer;
                 const isFixed = layer?.state === 1;
                 stroke = isFixed ? '#1f2937' : '#fb923c';
-                fill = isFixed ? 'rgba(31,41,55,0.16)' : 'rgba(251,146,60,0.18)';
+                fill = toRGBA(stroke, 0.75);
             } else if (item.data?.type === 'experiment') {
                 const color = item.data.color || '#64748b';
                 stroke = color;
-                fill = 'rgba(100,116,139,0.18)';
-                if (color.startsWith('#') && color.length === 7) {
-                    const r = parseInt(color.slice(1, 3), 16);
-                    const g = parseInt(color.slice(3, 5), 16);
-                    const b = parseInt(color.slice(5, 7), 16);
-                    fill = `rgba(${r}, ${g}, ${b}, 0.2)`;
-                }
+                fill = toRGBA(color, 0.75);
             } else if (item.data?.type === 'bridge') {
                 stroke = '#0ea5e9';
-                fill = 'rgba(14,165,233,0.2)';
+                fill = toRGBA('#0ea5e9', 0.75);
             }
 
             ctx.beginPath();
@@ -1616,7 +1639,10 @@ export class ProjectDashboard {
             if (!Number.isFinite(item?.x) || !Number.isFinite(item?.y)) {
                 continue;
             }
-            const hitRadius = Math.max(item.hitRadius || item.markerRadius || 6, 3);
+            const baseRadius = Number.isFinite(item.hitRadius) ? item.hitRadius
+                : Number.isFinite(item.markerRadius) ? item.markerRadius
+                : 4;
+            const hitRadius = Math.max(baseRadius + 1.5, 4.5);
             const distance = Math.hypot(x - item.x, y - item.y);
             if (!Number.isFinite(distance)) {
                 continue;
@@ -1766,19 +1792,38 @@ export class ProjectDashboard {
         this.render();
     }
 
+    applyZoomLevel() {
+        if (!this.baseDrawingWidth || !Number.isFinite(this.baseDrawingWidth)) {
+            this.baseDrawingWidth = this.drawingWidth || (this.dynamicWidth - this.margin * 2);
+        }
+        const minZoom = 1.0;
+        const maxZoom = 5.0;
+        this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoom);
+        this.drawingWidth = this.baseDrawingWidth * this.zoomLevel;
+        this.updateZoomLayout();
+        this._scalesCalculated = false;
+        this.render();
+    }
+
     // متدهای زوم
     zoomIn() {
         // افزایش سطح زوم
-        this.zoomLevel = Math.min(this.zoomLevel * 1.2, 5.0); // حداکثر 5 برابر
-        this.calculateScales();
-        this.render();
+        const nextZoom = Math.min(this.zoomLevel * 1.2, 5.0); // حداکثر 5 برابر
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
+            return;
+        }
+        this.zoomLevel = nextZoom;
+        this.applyZoomLevel();
     }
 
     zoomOut() {
         // کاهش سطح زوم
-        this.zoomLevel = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
-        this.calculateScales();
-        this.render();
+        const nextZoom = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
+            return;
+        }
+        this.zoomLevel = nextZoom;
+        this.applyZoomLevel();
     }
 
     resetZoom() {
@@ -1786,8 +1831,7 @@ export class ProjectDashboard {
         this.zoomLevel = 1.0;
         this.zoomCenterX = null;
         this.zoomCenterY = null;
-        this.calculateScales();
-        this.render();
+        this.applyZoomLevel();
     }
 
     drawCrosshair(x, y) {

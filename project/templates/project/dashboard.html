@@ -89,6 +89,22 @@
           <input id="yinput" type="text" class="coordinate-field" readonly>
         </div>
       </div>
+      <div class="zoom-buttons-section">
+        <div class="zoom-buttons-group">
+          <button type="button" class="btn-toggle-modern" id="zoomInBtn">
+            <i class="bi bi-zoom-in"></i>
+            <span>زوم بیشتر</span>
+          </button>
+          <button type="button" class="btn-toggle-modern" id="zoomOutBtn">
+            <i class="bi bi-zoom-out"></i>
+            <span>زوم کمتر</span>
+          </button>
+          <button type="button" class="btn-toggle-modern" id="zoomResetBtn">
+            <i class="bi bi-aspect-ratio"></i>
+            <span>بازنشانی زوم</span>
+          </button>
+        </div>
+      </div>
       
       <div class="toggle-buttons-section">
         <div class="toggle-buttons-group">
@@ -315,6 +331,10 @@
       dashboard.toggleExperiments();
       updateButtonState('toggleExperiments', dashboard.showExperiments);
     });
+
+    document.getElementById('zoomInBtn').addEventListener('click', () => dashboard.zoomIn());
+    document.getElementById('zoomOutBtn').addEventListener('click', () => dashboard.zoomOut());
+    document.getElementById('zoomResetBtn').addEventListener('click', () => dashboard.resetZoom());
     
     // کنترل‌های فیلتر زمانی
     document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());
