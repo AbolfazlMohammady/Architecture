@@ -136,29 +136,45 @@ def experiment_request_create(request):
         kilometer_formset = ExperimentRequestKilometerFormSet(request.POST, prefix='kilometer')
         file_formset = ExperimentRequestFileFormSet(request.POST, request.FILES, prefix='file')
         if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
-            experiment_request = form.save(commit=False)
-            experiment_request.user = request.user
-            experiment_request.save()
-            form.save_m2m()
-            kilometer_formset.instance = experiment_request
-            kilometer_formset.save()
-            file_formset.instance = experiment_request
-            file_formset.save()
-            # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
-            from experiment.models import ExperimentResponse
-            temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
-            notified_users = set()
-            for role in temp_response.get_required_approval_roles():
-                for user in temp_response.get_approvers_for_role(role):
-                    if user and user.id not in notified_users:
-                        models.Notification.objects.create(
-                            user=user,
-                            experiment_request=experiment_request,
-                            message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
-                        )
-                        notified_users.add(user.id)
-            messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
-            return redirect('experiment:experiment_request_list')
+            valid_ranges = []
+            for km_form in kilometer_formset:
+                if km_form.cleaned_data and not km_form.cleaned_data.get('DELETE', False):
+                    start = km_form.cleaned_data.get('start_kilometer')
+                    end = km_form.cleaned_data.get('end_kilometer')
+                    if start is not None and end is not None:
+                        valid_ranges.append((start, end))
+            if not valid_ranges:
+                kilometer_formset._non_form_errors = kilometer_formset.error_class(
+                    ['حداقل یک بازه کیلومتراژ باید ثبت شود.']
+                )
+            else:
+                experiment_request = form.save(commit=False)
+                experiment_request.user = request.user
+                start_values = [rng[0] for rng in valid_ranges]
+                end_values = [rng[1] for rng in valid_ranges]
+                experiment_request.start_kilometer = min(start_values)
+                experiment_request.end_kilometer = max(end_values)
+                experiment_request.save()
+                form.save_m2m()
+                kilometer_formset.instance = experiment_request
+                kilometer_formset.save()
+                file_formset.instance = experiment_request
+                file_formset.save()
+                # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+                from experiment.models import ExperimentResponse
+                temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
+                notified_users = set()
+                for role in temp_response.get_required_approval_roles():
+                    for user in temp_response.get_approvers_for_role(role):
+                        if user and user.id not in notified_users:
+                            models.Notification.objects.create(
+                                user=user,
+                                experiment_request=experiment_request,
+                                message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
+                            )
+                            notified_users.add(user.id)
+                messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
+                return redirect('experiment:experiment_request_list')
         else:
             print('Form errors:', form.errors)
             print('Kilometer formset errors:', kilometer_formset.errors)
@@ -178,15 +194,55 @@ def experiment_request_create(request):
 def experiment_request_edit(request, pk):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
     if request.method == 'POST':
-        form = forms.ExperimentRequestForm(request.POST, request.FILES, instance=experiment_request)
-        if form.is_valid():
-            form.save()
-            return redirect('experiment:experiment_request_list')
+        form = forms.ExperimentRequestForm(request.POST, request.FILES, instance=experiment_request, user=request.user)
+        kilometer_formset = ExperimentRequestKilometerFormSet(
+            request.POST,
+            prefix='kilometer',
+            instance=experiment_request
+        )
+        file_formset = ExperimentRequestFileFormSet(
+            request.POST,
+            request.FILES,
+            prefix='file',
+            instance=experiment_request
+        )
+        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
+            valid_ranges = []
+            for km_form in kilometer_formset:
+                if km_form.cleaned_data and not km_form.cleaned_data.get('DELETE', False):
+                    start = km_form.cleaned_data.get('start_kilometer')
+                    end = km_form.cleaned_data.get('end_kilometer')
+                    if start is not None and end is not None:
+                        valid_ranges.append((start, end))
+            if not valid_ranges:
+                kilometer_formset._non_form_errors = kilometer_formset.error_class(
+                    ['حداقل یک بازه کیلومتراژ باید ثبت شود.']
+                )
+            else:
+                experiment_request_instance = form.save(commit=False)
+                start_values = [rng[0] for rng in valid_ranges]
+                end_values = [rng[1] for rng in valid_ranges]
+                experiment_request_instance.start_kilometer = min(start_values)
+                experiment_request_instance.end_kilometer = max(end_values)
+                experiment_request_instance.save()
+                form.save_m2m()
+                kilometer_formset.save()
+                file_formset.save()
+                messages.success(request, 'درخواست آزمایش با موفقیت بروزرسانی شد.')
+                return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
+        else:
+            print('Form errors:', form.errors)
+            print('Kilometer formset errors:', kilometer_formset.errors)
+            print('File formset errors:', file_formset.errors)
     else:
-        form = forms.ExperimentRequestForm(instance=experiment_request)
+        form = forms.ExperimentRequestForm(instance=experiment_request, user=request.user)
+        kilometer_formset = ExperimentRequestKilometerFormSet(prefix='kilometer', instance=experiment_request)
+        file_formset = ExperimentRequestFileFormSet(prefix='file', instance=experiment_request)
     
     return render(request, 'experiment/experiment_request_form.html', {
         'form': form,
+        'kilometer_formset': kilometer_formset,
+        'file_formset': file_formset,
         'user': request.user,
     })
 
@@ -197,7 +253,7 @@ def experiment_request_detail(request, pk):
     experiment_responses = models.ExperimentResponse.objects.filter(experiment_request=experiment_request)
     kilometer_ranges = experiment_request.kilometer_ranges.all()
     request_files = experiment_request.files.all()
-    kilometer_ranges_list = list(kilometer_ranges.values('start_kilometer', 'end_kilometer'))
+    kilometer_ranges_list = list(kilometer_ranges.values('start_kilometer', 'end_kilometer', 'description'))
     request_files_list = list(request_files.values('file'))
     logger.info(f"[experiment_request_detail] pk={pk}, kilometer_ranges={kilometer_ranges.count()}, request_files={request_files.count()}")
     return render(request, 'experiment/experiment_request_detail.html', {

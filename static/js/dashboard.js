@@ -1090,18 +1090,21 @@ export class ProjectDashboard {
     drawStructures() {
         const profileData = this.projectData.profile_data;
         this.projectData.structures.forEach(structure => {
-            if (structure.name.includes('پل')) {
+            const startKm = Number(structure.start_kilometer) / 1000;
+            const endKm = Number(structure.end_kilometer) / 1000;
+            const locationKm = Number(structure.kilometer_location) / 1000;
+            if (structure.name.includes('پل') && Number.isFinite(startKm) && Number.isFinite(endKm)) {
                 // پل را به صورت داینامیک بین start_kilometer و end_kilometer رسم کن
-                const x1 = this.transformX(structure.start_kilometer);
-                const x2 = this.transformX(structure.end_kilometer);
+                const x1 = this.transformX(startKm);
+                const x2 = this.transformX(endKm);
                 // پیدا کردن y روی پروفیل جاده (نزدیک‌ترین نقطه به start_kilometer و end_kilometer)
                 let y1 = null, y2 = null;
                 if (profileData.road_points && profileData.road_points.length > 0) {
                     let minDist1 = Infinity, minDist2 = Infinity;
                     for (let p = 0; p < profileData.road_points.length; p++) {
-                        const dist1 = Math.abs(profileData.road_points[p].x - structure.start_kilometer);
+                        const dist1 = Math.abs(profileData.road_points[p].x - startKm);
                         if (dist1 < minDist1) { minDist1 = dist1; y1 = this.transformY(profileData.road_points[p].y); }
-                        const dist2 = Math.abs(profileData.road_points[p].x - structure.end_kilometer);
+                        const dist2 = Math.abs(profileData.road_points[p].x - endKm);
                         if (dist2 < minDist2) { minDist2 = dist2; y2 = this.transformY(profileData.road_points[p].y); }
                     }
                 }
@@ -1175,7 +1178,11 @@ export class ProjectDashboard {
                 });
             } else {
                 // سایر ابنیه‌ها (آبرو، تونل و ...)
-                const x = this.transformX(structure.kilometer_location);
+                const targetKm = Number.isFinite(locationKm) ? locationKm : startKm;
+                if (!Number.isFinite(targetKm)) {
+                    return;
+                }
+                const x = this.transformX(targetKm);
                 const y = this.height / 2;
                 this.drawStructureSymbol(structure, x, y);
             }

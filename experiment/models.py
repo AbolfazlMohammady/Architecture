@@ -303,6 +303,7 @@ class ExperimentRequestKilometer(models.Model):
     experiment_request = models.ForeignKey('ExperimentRequest', on_delete=models.CASCADE, related_name='kilometer_ranges')
     start_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ شروع")
     end_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ پایان")
+    description = models.TextField(null=True, blank=True, verbose_name="توضیحات بازه")
 
     def __str__(self):
         return f"{self.start_kilometer} تا {self.end_kilometer}"

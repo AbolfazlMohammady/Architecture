@@ -252,11 +252,12 @@
                 el.readOnly = true;
                 el.style.background = '#f8f9fa';
                 el.style.cursor = 'pointer';
-                el.addEventListener('click', function(e) {
+                el.addEventListener('click', function() {
                     currentTargetInput = el;
-                    modalInput.value = el.value.replace(/,/g, '');
-                    modalInput.focus();
-                    modalPreview.innerText = modalInput.value ? 'نمایش: ' + formatIntWithCommas(modalInput.value) + ' متر' : '';
+                    const currentValue = normalizeDecimal(el.value);
+                    modalInput.value = currentValue;
+                    modalPreview.innerText = previewMeters(currentValue);
+                    setTimeout(() => modalInput.focus(), 150);
                     modal.show();
                 });
             }
@@ -264,40 +265,16 @@
 
         // Format input as user types and show preview
         modalInput.addEventListener('input', function() {
-            // فقط اعداد و ممیز اعشاری (نقطه یا کاما) مجاز باشد
-            modalInput.value = modalInput.value.replace(/[^\d.,]/g, '');
-            // فقط یک ممیز مجاز باشد
-            let parts = modalInput.value.split(/[.,]/);
-            if(parts.length > 2) {
-                modalInput.value = parts[0] + '.' + parts.slice(1).join('');
-            } else if(parts.length === 2) {
-                modalInput.value = parts[0] + '.' + parts[1];
-            }
-            // پیش‌نمایش با کاما و تبدیل به متر
-            let previewVal = modalInput.value.replace(/,/g, '');
-            if(previewVal) {
-                let num = parseFloat(previewVal);
-                if(!isNaN(num)) {
-                    modalPreview.innerText = 'نمایش: ' + (num * 1000).toLocaleString('en-US', {maximumFractionDigits: 3}) + ' متر';
-                } else {
-                    modalPreview.innerText = '';
-                }
-            } else {
-                modalPreview.innerText = '';
-            }
+            const normalized = normalizeDecimal(modalInput.value, true);
+            modalInput.value = normalized;
+            modalPreview.innerText = previewMeters(normalized);
         });
 
         // Confirm button sets value
         confirmBtn.addEventListener('click', function() {
             if(currentTargetInput) {
-                // مقدار را به فرمت اعشاری استاندارد (نقطه) ذخیره کن
-                let val = modalInput.value.replace(/,/g, '.');
-                // فقط یک ممیز مجاز باشد
-                let parts = val.split('.');
-                if(parts.length > 2) {
-                    val = parts[0] + '.' + parts.slice(1).join('');
-                }
-                currentTargetInput.value = val;
+                const normalized = normalizeDecimal(modalInput.value, true);
+                currentTargetInput.value = normalized;
             }
             modal.hide();
         });
@@ -310,10 +287,28 @@
         });
     });
 
-    // Utility: format integer with thousand separators
-    function formatIntWithCommas(val) {
-        val = val.replace(/[^\d]/g, '');
-        return val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    function normalizeDecimal(value, keepCursorFormat=false) {
+        if (!value) return '';
+        let cleaned = value.replace(/,/g, '.').replace(/[^\d.]/g, '');
+        const parts = cleaned.split('.');
+        if (parts.length > 2) {
+            cleaned = parts[0] + '.' + parts.slice(1).join('');
+        }
+        if (!keepCursorFormat && cleaned) {
+            const num = parseFloat(cleaned);
+            if (!isNaN(num)) {
+                return num.toString();
+            }
+        }
+        return cleaned;
+    }
+
+    function previewMeters(kmValue) {
+        if (!kmValue) return '';
+        const num = parseFloat(kmValue);
+        if (isNaN(num)) return '';
+        const meters = num * 1000;
+        return 'نمایش: ' + meters.toLocaleString('fa-IR', { maximumFractionDigits: 3 }) + ' متر';
     }
 </script>
 {% endblock %}

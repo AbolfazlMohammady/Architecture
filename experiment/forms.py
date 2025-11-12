@@ -6,6 +6,7 @@ from project.models import Project, ProjectLayer
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from django.forms import inlineformset_factory
+from collections import Counter, defaultdict
 
 class ExperimentRequestForm(forms.ModelForm):
     request_date = JalaliDateField(
@@ -36,9 +37,10 @@ class ExperimentRequestForm(forms.ModelForm):
         
         self.fields['layer'].widget = Select2Widget()
         if self.instance.pk and self.instance.project:
-            self.fields['layer'].queryset = self.instance.project.projectlayer_set.all()
+            layer_qs = self.instance.project.projectlayer_set.all()
         else:
-            self.fields['layer'].queryset = ProjectLayer.objects.none()
+            layer_qs = ProjectLayer.objects.none()
+        self._set_layer_queryset(layer_qs)
         
         self.fields['experiment_type'].widget = Select2MultipleWidget()
         self.fields['experiment_type'].queryset = models.ExperimentType.objects.all()
@@ -52,9 +54,12 @@ class ExperimentRequestForm(forms.ModelForm):
         if 'project' in self.data:
             try:
                 project_id = int(self.data.get('project'))
-                self.fields['layer'].queryset = ProjectLayer.objects.filter(project_id=project_id)
+                layer_qs = ProjectLayer.objects.filter(project_id=project_id)
+                self._set_layer_queryset(layer_qs)
             except (ValueError, TypeError):
                 pass
+        elif self.instance.pk and self.instance.project:
+            self._set_layer_queryset(self.instance.project.projectlayer_set.all())
         
         # فیلتر کردن زیرنوع‌ها بر اساس نوع آزمایش انتخاب شده
         if 'experiment_type' in self.data:
@@ -101,11 +106,30 @@ class ExperimentRequestForm(forms.ModelForm):
         
         return cleaned_data
     
+    def _set_layer_queryset(self, queryset):
+        self.fields['layer'].queryset = queryset
+        layer_labels = {}
+        type_counts = Counter(layer.layer_type.name for layer in queryset)
+        type_indices = defaultdict(int)
+
+        for layer in queryset:
+            name = layer.layer_type.name
+            if type_counts[name] > 1:
+                type_indices[name] += 1
+                layer_labels[layer.pk] = f"{name} {type_indices[name]}"
+            else:
+                layer_labels[layer.pk] = name
+
+        def label_from_instance(obj):
+            return layer_labels.get(obj.pk, obj.layer_type.name)
+
+        self.fields['layer'].label_from_instance = label_from_instance
+    
     class Meta:
         model = models.ExperimentRequest
         fields = [
             'project', 'layer', 'experiment_type', 'experiment_subtype',
-            'concrete_place', 'request_date', 'start_kilometer', 'end_kilometer',
+            'concrete_place', 'request_date',
             'description', 'target_density', 'target_strength', 'request_file',
             'mix_design',
         ]
@@ -296,7 +320,7 @@ ExperimentResponseFileFormSet = inlineformset_factory(
 class ExperimentRequestKilometerForm(forms.ModelForm):
     class Meta:
         model = models.ExperimentRequestKilometer
-        fields = ['start_kilometer', 'end_kilometer']
+        fields = ['start_kilometer', 'end_kilometer', 'description']
 
 class ExperimentRequestFileForm(forms.ModelForm):
     class Meta:
