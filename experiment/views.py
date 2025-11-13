@@ -814,8 +814,22 @@ def get_layers(request):
     """API برای دریافت لایه‌های پروژه"""
     project_id = request.GET.get('project_id')
     if project_id:
-        layers = ProjectLayer.objects.filter(project_id=project_id)
-        data = [{'id': layer.id, 'name': layer.layer_type.name} for layer in layers]  # fix here
+        layers = ProjectLayer.objects.filter(project_id=project_id).order_by('order_from_top')
+        name_counts = {}
+        for layer in layers:
+            name = layer.layer_type.name
+            name_counts[name] = name_counts.get(name, 0) + 1
+
+        indices = {name: 0 for name in name_counts}
+        data = []
+        for layer in layers:
+            name = layer.layer_type.name
+            if name_counts[name] > 1:
+                indices[name] += 1
+                display_name = f"{name} {indices[name]}"
+            else:
+                display_name = name
+            data.append({'id': layer.id, 'name': display_name})
         return JsonResponse({'layers': data})
     return JsonResponse({'layers': []})
 

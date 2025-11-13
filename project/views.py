@@ -2,13 +2,34 @@ from . import models as project_models
 # from experiment import models as experiment_models
 from django.views import generic
 from django.db.models import Q
-from django.urls import reverse_lazy,reverse
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from . import forms as project_forms
 from django.forms.models import model_to_dict
 import pandas as pd
 import re
 import math
+
+
+def assign_layer_display_names(layers):
+    """
+    Attach display_name attribute to each layer with numbering for duplicate layer types.
+    """
+    layers = list(layers)
+    name_counts = {}
+    for layer in layers:
+        layer_name = layer.layer_type.name
+        name_counts[layer_name] = name_counts.get(layer_name, 0) + 1
+
+    indices = {name: 0 for name in name_counts}
+    for layer in layers:
+        layer_name = layer.layer_type.name
+        if name_counts[layer_name] > 1:
+            indices[layer_name] += 1
+            layer.display_name = f"{layer_name} {indices[layer_name]}"
+        else:
+            layer.display_name = layer_name
+    return layers
 # Create your views here.
 
 class ProjectDetailView(generic.DetailView):
@@ -121,10 +142,12 @@ class CreateProjectLayerView(generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = project_models.Project.objects.get(pk=self.kwargs['pk'])
-        context['layers'] = project.projectlayer_set.all()  # یا: ProjectLayer.objects.filter(project=project)
+        layers_qs = project.projectlayer_set.all().order_by('order_from_top')
+        context['layers'] = assign_layer_display_names(layers_qs)  # یا: ProjectLayer.objects.filter(project=project)
         context['project'] = project
         # لایه‌های قبلی برای استفاده مجدد
-        context['previous_layers'] = project.projectlayer_set.all().order_by('order_from_top')
+        previous_layers = project.projectlayer_set.all().order_by('order_from_top')
+        context['previous_layers'] = assign_layer_display_names(previous_layers)
         return context
 
     
@@ -160,6 +183,11 @@ class ProjectLayerDetailView(generic.DetailView):
     model = project_models.ProjectLayer
     template_name = 'project/project-layer-detail.html'
     context_object_name = 'project_layer'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        assign_layer_display_names([context['project_layer']])
+        return context
     
 class ProjectLayerListView(generic.ListView):
     model = project_models.ProjectLayer
@@ -184,6 +212,15 @@ class ProjectLayerListView(generic.ListView):
         for lt in summary:
             summary[lt]["orders"].sort()
         context["layer_type_summary"] = summary
+
+        page_obj = context.get('page_obj')
+        if page_obj is not None:
+            annotated_layers = assign_layer_display_names(page_obj.object_list)
+            page_obj.object_list = annotated_layers
+            context['project_layers'] = page_obj
+        else:
+            layers = assign_layer_display_names(context.get('project_layers', layers))
+            context['project_layers'] = layers
         return context
     
     def get_queryset(self):
@@ -191,7 +228,7 @@ class ProjectLayerListView(generic.ListView):
         project_id = self.kwargs['pk']
         
         # Filter the ProjectLayer objects based on the project ID
-        return super().get_queryset().filter(project__id=project_id)
+        return super().get_queryset().filter(project__id=project_id).order_by('order_from_top')
     
 class CreateProjectStructureView(generic.CreateView):
     model = project_models.ProjectStructure
