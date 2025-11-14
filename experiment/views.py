@@ -10,6 +10,57 @@ from . import models, forms
 from project.models import ProjectLayer
 from django.contrib import messages
 from django.db.models import Q, Avg, Max, Min
+from decimal import Decimal
+# Helpers
+def get_layer_display_name(layer):
+    siblings = layer.project.projectlayer_set.filter(
+        layer_type=layer.layer_type
+    ).order_by('order_from_top')
+    if siblings.count() > 1:
+        sibling_list = list(siblings)
+        try:
+            index = sibling_list.index(layer) + 1
+            return f"{layer.layer_type.name} {index}"
+        except ValueError:
+            pass
+    return layer.layer_type.name
+
+
+def find_blocking_lower_layers(project, target_layer, ranges):
+    """
+    ranges: list of (Decimal start, Decimal end)
+    Returns list of lower layers که تایید نشده‌اند برای بازه‌های همپوشان.
+    """
+    if not ranges:
+        return []
+    lower_layers = ProjectLayer.objects.filter(
+        project=project,
+        order_from_top__lt=target_layer.order_from_top
+    )
+    blocking = []
+    for lower in lower_layers:
+        layer_blocked = False
+        for start, end in ranges:
+            overlap_requests = models.ExperimentRequest.objects.filter(
+                project=project,
+                layer=lower,
+                start_kilometer__lt=end,
+                end_kilometer__gt=start,
+            )
+            approved = False
+            for req in overlap_requests:
+                for resp in req.experimentresponse_set.all():
+                    if resp.is_fully_approved():
+                        approved = True
+                        break
+                if approved:
+                    break
+            if not approved:
+                layer_blocked = True
+                break
+        if layer_blocked:
+            blocking.append(lower)
+    return blocking
 from .forms import (
     ExperimentResponseKilometerFormSet, 
     ExperimentResponseFileFormSet,
@@ -148,33 +199,49 @@ def experiment_request_create(request):
                     ['حداقل یک بازه کیلومتراژ باید ثبت شود.']
                 )
             else:
-                experiment_request = form.save(commit=False)
-                experiment_request.user = request.user
-                start_values = [rng[0] for rng in valid_ranges]
-                end_values = [rng[1] for rng in valid_ranges]
-                experiment_request.start_kilometer = min(start_values)
-                experiment_request.end_kilometer = max(end_values)
-                experiment_request.save()
-                form.save_m2m()
-                kilometer_formset.instance = experiment_request
-                kilometer_formset.save()
-                file_formset.instance = experiment_request
-                file_formset.save()
-                # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
-                from experiment.models import ExperimentResponse
-                temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
-                notified_users = set()
-                for role in temp_response.get_required_approval_roles():
-                    for user in temp_response.get_approvers_for_role(role):
-                        if user and user.id not in notified_users:
-                            models.Notification.objects.create(
-                                user=user,
-                                experiment_request=experiment_request,
-                                message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
-                            )
-                            notified_users.add(user.id)
-                messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
-                return redirect('experiment:experiment_request_list')
+                decimal_ranges = [
+                    (Decimal(str(rng[0])), Decimal(str(rng[1])))
+                    for rng in valid_ranges
+                ]
+                project = form.cleaned_data.get('project')
+                layer = form.cleaned_data.get('layer')
+                blocking_layers = []
+                if project and layer:
+                    blocking_layers = find_blocking_lower_layers(project, layer, decimal_ranges)
+                if blocking_layers:
+                    names = [get_layer_display_name(blk) for blk in blocking_layers]
+                    form.add_error(
+                        None,
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
+                    )
+                else:
+                    experiment_request = form.save(commit=False)
+                    experiment_request.user = request.user
+                    start_values = [rng[0] for rng in decimal_ranges]
+                    end_values = [rng[1] for rng in decimal_ranges]
+                    experiment_request.start_kilometer = min(start_values)
+                    experiment_request.end_kilometer = max(end_values)
+                    experiment_request.save()
+                    form.save_m2m()
+                    kilometer_formset.instance = experiment_request
+                    kilometer_formset.save()
+                    file_formset.instance = experiment_request
+                    file_formset.save()
+                    # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
+                    from experiment.models import ExperimentResponse
+                    temp_response = ExperimentResponse(experiment_request=experiment_request)  # فقط برای دسترسی به متد
+                    notified_users = set()
+                    for role in temp_response.get_required_approval_roles():
+                        for user in temp_response.get_approvers_for_role(role):
+                            if user and user.id not in notified_users:
+                                models.Notification.objects.create(
+                                    user=user,
+                                    experiment_request=experiment_request,
+                                    message=f'یک درخواست آزمایش جدید از {request.user.get_full_name()} برای پروژه {experiment_request.project.name} ثبت شد.'
+                                )
+                                notified_users.add(user.id)
+                    messages.success(request, 'درخواست آزمایش با موفقیت ثبت شد.')
+                    return redirect('experiment:experiment_request_list')
         else:
             print('Form errors:', form.errors)
             print('Kilometer formset errors:', kilometer_formset.errors)
@@ -219,17 +286,33 @@ def experiment_request_edit(request, pk):
                     ['حداقل یک بازه کیلومتراژ باید ثبت شود.']
                 )
             else:
-                experiment_request_instance = form.save(commit=False)
-                start_values = [rng[0] for rng in valid_ranges]
-                end_values = [rng[1] for rng in valid_ranges]
-                experiment_request_instance.start_kilometer = min(start_values)
-                experiment_request_instance.end_kilometer = max(end_values)
-                experiment_request_instance.save()
-                form.save_m2m()
-                kilometer_formset.save()
-                file_formset.save()
-                messages.success(request, 'درخواست آزمایش با موفقیت بروزرسانی شد.')
-                return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
+                decimal_ranges = [
+                    (Decimal(str(rng[0])), Decimal(str(rng[1])))
+                    for rng in valid_ranges
+                ]
+                project = form.cleaned_data.get('project')
+                layer = form.cleaned_data.get('layer')
+                blocking_layers = []
+                if project and layer:
+                    blocking_layers = find_blocking_lower_layers(project, layer, decimal_ranges)
+                if blocking_layers:
+                    names = [get_layer_display_name(blk) for blk in blocking_layers]
+                    form.add_error(
+                        None,
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
+                    )
+                else:
+                    experiment_request_instance = form.save(commit=False)
+                    start_values = [rng[0] for rng in decimal_ranges]
+                    end_values = [rng[1] for rng in decimal_ranges]
+                    experiment_request_instance.start_kilometer = min(start_values)
+                    experiment_request_instance.end_kilometer = max(end_values)
+                    experiment_request_instance.save()
+                    form.save_m2m()
+                    kilometer_formset.save()
+                    file_formset.save()
+                    messages.success(request, 'درخواست آزمایش با موفقیت بروزرسانی شد.')
+                    return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
         else:
             print('Form errors:', form.errors)
             print('Kilometer formset errors:', kilometer_formset.errors)
@@ -310,12 +393,33 @@ def experiment_response_create(request, pk):
         form = forms.ExperimentResponseForm()
         kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer')
         file_formset = ExperimentResponseFileFormSet(prefix='file')
-    return render(request, 'experiment/experiment_response_form.html', {
+
+    layer_display_name = experiment_request.layer.layer_type.name
+    siblings = experiment_request.project.projectlayer_set.filter(
+        layer_type=experiment_request.layer.layer_type
+    ).order_by('order_from_top')
+    if siblings.count() > 1:
+        layer_list = list(siblings)
+        try:
+            index = layer_list.index(experiment_request.layer) + 1
+            layer_display_name = f"{layer_display_name} {index}"
+        except ValueError:
+            pass
+
+    context = {
         'form': form,
         'kilometer_formset': kilometer_formset,
         'file_formset': file_formset,
-        'experiment_request': experiment_request
-    })
+        'experiment_request': experiment_request,
+        'project': experiment_request.project,
+        'layer': experiment_request.layer,
+        'layer_display_name': layer_display_name,
+        'experiment_types': experiment_request.experiment_type.all(),
+        'experiment_subtypes': experiment_request.experiment_subtype.all(),
+        'request_files': experiment_request.files.all(),
+        'kilometer_ranges': experiment_request.kilometer_ranges.all(),
+    }
+    return render(request, 'experiment/experiment_response_form.html', context)
 
 @login_required
 def experiment_approval_create(request, response_id):

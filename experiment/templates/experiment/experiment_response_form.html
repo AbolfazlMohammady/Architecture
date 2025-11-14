@@ -17,19 +17,83 @@
                     <h3 class="card-title">ثبت پاسخ آزمایش</h3>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="fw-bold mb-2"><i class="fas fa-clipboard-list me-2"></i>اطلاعات درخواست</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <span class="text-muted small">شماره درخواست</span>
+                                <div class="fw-bold">{{ experiment_request.id }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted small">پروژه</span>
+                                <div class="fw-bold">{{ project.name }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted small">لایه</span>
+                                <div class="fw-bold">{{ layer_display_name }} <span class="badge bg-light text-dark">ترتیب {{ layer.order_from_top }}</span></div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <span class="text-muted small">تاریخ درخواست</span>
+                                <div>{{ experiment_request.request_date|date:"Y/m/d" }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted small">بازه‌های کیلومتری</span>
+                                <div>
+                                    {% if kilometer_ranges %}
+                                        {% for km in kilometer_ranges %}
+                                            <span class="badge bg-success-light text-dark me-1 mb-1">{{ km.start_kilometer }} تا {{ km.end_kilometer }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">ثبت نشده</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted small">انواع آزمایش</span>
+                                <div>
+                                    {% for t in experiment_types %}
+                                        <span class="badge bg-primary-light text-dark me-1 mb-1">{{ t.name }}</span>
+                                    {% empty %}
+                                        <span class="text-muted">ثبت نشده</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if experiment_subtypes %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <span class="text-muted small">زیر نوع</span>
+                                <div>
+                                    {% for st in experiment_subtypes %}
+                                        <span class="badge bg-info-light text-dark me-1 mb-1">{{ st.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if request_files %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <span class="text-muted small">فایل‌های پیوست درخواست</span>
+                                <div class="d-flex flex-wrap gap-2 mt-1">
+                                    {% for file in request_files %}
+                                        <a href="{{ file.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download me-1"></i>دانلود
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>شماره درخواست:</label>
-                                    {# Assuming experiment_request is a field on the form, and you want to display its value #}
-                                    {# If experiment_request is meant to be a read-only field, you might render it differently #}
-                                    <p>{{ form.experiment_request.value }}</p>
-                                </div>
-                                <div class="form-group">
                                     <label>تاریخ پاسخ:</label>
-                                    {# Applying form-control class to response_date field #}
                                     {{ form.response_date|add_class:"form-control jalali_date-input" }}
                                     {% if form.response_date.errors %}
                                         <div class="invalid-feedback d-block">
@@ -41,7 +105,6 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>فایل پاسخ:</label>
-                                    {# Applying form-control-file class for file inputs #}
                                     {{ form.response_file|add_class:"form-control-file" }}
                                     {% if form.response_file.errors %}
                                         <div class="invalid-feedback d-block">
@@ -49,6 +112,46 @@
                                         </div>
                                     {% endif %}
                                 </div>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5 class="fw-bold mb-3"><i class="fas fa-vial me-2"></i>نتایج آزمایش</h5>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">نتیجه تراکم</label>
+                                {{ form.density_result|add_class:"form-control" }}
+                                {% if form.density_result.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.density_result.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">نتیجه ضخامت</label>
+                                {{ form.thickness_result|add_class:"form-control" }}
+                                {% if form.thickness_result.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.thickness_result.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">مقاومت ۱</label>
+                                {{ form.strength_result1|add_class:"form-control" }}
+                                {% if form.strength_result1.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.strength_result1.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mt-3">
+                                <label class="form-label">مقاومت ۲</label>
+                                {{ form.strength_result2|add_class:"form-control" }}
+                                {% if form.strength_result2.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.strength_result2.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mt-3">
+                                <label class="form-label">مقاومت ۳</label>
+                                {{ form.strength_result3|add_class:"form-control" }}
+                                {% if form.strength_result3.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.strength_result3.errors }}</div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="row mt-4">
@@ -74,6 +177,13 @@
                                         <button type="button" class="btn btn-light btn-sm fw-bold" id="add-kilometer"><i class="fas fa-plus-circle me-1 text-success"></i>افزودن بازه</button>
                                     </div>
                                     <div class="card-body pt-3 pb-2" id="kilometer-formset">
+                                        {% if kilometer_formset.non_form_errors %}
+                                            <div class="alert alert-danger py-2">
+                                                {% for error in kilometer_formset.non_form_errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
                                         {{ kilometer_formset.management_form }}
                                         {% for form in kilometer_formset %}
                                             <div class="row kilometer-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">
@@ -119,6 +229,13 @@
                                         <button type="button" class="btn btn-light btn-sm fw-bold" id="add-file"><i class="fas fa-plus-circle me-1 text-info"></i>افزودن فایل</button>
                                     </div>
                                     <div class="card-body pt-3 pb-2" id="file-formset">
+                                        {% if file_formset.non_form_errors %}
+                                            <div class="alert alert-danger py-2">
+                                                {% for error in file_formset.non_form_errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
                                         {{ file_formset.management_form }}
                                         {% for form in file_formset %}
                                             <div class="row file-form-row align-items-end mb-2 border rounded-3 p-2 position-relative animate__animated animate__fadeIn bg-light">

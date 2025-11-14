@@ -36,6 +36,13 @@
         <div class="card-body">
             <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                         {% csrf_token %}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         
                         <div class="row">
                     <!-- اطلاعات اصلی -->

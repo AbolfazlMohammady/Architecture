@@ -103,7 +103,7 @@ class ExperimentRequestForm(forms.ModelForm):
            any('ملات بنایی' in name for name in subtype_names):
             if not cleaned_data.get('target_strength'):
                 self.add_error('target_strength', 'وارد کردن حد مقاومت فشاری الزامی است.')
-        
+
         return cleaned_data
     
     def _set_layer_queryset(self, queryset):
