@@ -418,6 +418,8 @@ def experiment_response_create(request, pk):
         'experiment_subtypes': experiment_request.experiment_subtype.all(),
         'request_files': experiment_request.files.all(),
         'kilometer_ranges': experiment_request.kilometer_ranges.all(),
+        'request_user': experiment_request.user,  # کاربری که درخواست داده
+        'response_user': request.user,  # کاربری که پاسخ می‌دهد
     }
     return render(request, 'experiment/experiment_response_form.html', context)
 

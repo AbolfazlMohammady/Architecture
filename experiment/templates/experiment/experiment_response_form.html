@@ -20,25 +20,29 @@
                     <div class="alert alert-info mb-4">
                         <h5 class="fw-bold mb-2"><i class="fas fa-clipboard-list me-2"></i>اطلاعات درخواست</h5>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">شماره درخواست</span>
-                                <div class="fw-bold">{{ experiment_request.id }}</div>
+                                <div class="fw-bold">{{ experiment_request.order }}</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">پروژه</span>
                                 <div class="fw-bold">{{ project.name }}</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">لایه</span>
                                 <div class="fw-bold">{{ layer_display_name }} <span class="badge bg-light text-dark">ترتیب {{ layer.order_from_top }}</span></div>
                             </div>
+                            <div class="col-md-3">
+                                <span class="text-muted small">درخواست‌کننده</span>
+                                <div class="fw-bold">{{ request_user.get_full_name|default:request_user.username }}</div>
+                            </div>
                         </div>
                         <div class="row mt-2">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">تاریخ درخواست</span>
                                 <div>{{ experiment_request.request_date|date:"Y/m/d" }}</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">بازه‌های کیلومتری</span>
                                 <div>
                                     {% if kilometer_ranges %}
@@ -50,7 +54,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <span class="text-muted small">انواع آزمایش</span>
                                 <div>
                                     {% for t in experiment_types %}
@@ -59,6 +63,10 @@
                                         <span class="text-muted">ثبت نشده</span>
                                     {% endfor %}
                                 </div>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="text-muted small">پاسخ‌دهنده</span>
+                                <div class="fw-bold text-success">{{ response_user.get_full_name|default:response_user.username }}</div>
                             </div>
                         </div>
                         {% if experiment_subtypes %}
@@ -117,37 +125,43 @@
                         <div class="row mt-4">
                             <div class="col-12">
                                 <h5 class="fw-bold mb-3"><i class="fas fa-vial me-2"></i>نتایج آزمایش</h5>
+                                <div class="alert alert-warning small mb-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    فیلدهای زیر بر اساس نوع آزمایش انتخاب شده در درخواست نمایش داده می‌شوند.
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">نتیجه تراکم</label>
+                            <!-- فیلدهای تراکم نسبی (2 عدد: تراکم + ضخامت) -->
+                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی">
+                                <label class="form-label">نتیجه تراکم (%)</label>
                                 {{ form.density_result|add_class:"form-control" }}
                                 {% if form.density_result.errors %}
                                     <div class="invalid-feedback d-block">{{ form.density_result.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">نتیجه ضخامت</label>
+                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی">
+                                <label class="form-label">نتیجه ضخامت (سانتی‌متر)</label>
                                 {{ form.thickness_result|add_class:"form-control" }}
                                 {% if form.thickness_result.errors %}
                                     <div class="invalid-feedback d-block">{{ form.thickness_result.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">مقاومت ۱</label>
+                            <!-- فیلدهای مقاومت فشاری بتن (3 عدد) -->
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                                <label class="form-label">مقاومت ۱ (کیلوگرم بر سانتی‌متر مربع)</label>
                                 {{ form.strength_result1|add_class:"form-control" }}
                                 {% if form.strength_result1.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result1.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 mt-3">
-                                <label class="form-label">مقاومت ۲</label>
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                                <label class="form-label">مقاومت ۲ (کیلوگرم بر سانتی‌متر مربع)</label>
                                 {{ form.strength_result2|add_class:"form-control" }}
                                 {% if form.strength_result2.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result2.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 mt-3">
-                                <label class="form-label">مقاومت ۳</label>
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                                <label class="form-label">مقاومت ۳ (کیلوگرم بر سانتی‌متر مربع)</label>
                                 {{ form.strength_result3|add_class:"form-control" }}
                                 {% if form.strength_result3.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result3.errors }}</div>
@@ -305,6 +319,39 @@
                 }
             }
         });
+        
+        // نمایش/مخفی کردن فیلدهای پاسخ بر اساس نوع آزمایش
+        var experimentTypes = [
+            {% for t in experiment_types %}
+                "{{ t.name }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        function toggleResultFields() {
+            $('.result-field').each(function() {
+                var $field = $(this);
+                var requiredTypes = $field.data('experiment-types');
+                var shouldShow = false;
+                
+                // بررسی اینکه آیا نوع آزمایش مورد نیاز در لیست انواع آزمایش انتخاب شده وجود دارد
+                if (requiredTypes && experimentTypes.length > 0) {
+                    if (experimentTypes.some(function(type) {
+                        return type.includes(requiredTypes) || requiredTypes.includes(type);
+                    })) {
+                        shouldShow = true;
+                    }
+                }
+                
+                if (shouldShow) {
+                    $field.show();
+                } else {
+                    $field.hide();
+                }
+            });
+        }
+        
+        // اجرای اولیه
+        toggleResultFields();
     });
 </script>
 {% endblock %}
