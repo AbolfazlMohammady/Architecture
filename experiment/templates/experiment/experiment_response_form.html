@@ -131,14 +131,14 @@
                                 </div>
                             </div>
                             <!-- فیلدهای تراکم نسبی (2 عدد: تراکم + ضخامت) -->
-                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی">
+                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی" style="display: none;">
                                 <label class="form-label">نتیجه تراکم (%)</label>
                                 {{ form.density_result|add_class:"form-control" }}
                                 {% if form.density_result.errors %}
                                     <div class="invalid-feedback d-block">{{ form.density_result.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی">
+                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی" style="display: none;">
                                 <label class="form-label">نتیجه ضخامت (سانتی‌متر)</label>
                                 {{ form.thickness_result|add_class:"form-control" }}
                                 {% if form.thickness_result.errors %}
@@ -146,26 +146,32 @@
                                 {% endif %}
                             </div>
                             <!-- فیلدهای مقاومت فشاری بتن (3 عدد) -->
-                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات" style="display: none;">
                                 <label class="form-label">مقاومت ۱ (کیلوگرم بر سانتی‌متر مربع)</label>
-                                {{ form.strength_result1|add_class:"form-control" }}
+                                {{ form.strength_result1|add_class:"form-control strength-input" }}
                                 {% if form.strength_result1.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result1.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات" style="display: none;">
                                 <label class="form-label">مقاومت ۲ (کیلوگرم بر سانتی‌متر مربع)</label>
-                                {{ form.strength_result2|add_class:"form-control" }}
+                                {{ form.strength_result2|add_class:"form-control strength-input" }}
                                 {% if form.strength_result2.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result2.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات">
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات" style="display: none;">
                                 <label class="form-label">مقاومت ۳ (کیلوگرم بر سانتی‌متر مربع)</label>
-                                {{ form.strength_result3|add_class:"form-control" }}
+                                {{ form.strength_result3|add_class:"form-control strength-input" }}
                                 {% if form.strength_result3.errors %}
                                     <div class="invalid-feedback d-block">{{ form.strength_result3.errors }}</div>
                                 {% endif %}
+                            </div>
+                            <!-- فیلد میانگین مقاومت (فقط خواندنی) -->
+                            <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات" style="display: none;">
+                                <label class="form-label">میانگین مقاومت (کیلوگرم بر سانتی‌متر مربع)</label>
+                                <input type="text" id="strength_average" class="form-control" readonly style="background-color: #e9ecef;">
+                                <small class="form-text text-muted">این مقدار به صورت خودکار از میانگین سه مقاومت محاسبه می‌شود</small>
                             </div>
                         </div>
                         <div class="row mt-4">
@@ -303,10 +309,13 @@
 <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            width: '100%'
-        });
+        // فعال‌سازی Select2 فقط اگر موجود باشد
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                width: '100%'
+            });
+        }
         // فعال‌سازی تقویم شمسی برای تاریخ پاسخ
         $('.jalali_date-input').persianDatepicker({
             format: 'YYYY/MM/DD',
@@ -328,30 +337,113 @@
         ];
         
         function toggleResultFields() {
-            $('.result-field').each(function() {
+            console.log('=== toggleResultFields called ===');
+            console.log('Experiment Types:', experimentTypes);
+            console.log('Number of result fields:', $('.result-field').length);
+            
+            $('.result-field').each(function(index) {
                 var $field = $(this);
                 var requiredTypes = $field.data('experiment-types');
                 var shouldShow = false;
                 
+                console.log('Field ' + index + ' - Required type:', requiredTypes);
+                
                 // بررسی اینکه آیا نوع آزمایش مورد نیاز در لیست انواع آزمایش انتخاب شده وجود دارد
                 if (requiredTypes && experimentTypes.length > 0) {
-                    if (experimentTypes.some(function(type) {
-                        return type.includes(requiredTypes) || requiredTypes.includes(type);
-                    })) {
-                        shouldShow = true;
-                    }
+                    // بررسی دقیق: فقط وقتی که نام نوع آزمایش دقیقاً مطابقت داشته باشد
+                    shouldShow = experimentTypes.some(function(type) {
+                        var cleanType = type.trim();
+                        var cleanRequired = requiredTypes.trim();
+                        
+                        // بررسی دقیق برای "تراکم نسبی" - فقط اگر دقیقاً مطابقت داشته باشد
+                        if (cleanRequired === "تراکم نسبی") {
+                            var matches = cleanType === "تراکم نسبی";
+                            if (matches) {
+                                console.log('✓ تراکم نسبی matched with:', cleanType);
+                            }
+                            return matches;
+                        }
+                        
+                        // بررسی دقیق برای "مقاومت فشاری بتن و ملات"
+                        if (cleanRequired === "مقاومت فشاری بتن و ملات") {
+                            // باید شامل "مقاومت فشاری" و "بتن" باشد
+                            var matches = cleanType === "مقاومت فشاری بتن و ملات" || 
+                                         (cleanType.indexOf("مقاومت فشاری") !== -1 && cleanType.indexOf("بتن") !== -1);
+                            if (matches) {
+                                console.log('✓ مقاومت فشاری matched with:', cleanType);
+                            }
+                            return matches;
+                        }
+                        
+                        // برای سایر موارد، بررسی دقیق - فقط اگر دقیقاً یکسان باشند
+                        var matches = cleanType === cleanRequired;
+                        if (matches) {
+                            console.log('✓ General match:', cleanType, '===', cleanRequired);
+                        }
+                        return matches;
+                    });
                 }
                 
+                console.log('Field ' + index + ' - Should show:', shouldShow);
+                
                 if (shouldShow) {
-                    $field.show();
+                    $field.css('display', 'block');
+                    console.log('Field ' + index + ' - SHOWN');
                 } else {
-                    $field.hide();
+                    $field.css('display', 'none');
+                    console.log('Field ' + index + ' - HIDDEN');
                 }
             });
+            console.log('=== toggleResultFields finished ===');
         }
         
-        // اجرای اولیه
-        toggleResultFields();
+        // اجرای اولیه - بعد از اطمینان از بارگذاری کامل DOM
+        setTimeout(function() {
+            toggleResultFields();
+        }, 100);
+        
+        // محاسبه خودکار میانگین مقاومت
+        function calculateStrengthAverage() {
+            var val1 = $('#id_strength_result1').val();
+            var val2 = $('#id_strength_result2').val();
+            var val3 = $('#id_strength_result3').val();
+            
+            var results = [];
+            // بررسی اینکه آیا مقدار وارد شده است (نه خالی و نه NaN)
+            if (val1 && val1.trim() !== '') {
+                var strength1 = parseFloat(val1);
+                if (!isNaN(strength1)) {
+                    results.push(strength1);
+                }
+            }
+            if (val2 && val2.trim() !== '') {
+                var strength2 = parseFloat(val2);
+                if (!isNaN(strength2)) {
+                    results.push(strength2);
+                }
+            }
+            if (val3 && val3.trim() !== '') {
+                var strength3 = parseFloat(val3);
+                if (!isNaN(strength3)) {
+                    results.push(strength3);
+                }
+            }
+            
+            if (results.length > 0) {
+                var average = results.reduce((a, b) => a + b, 0) / results.length;
+                $('#strength_average').val(average.toFixed(3));
+            } else {
+                $('#strength_average').val('');
+            }
+        }
+        
+        // محاسبه میانگین هنگام تغییر هر یک از فیلدهای مقاومت
+        $('.strength-input').on('input', function() {
+            calculateStrengthAverage();
+        });
+        
+        // محاسبه اولیه در صورت وجود مقادیر
+        calculateStrengthAverage();
     });
 </script>
 {% endblock %}

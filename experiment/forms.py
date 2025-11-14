@@ -178,6 +178,50 @@ class ExperimentResponseForm(forms.ModelForm):
         required=True
     )
     
+    def __init__(self, *args, **kwargs):
+        self.experiment_request = kwargs.pop('experiment_request', None)
+        super().__init__(*args, **kwargs)
+        
+        # تنظیم کلاس‌های فرم
+        for field in self.fields:
+            if isinstance(self.fields[field].widget, (forms.TextInput, forms.NumberInput, forms.Textarea)):
+                self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
+            elif isinstance(self.fields[field].widget, forms.Select):
+                self.fields[field].widget.attrs['class'] = 'form-select'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # اگر experiment_request موجود باشد، بررسی نوع آزمایش
+        if self.experiment_request:
+            experiment_types = self.experiment_request.experiment_type.all()
+            type_names = [et.name for et in experiment_types]
+            
+            # بررسی برای مقاومت فشاری بتن و ملات
+            if any('مقاومت فشاری بتن' in name or 'مقاومت فشاری' in name for name in type_names):
+                strength1 = cleaned_data.get('strength_result1')
+                strength2 = cleaned_data.get('strength_result2')
+                strength3 = cleaned_data.get('strength_result3')
+                
+                if strength1 is None:
+                    self.add_error('strength_result1', 'برای آزمایش مقاومت فشاری بتن و ملات، وارد کردن مقاومت 1 الزامی است.')
+                if strength2 is None:
+                    self.add_error('strength_result2', 'برای آزمایش مقاومت فشاری بتن و ملات، وارد کردن مقاومت 2 الزامی است.')
+                if strength3 is None:
+                    self.add_error('strength_result3', 'برای آزمایش مقاومت فشاری بتن و ملات، وارد کردن مقاومت 3 الزامی است.')
+            
+            # بررسی برای تراکم نسبی
+            if any('تراکم نسبی' in name for name in type_names):
+                density = cleaned_data.get('density_result')
+                thickness = cleaned_data.get('thickness_result')
+                
+                if density is None:
+                    self.add_error('density_result', 'برای آزمایش تراکم نسبی، وارد کردن نتیجه تراکم الزامی است.')
+                if thickness is None:
+                    self.add_error('thickness_result', 'برای آزمایش تراکم نسبی، وارد کردن نتیجه ضخامت الزامی است.')
+        
+        return cleaned_data
+    
     class Meta:
         model = models.ExperimentResponse
         fields = ['response_date', 'response_file', 'density_result', 'thickness_result', 

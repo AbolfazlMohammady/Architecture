@@ -117,6 +117,29 @@ class ExperimentResponse(models.Model):
     strength_result1 = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="نتیجه مقاومت 1", null=True, blank=True)
     strength_result2 = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="نتیجه مقاومت 2", null=True, blank=True)
     strength_result3 = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="نتیجه مقاومت 3", null=True, blank=True)
+    strength_average = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="میانگین مقاومت", null=True, blank=True, editable=False)
+    
+    def calculate_strength_average(self):
+        """محاسبه میانگین مقاومت از 3 فیلد مقاومت"""
+        results = []
+        if self.strength_result1 is not None:
+            results.append(float(self.strength_result1))
+        if self.strength_result2 is not None:
+            results.append(float(self.strength_result2))
+        if self.strength_result3 is not None:
+            results.append(float(self.strength_result3))
+        if results:
+            from decimal import Decimal
+            return Decimal(str(sum(results) / len(results)))
+        return None
+    
+    def save(self, *args, **kwargs):
+        """محاسبه و ذخیره میانگین مقاومت قبل از ذخیره"""
+        if self.strength_result1 is not None or self.strength_result2 is not None or self.strength_result3 is not None:
+            self.strength_average = self.calculate_strength_average()
+        else:
+            self.strength_average = None
+        super().save(*args, **kwargs)
     
     class Meta:
         verbose_name = "پاسخ آزمایش"

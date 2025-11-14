@@ -112,6 +112,14 @@ class ExperimentResponseCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = 'experiment/experiment_response_form.html'
     success_url = reverse_lazy('experiment:experiment_request_list')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        experiment_request_id = self.kwargs.get('experiment_request_id')
+        if experiment_request_id:
+            experiment_request = get_object_or_404(models.ExperimentRequest, id=experiment_request_id)
+            kwargs['experiment_request'] = experiment_request
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         experiment_request_id = self.kwargs.get('experiment_request_id')
@@ -357,7 +365,7 @@ def experiment_response_create(request, pk):
         messages.error(request, 'تا زمانی که همه نقش‌های کلیدی پروژه پاسخ قبلی را تایید نکرده‌اند، امکان ثبت پاسخ جدید وجود ندارد.')
         return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
     if request.method == 'POST':
-        form = forms.ExperimentResponseForm(request.POST, request.FILES)
+        form = forms.ExperimentResponseForm(request.POST, request.FILES, experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(request.POST, prefix='kilometer')
         file_formset = ExperimentResponseFileFormSet(request.POST, request.FILES, prefix='file')
         if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
@@ -390,7 +398,7 @@ def experiment_response_create(request, pk):
             print('File formset errors:', file_formset.errors)
             print('File formset non_form_errors:', file_formset.non_form_errors())
     else:
-        form = forms.ExperimentResponseForm()
+        form = forms.ExperimentResponseForm(experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer')
         file_formset = ExperimentResponseFileFormSet(prefix='file')
 
@@ -882,15 +890,52 @@ def experiment_request_delete(request, pk):
 def experiment_response_update(request, pk):
     """بروزرسانی پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
+    experiment_request = experiment_response.experiment_request
+    
     if request.method == 'POST':
-        form = forms.ExperimentResponseForm(request.POST, request.FILES, instance=experiment_response)
-        if form.is_valid():
+        form = forms.ExperimentResponseForm(request.POST, request.FILES, instance=experiment_response, experiment_request=experiment_request)
+        kilometer_formset = ExperimentResponseKilometerFormSet(request.POST, prefix='kilometer', instance=experiment_response)
+        file_formset = ExperimentResponseFileFormSet(request.POST, request.FILES, prefix='file', instance=experiment_response)
+        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
             form.save()
+            kilometer_formset.save()
+            file_formset.save()
             messages.success(request, 'پاسخ آزمایش با موفقیت بروزرسانی شد.')
             return redirect('experiment:experiment_response_detail', pk=pk)
     else:
-        form = forms.ExperimentResponseForm(instance=experiment_response)
-    return render(request, 'experiment/experiment_response_form.html', {'form': form})
+        form = forms.ExperimentResponseForm(instance=experiment_response, experiment_request=experiment_request)
+        kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer', instance=experiment_response)
+        file_formset = ExperimentResponseFileFormSet(prefix='file', instance=experiment_response)
+    
+    # آماده‌سازی context مشابه experiment_response_create
+    layer_display_name = experiment_request.layer.layer_type.name
+    siblings = experiment_request.project.projectlayer_set.filter(
+        layer_type=experiment_request.layer.layer_type
+    ).order_by('order_from_top')
+    if siblings.count() > 1:
+        layer_list = list(siblings)
+        try:
+            index = layer_list.index(experiment_request.layer) + 1
+            layer_display_name = f"{layer_display_name} {index}"
+        except ValueError:
+            pass
+    
+    context = {
+        'form': form,
+        'kilometer_formset': kilometer_formset,
+        'file_formset': file_formset,
+        'experiment_request': experiment_request,
+        'project': experiment_request.project,
+        'layer': experiment_request.layer,
+        'layer_display_name': layer_display_name,
+        'experiment_types': experiment_request.experiment_type.all(),
+        'experiment_subtypes': experiment_request.experiment_subtype.all(),
+        'request_files': experiment_request.files.all(),
+        'kilometer_ranges': experiment_request.kilometer_ranges.all(),
+        'request_user': experiment_request.user,
+        'response_user': request.user,
+    }
+    return render(request, 'experiment/experiment_response_form.html', context)
 
 @login_required
 def experiment_response_delete(request, pk):
