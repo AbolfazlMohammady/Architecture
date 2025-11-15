@@ -943,12 +943,16 @@ export class ProjectDashboard {
             }
 
             ctx.save();
-            ctx.lineWidth = layer.state === 1 ? 1.15 : 1.6;
+            // خطوط نازک‌تر و بدون حاشیه
+            ctx.lineWidth = layer.state === 1 ? 0.5 : 0.7;
             ctx.strokeStyle = layer.state === 1 ? '#1f2937' : '#fb923c';
             ctx.setLineDash(layer.state === 1 ? [] : [5, 6]);
-            ctx.globalAlpha = layer.state === 1 ? 0.9 : 1;
+            ctx.globalAlpha = layer.state === 1 ? 0.85 : 0.9;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
+            // حذف حاشیه (shadow)
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
 
             segments.forEach(segment => {
                 if (segment.length < 2) {
@@ -1148,15 +1152,7 @@ export class ProjectDashboard {
                 ctx.strokeStyle = '#37474f';
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
-                // نام پل بالای قوس
-                ctx.font = 'bold 13px Tahoma';
-                ctx.fillStyle = '#263238';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                ctx.shadowColor = '#fff';
-                ctx.shadowBlur = 6;
-                ctx.fillText(structure.name, (x1 + x2) / 2, yBridge - 4);
-                ctx.shadowBlur = 0;
+                // نام پل حذف شده - فقط در tooltip نمایش داده می‌شود
                 ctx.restore();
                 // Add tooltipData for bridge (center)
                 if (!this.tooltipData) this.tooltipData = [];
@@ -1228,11 +1224,25 @@ export class ProjectDashboard {
             ctx.strokeRect(x - 10, y - 10, 20, 20);
         }
         
-        // نوشتن نام ابنیه
-        ctx.fillStyle = '#000';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(structure.name, x, y + 25);
+        // نام ابنیه حذف شده - فقط در tooltip نمایش داده می‌شود
+        
+        // اضافه کردن tooltip برای ابنیه
+        if (!this.tooltipData) this.tooltipData = [];
+        this.tooltipData.push({
+            x: x,
+            y: y,
+            width: 20,
+            height: 20,
+            geometry: {
+                type: 'circle',
+                x: x,
+                y: y,
+                radius: 10
+            },
+            markerRadius: 5,
+            hitRadius: 8,
+            data: { type: 'structure', structure }
+        });
         
         ctx.restore();
     }
@@ -1745,6 +1755,23 @@ export class ProjectDashboard {
                 html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
                 html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
                 html += `<div style="font-size:12px;color:#555;">طول پل: <b>${(s.end_kilometer-s.start_kilometer).toFixed(2)} km</b></div>`;
+            } else if (d.type === 'structure') {
+                const s = d.structure;
+                const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
+                let statusColor = s.status === 2 ? '#7ed957' : s.status === 1 ? '#ffc107' : '#bdbdbd';
+                let icon = '🏗️';
+                if (s.name.includes('پل')) icon = '🌉';
+                else if (s.name.includes('آبرو')) icon = '🌊';
+                else if (s.name.includes('تونل')) icon = '🚇';
+                html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">${icon}</span> <span>${s.name}</span></div>`;
+                html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[s.status] || 'نامشخص'}</b></div>`;
+                if (s.kilometer_location) {
+                    html += `<div style="font-size:12px;color:#555;">کیلومتر: <b>${s.kilometer_location}</b></div>`;
+                }
+                if (s.start_kilometer && s.end_kilometer) {
+                    html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
+                    html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
+                }
             } else if (d.type === 'experiment') {
                 const experiment = d.experiment;
                 const layer = d.layer;
