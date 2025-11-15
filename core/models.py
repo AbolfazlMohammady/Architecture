@@ -18,6 +18,41 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
+class UserProjectRole(models.Model):
+    """نقش کاربر در پروژه خاص یا همه پروژه‌ها"""
+    user = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='project_roles',
+        verbose_name="کاربر"
+    )
+    project = models.ForeignKey(
+        'project.Project',
+        on_delete=models.CASCADE,
+        related_name='user_roles',
+        null=True,
+        blank=True,
+        verbose_name="پروژه",
+        help_text="اگر خالی باشد، این نقش برای همه پروژه‌ها اعمال می‌شود"
+    )
+    role_name = models.CharField(
+        max_length=100,
+        verbose_name="نام نقش",
+        help_text="مثال: نظارت پیمانکار، نظارت کارفرما، نماینده پیمانکار و..."
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ به‌روزرسانی")
+
+    class Meta:
+        verbose_name = "نقش کاربر در پروژه"
+        verbose_name_plural = "نقش‌های کاربران در پروژه‌ها"
+        ordering = ['user', 'project', 'role_name']
+        unique_together = [['user', 'project', 'role_name']]
+
+    def __str__(self):
+        project_name = self.project.name if self.project else "همه پروژه‌ها"
+        return f"{self.user.get_full_name()} - {self.role_name} - {project_name}"
+
 class User(AbstractUser):
     REQUIRED_FIELDS = []
     national_id = models.CharField(max_length=10,

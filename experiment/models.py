@@ -201,20 +201,45 @@ class ExperimentResponse(models.Model):
     def get_approvers_for_role(self, role_name):
         """بر اساس نقش، کاربر(ان) مرتبط با پروژه را برگردان"""
         project = self.experiment_request.project
-        # نقش‌ها بر اساس فیلدهای تعریف شده در مدل Project
+        approvers = []
+        
+        # ابتدا از فیلدهای تعریف شده در مدل Project استفاده می‌کنیم (برای سازگاری با کد قدیمی)
         if role_name == 'نماینده پیمانکار':
-            return [project.project_manager] if project.project_manager else []
-        if role_name == 'نقشه بردار پیمانکار':
-            return [project.technical_manager] if project.technical_manager else []
-        if role_name == 'نقشه بردار نظارت':
-            return [project.quality_control_manager] if project.quality_control_manager else []
-        if role_name == 'نظارت پروژه':
-            return [project.quality_control_manager] if project.quality_control_manager else []
-        if role_name == 'مسئول آزمایشگاه':
-            return [project.lab_manager] if project.lab_manager else []
-        if role_name == 'مسئول HSSE پروژه':
-            return [project.hsse_manager] if project.hsse_manager else []
-        return []
+            if project.project_manager:
+                approvers.append(project.project_manager)
+        elif role_name == 'نقشه بردار پیمانکار':
+            if project.technical_manager:
+                approvers.append(project.technical_manager)
+        elif role_name == 'نقشه بردار نظارت':
+            if project.quality_control_manager:
+                approvers.append(project.quality_control_manager)
+        elif role_name == 'نظارت پروژه':
+            if project.quality_control_manager:
+                approvers.append(project.quality_control_manager)
+        elif role_name == 'مسئول آزمایشگاه':
+            if project.lab_manager:
+                approvers.append(project.lab_manager)
+        elif role_name == 'مسئول HSSE پروژه':
+            if project.hsse_manager:
+                approvers.append(project.hsse_manager)
+        
+        # سپس از UserProjectRole استفاده می‌کنیم (برای نقش‌های جدید)
+        from core.models import UserProjectRole
+        # ابتدا نقش‌های مربوط به این پروژه خاص را پیدا می‌کنیم
+        project_roles = UserProjectRole.objects.filter(
+            role_name=role_name,
+            project=project
+        ).select_related('user')
+        approvers.extend([role.user for role in project_roles if role.user not in approvers])
+        
+        # سپس نقش‌هایی که برای همه پروژه‌ها تعریف شده‌اند (project=None)
+        global_roles = UserProjectRole.objects.filter(
+            role_name=role_name,
+            project__isnull=True
+        ).select_related('user')
+        approvers.extend([role.user for role in global_roles if role.user not in approvers])
+        
+        return approvers
 
     def get_approval_status_by_role(self):
         """وضعیت تایید هر نقش را به صورت دیکشنری برمی‌گرداند"""

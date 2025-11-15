@@ -91,6 +91,13 @@ class ExperimentRequestListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
+        
+        # فیلتر کردن بر اساس دسترسی کاربر به پروژه‌ها
+        if not user.is_superuser:
+            # فقط درخواست‌های پروژه‌هایی که کاربر به آن‌ها دسترسی دارد
+            queryset = queryset.filter(project__in=user.accessible_projects.all())
+        
         project_id = self.request.GET.get('project')
         if project_id:
             queryset = queryset.filter(project_id=project_id)
@@ -98,7 +105,13 @@ class ExperimentRequestListView(LoginRequiredMixin, generic.ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['projects'] = models.Project.objects.all()
+        user = self.request.user
+        
+        # فقط پروژه‌های قابل دسترسی کاربر
+        if user.is_superuser:
+            context['projects'] = models.Project.objects.all()
+        else:
+            context['projects'] = user.accessible_projects.all()
         return context
 
 class ExperimentRequestCreateView(LoginRequiredMixin, generic.CreateView):
@@ -115,6 +128,15 @@ class ExperimentRequestDetailView(LoginRequiredMixin, generic.DetailView):
     model = models.ExperimentRequest
     template_name = 'experiment/experiment-request-detail.html'
     context_object_name = 'experiment_request'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # چک کردن دسترسی کاربر به پروژه
+        obj = self.get_object()
+        if not request.user.is_superuser:
+            if obj.project not in request.user.accessible_projects.all():
+                messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+                return redirect('experiment:experiment_request_list')
+        return super().dispatch(request, *args, **kwargs)
 
 class ExperimentResponseCreateView(LoginRequiredMixin, generic.CreateView):
     model = models.ExperimentResponse
@@ -170,8 +192,15 @@ class ExperimentApprovalCreateView(LoginRequiredMixin, generic.CreateView):
 
 @login_required
 def experiment_request_list(request):
-    experiment_requests = models.ExperimentRequest.objects.all()
-    projects = models.Project.objects.all()
+    user = request.user
+    
+    # فیلتر کردن بر اساس دسترسی کاربر به پروژه‌ها
+    if user.is_superuser:
+        experiment_requests = models.ExperimentRequest.objects.all()
+        projects = models.Project.objects.all()
+    else:
+        experiment_requests = models.ExperimentRequest.objects.filter(project__in=user.accessible_projects.all())
+        projects = user.accessible_projects.all()
     
     # دریافت پارامترهای GET
     project_id = request.GET.get('project', '').strip()
@@ -186,8 +215,14 @@ def experiment_request_list(request):
     if project_id:
         try:
             project_id_int = int(project_id)
-            experiment_requests = experiment_requests.filter(project_id=project_id_int)
-            print(f"DEBUG: Filtered by project_id: {project_id_int}, count: {experiment_requests.count()}")
+            # چک کردن دسترسی کاربر به پروژه
+            if not user.is_superuser:
+                if not user.accessible_projects.filter(id=project_id_int).exists():
+                    messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+                    project_id_int = None
+            if project_id_int:
+                experiment_requests = experiment_requests.filter(project_id=project_id_int)
+                print(f"DEBUG: Filtered by project_id: {project_id_int}, count: {experiment_requests.count()}")
         except (ValueError, TypeError) as e:
             print(f"DEBUG: Invalid project_id: {project_id}, error: {e}")
     
@@ -259,6 +294,18 @@ def experiment_request_create(request):
                         f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
                     )
                 else:
+                    # چک کردن دسترسی کاربر به پروژه
+                    project = form.cleaned_data.get('project')
+                    if not request.user.is_superuser:
+                        if project not in request.user.accessible_projects.all():
+                            messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+                            return render(request, 'experiment/experiment_request_form.html', {
+                                'form': form,
+                                'kilometer_formset': kilometer_formset,
+                                'file_formset': file_formset,
+                                'user': request.user,
+                            })
+                    
                     experiment_request = form.save(commit=False)
                     experiment_request.user = request.user
                     start_values = [rng[0] for rng in decimal_ranges]
@@ -304,6 +351,13 @@ def experiment_request_create(request):
 @login_required
 def experiment_request_edit(request, pk):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
+    
+    # چک کردن دسترسی کاربر به پروژه
+    if not request.user.is_superuser:
+        if experiment_request.project not in request.user.accessible_projects.all():
+            messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+            return redirect('experiment:experiment_request_list')
+    
     if request.method == 'POST':
         form = forms.ExperimentRequestForm(request.POST, request.FILES, instance=experiment_request, user=request.user)
         kilometer_formset = ExperimentRequestKilometerFormSet(
@@ -346,6 +400,18 @@ def experiment_request_edit(request, pk):
                         f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
                     )
                 else:
+                    # چک کردن دسترسی کاربر به پروژه جدید (اگر تغییر کرده باشد)
+                    project = form.cleaned_data.get('project')
+                    if not request.user.is_superuser:
+                        if project not in request.user.accessible_projects.all():
+                            messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+                            return render(request, 'experiment/experiment_request_form.html', {
+                                'form': form,
+                                'kilometer_formset': kilometer_formset,
+                                'file_formset': file_formset,
+                                'user': request.user,
+                            })
+                    
                     experiment_request_instance = form.save(commit=False)
                     start_values = [rng[0] for rng in decimal_ranges]
                     end_values = [rng[1] for rng in decimal_ranges]
@@ -377,6 +443,13 @@ def experiment_request_edit(request, pk):
 def experiment_request_detail(request, pk):
     logger = logging.getLogger(__name__)
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
+    
+    # چک کردن دسترسی کاربر به پروژه
+    if not request.user.is_superuser:
+        if experiment_request.project not in request.user.accessible_projects.all():
+            messages.error(request, 'شما به این پروژه دسترسی ندارید.')
+            return redirect('experiment:experiment_request_list')
+    
     experiment_responses = models.ExperimentResponse.objects.filter(experiment_request=experiment_request)
     kilometer_ranges = experiment_request.kilometer_ranges.all()
     request_files = experiment_request.files.all()
