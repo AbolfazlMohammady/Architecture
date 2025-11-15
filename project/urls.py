@@ -18,6 +18,7 @@ urlpatterns = [
     path("project-structure-delete/<int:pk>/",views.ProjectStructureDeleteView.as_view(),name="project-structure-delete"),
     path("project-structure-list/<int:pk>/", views.ProjectStructureListView.as_view(), name="project-structure-list"),
     path("project-structure/<int:pk>/", views.ProjectStructureDetailView.as_view(), name="project-structure-detail"),
+    path("experiment-grid/<int:pk>/", views.ExperimentGridDashboardView.as_view(), name="experiment-grid-dashboard"),
     
     
 ]

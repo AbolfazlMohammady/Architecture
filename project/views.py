@@ -589,3 +589,131 @@ class ProjectStructureUpdateView(generic.UpdateView):
     
     def get_success_url(self):
         return reverse('project-structure-detail',kwargs={"pk":self.object.pk})
+
+
+class ExperimentGridDashboardView(generic.DetailView):
+    """داشبورد شطرنجی برای نمایش درخواست‌های آزمایش"""
+    model = project_models.Project
+    template_name = 'project/experiment_grid_dashboard.html'
+    context_object_name = 'project'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.get_object()
+        
+        # دریافت لایه‌ها و مرتب‌سازی
+        layers = project_models.ProjectLayer.objects.filter(project=project).order_by('order_from_top')
+        
+        # دریافت درخواست‌های آزمایش
+        from experiment.models import ExperimentRequest, ExperimentResponse, ExperimentApproval
+        from experiment.views import get_layer_display_name
+        
+        experiment_requests = ExperimentRequest.objects.filter(project=project).select_related(
+            'layer'
+        ).prefetch_related(
+            'experiment_type', 'experiment_subtype',
+            'experimentresponse_set__experimentapproval_set'
+        )
+        
+        # محاسبه بازه کیلومتراژ (ستون‌ها)
+        # تقسیم پروژه به بازه‌های 0.1 کیلومتری
+        start_km = float(project.start_kilometer)
+        end_km = float(project.end_kilometer)
+        km_range = end_km - start_km
+        
+        # ایجاد بازه‌های کیلومتراژ (هر 0.1 کیلومتر)
+        cell_size = 0.1  # اندازه هر سلول به کیلومتر
+        columns = []
+        current_km = start_km
+        while current_km < end_km:
+            columns.append({
+                'start': round(current_km, 1),
+                'end': round(min(current_km + cell_size, end_km), 1),
+                'label': f"{round(current_km, 1)}-{round(min(current_km + cell_size, end_km), 1)}"
+            })
+            current_km += cell_size
+        
+        # ساخت داده‌های grid
+        grid_data = []
+        for layer in layers:
+            layer_display_name = get_layer_display_name(layer)
+            row_data = {
+                'layer_id': layer.id,
+                'layer_name': layer_display_name,
+                'cells': []
+            }
+            
+            # برای هر ستون (بازه کیلومتراژ)
+            for col in columns:
+                # پیدا کردن درخواست‌های آزمایش که با این بازه همپوشانی دارند
+                overlapping_requests = experiment_requests.filter(
+                    layer=layer,
+                    start_kilometer__lt=col['end'],
+                    end_kilometer__gt=col['start']
+                )
+                
+                cell_info = None
+                if overlapping_requests.exists():
+                    # استفاده از اولین درخواست (اگر چندتایی باشد)
+                    request = overlapping_requests.first()
+                    
+                    # محاسبه وضعیت
+                    actual_status = request.get_actual_status()
+                    
+                    # بررسی پاسخ و تاییدیه
+                    response_status = None
+                    is_recompact = False
+                    latest_response = None
+                    
+                    if request.experimentresponse_set.exists():
+                        latest_response = request.experimentresponse_set.order_by('-created_at').first()
+                        approvals = latest_response.experimentapproval_set.all()
+                        
+                        if approvals.exists():
+                            if approvals.filter(status=ExperimentApproval.REJECTED).exists():
+                                response_status = 'rejected'
+                            elif latest_response.is_fully_approved():
+                                response_status = 'approved'
+                            
+                            # بررسی ریکامپکت (اگر در توضیحات یا description باشد)
+                            if latest_response.description and 'ریکامپکت' in latest_response.description:
+                                is_recompact = True
+                    
+                    # تعیین رنگ بر اساس وضعیت
+                    color = None
+                    if is_recompact:
+                        color = 'purple'  # بنفش برای ریکامپکت
+                    elif response_status == 'approved':
+                        color = 'green'  # سبز برای قابل قبول
+                    elif response_status == 'rejected':
+                        color = 'red'  # قرمز برای غیر قابل قبول
+                    elif actual_status == ExperimentRequest.IN_PROGRESS:
+                        color = 'orange'  # نارنجی برای تایید شده (رفته برای آزمایش)
+                    elif actual_status == ExperimentRequest.PENDING:
+                        color = 'lightgray'  # طوسی روشن برای درخواست ثبت شده
+                    else:
+                        color = 'lightgray'
+                    
+                    cell_info = {
+                        'request_id': request.id,
+                        'color': color,
+                        'status': actual_status,
+                        'request_date': request.request_date.strftime('%Y/%m/%d') if request.request_date else None,
+                        'response_date': latest_response.response_date.strftime('%Y/%m/%d') if latest_response and latest_response.response_date else None,
+                        'experiment_type': ', '.join([et.name for et in request.experiment_type.all()]),
+                        'description': request.description,
+                        'response_description': latest_response.description if latest_response else None,
+                        'is_recompact': is_recompact,
+                    }
+                
+                row_data['cells'].append(cell_info)
+            
+            grid_data.append(row_data)
+        
+        context['grid_data'] = grid_data
+        context['columns'] = columns
+        context['project'] = project
+        context['start_km'] = start_km
+        context['end_km'] = end_km
+        
+        return context

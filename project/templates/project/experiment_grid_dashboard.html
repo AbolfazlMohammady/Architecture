@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}داشبورد شطرنجی آزمایش‌ها - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>
+                        داشبورد شطرنجی آزمایش‌ها - {{ project.name }}
+                    </h4>
+                    <small>بازه کیلومتراژ: {{ start_km }} تا {{ end_km }}</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 80vh; overflow: auto;">
+                        <table class="table table-bordered mb-0" id="experiment-grid">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="min-width: 200px; position: sticky; left: 0; background: #f8f9fa; z-index: 10;">
+                                        لایه
+                                    </th>
+                                    {% for col in columns %}
+                                    <th style="min-width: 80px; text-align: center; font-size: 0.85rem;">
+                                        {{ col.start }}<br>{{ col.end }}
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in grid_data %}
+                                <tr>
+                                    <td style="position: sticky; left: 0; background: white; z-index: 5; font-weight: bold; min-width: 200px;">
+                                        {{ row.layer_name }}
+                                    </td>
+                                    {% for cell in row.cells %}
+                                    <td class="grid-cell" 
+                                        data-request-id="{% if cell %}{{ cell.request_id }}{% endif %}"
+                                        data-color="{% if cell %}{{ cell.color }}{% endif %}"
+                                        data-status="{% if cell %}{{ cell.status }}{% endif %}"
+                                        data-request-date="{% if cell %}{{ cell.request_date|default:'' }}{% endif %}"
+                                        data-response-date="{% if cell %}{{ cell.response_date|default:'' }}{% endif %}"
+                                        data-experiment-type="{% if cell %}{{ cell.experiment_type|default:'' }}{% endif %}"
+                                        data-description="{% if cell %}{{ cell.description|default:'' }}{% endif %}"
+                                        data-response-description="{% if cell %}{{ cell.response_description|default:'' }}{% endif %}"
+                                        data-is-recompact="{% if cell %}{{ cell.is_recompact|yesno:'true,false' }}{% else %}false{% endif %}"
+                                        style="padding: 2px; cursor: pointer; {% if cell %}background-color: {% if cell.color == 'lightgray' %}#e0e0e0{% elif cell.color == 'orange' %}#ffb74d{% elif cell.color == 'green' %}#81c784{% elif cell.color == 'red' %}#e57373{% elif cell.color == 'purple' %}#ba68c8{% endif %};{% else %}background-color: white;{% endif %} border: 1px solid #dee2e6;"
+                                        onmouseover="showTooltip(event, this)"
+                                        onmouseout="hideTooltip()">
+                                        &nbsp;
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- راهنمای رنگ‌ها -->
+            <div class="card mt-3 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">راهنمای رنگ‌ها</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 30px; height: 30px; background-color: #e0e0e0; border: 1px solid #ccc; margin-left: 10px;"></div>
+                                <span>درخواست ثبت شده</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 30px; height: 30px; background-color: #ffb74d; border: 1px solid #ccc; margin-left: 10px;"></div>
+                                <span>تایید شده (رفته برای آزمایش)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 30px; height: 30px; background-color: #81c784; border: 1px solid #ccc; margin-left: 10px;"></div>
+                                <span>قابل قبول</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 30px; height: 30px; background-color: #e57373; border: 1px solid #ccc; margin-left: 10px;"></div>
+                                <span>غیر قابل قبول</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 30px; height: 30px; background-color: #ba68c8; border: 1px solid #ccc; margin-left: 10px;"></div>
+                                <span>ریکامپکت شده</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div id="grid-tooltip" class="tooltip-custom" style="display: none; position: absolute; z-index: 1000;"></div>
+
+<style>
+.grid-cell {
+    transition: all 0.2s;
+}
+
+.grid-cell:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+    z-index: 100;
+    position: relative;
+}
+
+.tooltip-custom {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 13px;
+    max-width: 300px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+
+.tooltip-custom h6 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 5px;
+}
+
+.tooltip-custom p {
+    margin: 5px 0;
+    font-size: 12px;
+}
+
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+</style>
+
+<script>
+function showTooltip(event, element) {
+    const tooltip = document.getElementById('grid-tooltip');
+    const requestId = element.getAttribute('data-request-id');
+    
+    if (!requestId) {
+        return;
+    }
+    
+    const color = element.getAttribute('data-color');
+    const requestDate = element.getAttribute('data-request-date');
+    const responseDate = element.getAttribute('data-response-date');
+    const experimentType = element.getAttribute('data-experiment-type');
+    const description = element.getAttribute('data-description');
+    const responseDescription = element.getAttribute('data-response-description');
+    const isRecompact = element.getAttribute('data-is-recompact') === 'true';
+    
+    let html = '<h6>جزئیات آزمایش</h6>';
+    
+    if (experimentType) {
+        html += `<p><strong>نوع آزمایش:</strong> ${experimentType}</p>`;
+    }
+    
+    if (requestDate) {
+        html += `<p><strong>تاریخ درخواست:</strong> ${requestDate}</p>`;
+    }
+    
+    if (responseDate) {
+        html += `<p><strong>تاریخ پاسخ:</strong> ${responseDate}</p>`;
+    }
+    
+    if (description) {
+        html += `<p><strong>توضیحات درخواست:</strong> ${description}</p>`;
+    }
+    
+    if (responseDescription) {
+        html += `<p><strong>توضیحات پاسخ:</strong> ${responseDescription}</p>`;
+    }
+    
+    if (isRecompact) {
+        html += `<p><strong style="color: #ba68c8;">ریکامپکت شده</strong></p>`;
+    }
+    
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    
+    // موقعیت tooltip
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = (rect.left + rect.width / 2 - 150) + 'px';
+    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+    
+    // اگر tooltip از بالای صفحه خارج شد، آن را پایین نشان بده
+    if (rect.top - tooltip.offsetHeight - 10 < 0) {
+        tooltip.style.top = (rect.bottom + 10) + 'px';
+    }
+}
+
+function hideTooltip() {
+    const tooltip = document.getElementById('grid-tooltip');
+    tooltip.style.display = 'none';
+}
+</script>
+{% endblock %}
+
