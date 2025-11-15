@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient, ExperimentRequestKilometer, ExperimentRequestFile
+from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient, ExperimentRequestKilometer, ExperimentRequestFile, AsphaltTest, AsphaltGradation
 from utils import baseAdminModel
 
 class MyModelAdminMixin(admin.ModelAdmin, baseAdminModel.BtnDeleteSelected):
@@ -86,3 +86,32 @@ class PaymentCoefficientAdmin(MyModelAdminMixin):
 
 admin.site.register(ExperimentRequestKilometer)
 admin.site.register(ExperimentRequestFile)
+
+
+class AsphaltGradationInline(admin.TabularInline):
+    """Inline برای مدیریت دانه‌بندی آسفالت (الک‌ها)"""
+    model = AsphaltGradation
+    extra = 1
+    fields = ('sieve_size', 'passing_percentage')
+
+
+@admin.register(AsphaltTest)
+class AsphaltTestAdmin(MyModelAdminMixin):
+    list_display = ('experiment_response', 'layer_type', 'bitumen_percentage', 'fracture_percentage', 'temperature', 'created_at')
+    list_filter = ('layer_type', 'created_at')
+    search_fields = ('experiment_response__experiment_request__project__name',)
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+    inlines = [AsphaltGradationInline]
+    fields = ('experiment_response', 'layer_type', 'bitumen_percentage', 'fracture_percentage', 
+              'temperature', 'air_void_percentage', 'vma_percentage', 'vfa_percentage', 
+              'filler_to_bitumen_ratio', 'created_at')
+
+
+@admin.register(AsphaltGradation)
+class AsphaltGradationAdmin(MyModelAdminMixin):
+    list_display = ('asphalt_test', 'sieve_size', 'passing_percentage', 'created_at')
+    list_filter = ('sieve_size', 'created_at')
+    search_fields = ('asphalt_test__experiment_response__experiment_request__project__name', 'sieve_size')
+    ordering = ('asphalt_test', 'sieve_size')
+    readonly_fields = ('created_at',)

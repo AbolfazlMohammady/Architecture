@@ -355,26 +355,116 @@ class Notification(models.Model):
         ordering = ['-created_at']
 
 class AsphaltTest(models.Model):
-    experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
+    """آزمایش آسفالت با 8 فیلد طبق داکیومنت"""
+    experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش", related_name='asphalt_tests')
     layer_type = models.CharField(max_length=50, choices=[
         ('BINDER', 'بیندر'),
         ('TOPAK', 'توپکا'),
     ], verbose_name="نوع لایه")
-    density = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="چگالی")
-    air_void = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="درصد هوای مخلوط")
-    vma = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="VMA")
-    vfa = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="VFA")
-    stability = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="پایداری")
-    flow = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="روانی")
+    
+    # 1. دانه‌بندی در مدل جداگانه AsphaltGradation مدیریت می‌شود
+    
+    # 2. درصد قیر نسبت به مخلوط آسفالت
+    bitumen_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد قیر نسبت به مخلوط آسفالت", 
+        null=True, 
+        blank=True,
+        help_text="(طرح اختلاط) ۱۰٪+ >= X >= (طرح اختلاط) ۱۰٪-"
+    )
+    
+    # 3. درصد شکستگی
+    fracture_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد شکستگی", 
+        null=True, 
+        blank=True,
+        help_text="باید >= 80 باشد"
+    )
+    
+    # 4. درجه حرارت آسفالت
+    temperature = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درجه حرارت آسفالت", 
+        null=True, 
+        blank=True,
+        help_text="163 >= X >= 136"
+    )
+    
+    # 5. درصد فضای خالی
+    air_void_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد فضای خالی", 
+        null=True, 
+        blank=True,
+        help_text="بیندر: 6 >= X >= 3, توپکا: 5 >= X >= 3"
+    )
+    
+    # 6. درصد حجمی فضای خالی
+    vma_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد حجمی فضای خالی (VMA)", 
+        null=True, 
+        blank=True,
+        help_text="15 >= X >= 13"
+    )
+    
+    # 7. درصد فضای خالی پرشده با قیر
+    vfa_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد فضای خالی پرشده با قیر (VFA)", 
+        null=True, 
+        blank=True,
+        help_text="75 >= X >= 60"
+    )
+    
+    # 8. درصد فیلر به قیر
+    filler_to_bitumen_ratio = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد فیلر به قیر", 
+        null=True, 
+        blank=True,
+        help_text="1.2 >= X >= 0.6"
+    )
+    
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
 
     def __str__(self):
-        return f"آزمایش آسفالت {self.layer_type} - {self.experiment_response}"
+        return f"آزمایش آسفالت {self.get_layer_type_display()} - {self.experiment_response}"
 
     class Meta:
         verbose_name = "آزمایش آسفالت"
         verbose_name_plural = "آزمایشات آسفالت"
         ordering = ['-created_at']
+
+
+class AsphaltGradation(models.Model):
+    """دانه‌بندی آسفالت (الک‌ها)"""
+    asphalt_test = models.ForeignKey(AsphaltTest, on_delete=models.CASCADE, verbose_name="آزمایش آسفالت", related_name='gradations')
+    sieve_size = models.CharField(max_length=20, verbose_name="اندازه الک", help_text="مثال: 3, 2.5, 2, 1.5, 1, 4/3, 2/1, ...")
+    passing_percentage = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        verbose_name="درصد عبوری", 
+        null=True, 
+        blank=True
+    )
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    def __str__(self):
+        return f"الک {self.sieve_size} - {self.passing_percentage}%"
+
+    class Meta:
+        verbose_name = "دانه‌بندی آسفالت"
+        verbose_name_plural = "دانه‌بندی‌های آسفالت"
+        ordering = ['asphalt_test', 'sieve_size']
 
 class ExperimentResponseKilometer(models.Model):
     experiment_response = models.ForeignKey('ExperimentResponse', on_delete=models.CASCADE, related_name='kilometer_ranges')

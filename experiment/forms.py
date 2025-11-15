@@ -332,20 +332,54 @@ class ConcretePlaceForm(forms.ModelForm):
         fields = ['name'] 
 
 class AsphaltTestForm(forms.ModelForm):
+    """فرم آزمایش آسفالت با 8 فیلد طبق داکیومنت"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # تنظیم کلاس‌های فرم
+        for field in self.fields:
+            if isinstance(self.fields[field].widget, (forms.TextInput, forms.NumberInput)):
+                self.fields[field].widget.attrs['class'] = 'form-control form-control-sm'
+            elif isinstance(self.fields[field].widget, forms.Select):
+                self.fields[field].widget.attrs['class'] = 'form-select'
+    
     class Meta:
         model = models.AsphaltTest
         fields = [
-            'layer_type', 'density', 'air_void', 'vma', 'vfa',
-            'stability', 'flow'
+            'layer_type', 
+            'bitumen_percentage', 
+            'fracture_percentage', 
+            'temperature',
+            'air_void_percentage', 
+            'vma_percentage', 
+            'vfa_percentage',
+            'filler_to_bitumen_ratio'
         ]
         widgets = {
             'layer_type': forms.Select(attrs={'class': 'form-select'}),
-            'density': forms.NumberInput(attrs={'class': 'form-control'}),
-            'air_void': forms.NumberInput(attrs={'class': 'form-control'}),
-            'vma': forms.NumberInput(attrs={'class': 'form-control'}),
-            'vfa': forms.NumberInput(attrs={'class': 'form-control'}),
-            'stability': forms.NumberInput(attrs={'class': 'form-control'}),
-            'flow': forms.NumberInput(attrs={'class': 'form-control'}),
+            'bitumen_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'fracture_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'temperature': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'air_void_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'vma_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'vfa_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'filler_to_bitumen_ratio': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+
+class AsphaltGradationForm(forms.ModelForm):
+    """فرم دانه‌بندی آسفالت (الک‌ها)"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sieve_size'].widget.attrs['class'] = 'form-control form-control-sm'
+        self.fields['passing_percentage'].widget.attrs['class'] = 'form-control form-control-sm'
+        self.fields['passing_percentage'].widget.attrs['step'] = '0.01'
+    
+    class Meta:
+        model = models.AsphaltGradation
+        fields = ['sieve_size', 'passing_percentage']
+        widgets = {
+            'sieve_size': forms.TextInput(attrs={'class': 'form-control'}),
+            'passing_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         } 
 
 class ExperimentResponseKilometerForm(forms.ModelForm):
@@ -365,6 +399,18 @@ ExperimentResponseKilometerFormSet = inlineformset_factory(
 ExperimentResponseFileFormSet = inlineformset_factory(
     models.ExperimentResponse, models.ExperimentResponseFile,
     form=ExperimentResponseFileForm, extra=1, can_delete=True
+)
+
+# Formset برای آزمایش آسفالت
+AsphaltTestFormSet = inlineformset_factory(
+    models.ExperimentResponse, models.AsphaltTest,
+    form=AsphaltTestForm, extra=1, can_delete=True
+)
+
+# Formset برای دانه‌بندی آسفالت
+AsphaltGradationFormSet = inlineformset_factory(
+    models.AsphaltTest, models.AsphaltGradation,
+    form=AsphaltGradationForm, extra=1, can_delete=True
 ) 
 
 class ExperimentRequestKilometerForm(forms.ModelForm):

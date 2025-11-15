@@ -173,6 +173,100 @@
                                 <input type="text" id="strength_average" class="form-control" readonly style="background-color: #e9ecef;">
                                 <small class="form-text text-muted">این مقدار به صورت خودکار از میانگین سه مقاومت محاسبه می‌شود</small>
                             </div>
+                            
+                            <!-- فیلدهای آسفالت (8 فیلد) -->
+                            {% if is_asphalt and asphalt_formset %}
+                            <div class="col-12 result-field" data-experiment-types="آسفالت" style="display: none;">
+                                <div class="card mb-4 shadow">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0"><i class="fas fa-road me-2"></i>نتایج آزمایش آسفالت</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {{ asphalt_formset.management_form }}
+                                        {% for form in asphalt_formset %}
+                                        <div class="asphalt-form-row border rounded p-3 mb-3 bg-light">
+                                            <div class="row">
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">نوع لایه</label>
+                                                    {{ form.layer_type|add_class:"form-select" }}
+                                                    {% if form.layer_type.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.layer_type.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد قیر نسبت به مخلوط آسفالت</label>
+                                                    {{ form.bitumen_percentage|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">(طرح اختلاط) ۱۰٪+ >= X >= (طرح اختلاط) ۱۰٪-</small>
+                                                    {% if form.bitumen_percentage.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.bitumen_percentage.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد شکستگی</label>
+                                                    {{ form.fracture_percentage|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">باید >= 80 باشد</small>
+                                                    {% if form.fracture_percentage.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.fracture_percentage.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درجه حرارت آسفالت</label>
+                                                    {{ form.temperature|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">163 >= X >= 136</small>
+                                                    {% if form.temperature.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.temperature.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد فضای خالی</label>
+                                                    {{ form.air_void_percentage|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">بیندر: 6 >= X >= 3, توپکا: 5 >= X >= 3</small>
+                                                    {% if form.air_void_percentage.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.air_void_percentage.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد حجمی فضای خالی (VMA)</label>
+                                                    {{ form.vma_percentage|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">15 >= X >= 13</small>
+                                                    {% if form.vma_percentage.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.vma_percentage.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد فضای خالی پرشده با قیر (VFA)</label>
+                                                    {{ form.vfa_percentage|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">75 >= X >= 60</small>
+                                                    {% if form.vfa_percentage.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.vfa_percentage.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3 mb-3">
+                                                    <label class="form-label">درصد فیلر به قیر</label>
+                                                    {{ form.filler_to_bitumen_ratio|add_class:"form-control" }}
+                                                    <small class="form-text text-muted">1.2 >= X >= 0.6</small>
+                                                    {% if form.filler_to_bitumen_ratio.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.filler_to_bitumen_ratio.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                            {% if form.DELETE %}
+                                                <div class="form-check">
+                                                    {{ form.DELETE|add_class:"form-check-input" }}
+                                                    <label class="form-check-label">حذف</label>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                        <div class="alert alert-info small">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>نکته:</strong> برای ثبت دانه‌بندی (الک‌ها)، پس از ذخیره این فرم، می‌توانید در صفحه جزئیات پاسخ، دانه‌بندی را اضافه کنید.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="row mt-4">
                             <div class="col-12">
@@ -371,6 +465,15 @@
                                          (cleanType.indexOf("مقاومت فشاری") !== -1 && cleanType.indexOf("بتن") !== -1);
                             if (matches) {
                                 console.log('✓ مقاومت فشاری matched with:', cleanType);
+                            }
+                            return matches;
+                        }
+                        
+                        // بررسی برای "آسفالت"
+                        if (cleanRequired === "آسفالت") {
+                            var matches = cleanType.indexOf("آسفالت") !== -1;
+                            if (matches) {
+                                console.log('✓ آسفالت matched with:', cleanType);
                             }
                             return matches;
                         }

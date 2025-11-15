@@ -108,7 +108,8 @@ from .forms import (
     ExperimentResponseKilometerFormSet, 
     ExperimentResponseFileFormSet,
     ExperimentRequestKilometerFormSet,
-    ExperimentRequestFileFormSet
+    ExperimentRequestFileFormSet,
+    AsphaltTestFormSet
 )
 
 # تنظیم لاگر
@@ -506,11 +507,24 @@ def experiment_response_create(request, pk):
     if last_response and not last_response.is_fully_approved():
         messages.error(request, 'تا زمانی که همه نقش‌های کلیدی پروژه پاسخ قبلی را تایید نکرده‌اند، امکان ثبت پاسخ جدید وجود ندارد.')
         return redirect('experiment:experiment_request_detail', pk=experiment_request.pk)
+    # بررسی اینکه آیا آزمایش آسفالت است
+    experiment_types = experiment_request.experiment_type.all()
+    is_asphalt = any('آسفالت' in et.name for et in experiment_types)
+    
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES, experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(request.POST, prefix='kilometer')
         file_formset = ExperimentResponseFileFormSet(request.POST, request.FILES, prefix='file')
-        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
+        asphalt_formset = None
+        
+        if is_asphalt:
+            asphalt_formset = AsphaltTestFormSet(request.POST, prefix='asphalt')
+        
+        is_valid = form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid()
+        if is_asphalt and asphalt_formset:
+            is_valid = is_valid and asphalt_formset.is_valid()
+        
+        if is_valid:
             experiment_response = form.save(commit=False)
             experiment_response.experiment_request = experiment_request
             experiment_response.user = request.user
@@ -519,6 +533,12 @@ def experiment_response_create(request, pk):
             kilometer_formset.save()
             file_formset.instance = experiment_response
             file_formset.save()
+            
+            # ذخیره فرم آسفالت
+            if is_asphalt and asphalt_formset:
+                asphalt_formset.instance = experiment_response
+                asphalt_formset.save()
+            
             # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
             notified_users = set()
             for role in experiment_response.get_required_approval_roles():
@@ -539,10 +559,16 @@ def experiment_response_create(request, pk):
             print('Kilometer formset non_form_errors:', kilometer_formset.non_form_errors())
             print('File formset errors:', file_formset.errors)
             print('File formset non_form_errors:', file_formset.non_form_errors())
+            if is_asphalt and asphalt_formset:
+                print('Asphalt formset errors:', asphalt_formset.errors)
+                print('Asphalt formset non_form_errors:', asphalt_formset.non_form_errors())
     else:
         form = forms.ExperimentResponseForm(experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer')
         file_formset = ExperimentResponseFileFormSet(prefix='file')
+        asphalt_formset = None
+        if is_asphalt:
+            asphalt_formset = AsphaltTestFormSet(prefix='asphalt')
 
     layer_display_name = experiment_request.layer.layer_type.name
     siblings = experiment_request.project.projectlayer_set.filter(
@@ -1253,6 +1279,8 @@ def experiment_response_update(request, pk):
         'form': form,
         'kilometer_formset': kilometer_formset,
         'file_formset': file_formset,
+        'asphalt_formset': asphalt_formset,
+        'is_asphalt': is_asphalt,
         'experiment_request': experiment_request,
         'project': experiment_request.project,
         'layer': experiment_request.layer,
