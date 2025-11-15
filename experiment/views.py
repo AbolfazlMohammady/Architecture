@@ -13,6 +13,10 @@ from django.db.models import Q, Avg, Max, Min
 from decimal import Decimal
 # Helpers
 def get_layer_display_name(layer):
+    """نمایش نام لایه با شماره فارسی برای لایه‌های تکراری"""
+    # تبدیل "خاکریزی" به "خاک ریز"
+    layer_name = layer.layer_type.name.replace('خاکریزی', 'خاک ریز')
+    
     siblings = layer.project.projectlayer_set.filter(
         layer_type=layer.layer_type
     ).order_by('order_from_top')
@@ -20,10 +24,16 @@ def get_layer_display_name(layer):
         sibling_list = list(siblings)
         try:
             index = sibling_list.index(layer) + 1
-            return f"{layer.layer_type.name} {index}"
+            # تبدیل عدد به فارسی
+            persian_numbers = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه', 'ده']
+            if index <= 10:
+                persian_index = persian_numbers[index]
+            else:
+                persian_index = str(index)
+            return f"{layer_name} {persian_index}"
         except ValueError:
             pass
-    return layer.layer_type.name
+    return layer_name
 
 
 def find_blocking_lower_layers(project, target_layer, ranges):
@@ -199,6 +209,10 @@ def experiment_request_list(request):
     
     # مرتب‌سازی بر اساس تاریخ ایجاد (جدیدترین اول)
     experiment_requests = experiment_requests.order_by('-created_at')
+    
+    # اضافه کردن نام نمایشی لایه به هر درخواست
+    for exp_request in experiment_requests:
+        exp_request.layer_display_name = get_layer_display_name(exp_request.layer) if exp_request.layer else '-'
     
     print(f"DEBUG: Final count: {experiment_requests.count()}")
     
@@ -644,6 +658,84 @@ def payment_coefficient_delete(request, pk):
         'coefficient': coefficient
     })
 
+@login_required
+def update_experiment_kilometers(request):
+    """به‌روزرسانی کیلومتراژ آزمایشات به محدوده پروژه"""
+    if not request.user.is_superuser:
+        messages.error(request, 'شما دسترسی به این صفحه را ندارید.')
+        return redirect('experiment:experiment_request_list')
+    
+    from project.models import Project
+    from decimal import Decimal
+    
+    project_id = request.GET.get('project_id', 1)
+    try:
+        project = Project.objects.get(pk=project_id)
+    except Project.DoesNotExist:
+        messages.error(request, f'پروژه با ID {project_id} یافت نشد!')
+        return redirect('experiment:experiment_request_list')
+    
+    # محاسبه محدوده کیلومتراژ پروژه
+    project_start = float(project.start_kilometer) if project.start_kilometer else 0.0
+    project_end = float(project.end_kilometer) if project.end_kilometer else project_start + 10.0
+    project_range = project_end - project_start
+    
+    # پیدا کردن آزمایشات با کیلومتراژ خارج از محدوده
+    old_experiments = models.ExperimentRequest.objects.filter(
+        project=project
+    ).filter(
+        models.Q(start_kilometer__gte=1000) | 
+        models.Q(start_kilometer__lt=project_start) | 
+        models.Q(start_kilometer__gt=project_end)
+    ).order_by('id')
+    
+    count = old_experiments.count()
+    if count == 0:
+        messages.info(request, 'هیچ آزمایشی با کیلومتراژ خارج از محدوده یافت نشد!')
+        return redirect('experiment:experiment_request_list')
+    
+    # تقسیم محدوده پروژه به بخش‌های مساوی
+    segment_size = project_range / (count + 1) if count > 0 else project_range
+    
+    updated_count = 0
+    # به‌روزرسانی هر آزمایش
+    for i, exp in enumerate(old_experiments, start=1):
+        old_start = float(exp.start_kilometer)
+        old_end = float(exp.end_kilometer)
+        old_range = old_end - old_start if old_end > old_start else 1.0  # حداقل 1 کیلومتر
+        
+        # محاسبه کیلومتراژ جدید
+        new_start = project_start + (i * segment_size)
+        new_end = new_start + old_range  # حفظ طول بازه
+        
+        # اطمینان از اینکه در محدوده پروژه است
+        if new_end > project_end:
+            new_end = project_end
+            new_start = max(project_start, new_end - old_range)
+        
+        # به‌روزرسانی در model اصلی
+        exp.start_kilometer = Decimal(str(new_start))
+        exp.end_kilometer = Decimal(str(new_end))
+        exp.save()
+        
+        # به‌روزرسانی در formset (اگر وجود داشته باشد)
+        from experiment.models import ExperimentRequestKilometer
+        km_ranges = ExperimentRequestKilometer.objects.filter(experiment_request=exp)
+        if km_ranges.exists():
+            # حذف بازه‌های قدیمی
+            km_ranges.delete()
+            # ایجاد بازه جدید
+            ExperimentRequestKilometer.objects.create(
+                experiment_request=exp,
+                start_kilometer=Decimal(str(new_start)),
+                end_kilometer=Decimal(str(new_end))
+            )
+        
+        updated_count += 1
+    
+    messages.success(request, f'{updated_count} آزمایش با موفقیت به‌روزرسانی شدند! (محدوده: {project_start:.3f} تا {project_end:.3f})')
+    return redirect('experiment:experiment_request_list')
+
 def dashboard_charts(request):
     """نمایش نمودارهای ضریب پرداخت با میانگین ضرایب پرداخت"""
     logger.info(f"Accessing dashboard_charts view by user: {request.user}")
@@ -902,14 +994,108 @@ def experiment_request_update(request, pk):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=pk)
     if request.method == 'POST':
         form = forms.ExperimentRequestForm(request.POST, request.FILES, instance=experiment_request, user=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'درخواست آزمایش با موفقیت بروزرسانی شد.')
-            return redirect('experiment:experiment_request_list')
+        kilometer_formset = ExperimentRequestKilometerFormSet(
+            request.POST,
+            prefix='kilometer',
+            instance=experiment_request
+        )
+        file_formset = ExperimentRequestFileFormSet(
+            request.POST,
+            request.FILES,
+            prefix='file',
+            instance=experiment_request
+        )
+        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
+            valid_ranges = []
+            for km_form in kilometer_formset:
+                if km_form.cleaned_data and not km_form.cleaned_data.get('DELETE', False):
+                    start = km_form.cleaned_data.get('start_kilometer')
+                    end = km_form.cleaned_data.get('end_kilometer')
+                    if start is not None and end is not None:
+                        valid_ranges.append((start, end))
+            
+            if not valid_ranges:
+                kilometer_formset._non_form_errors = kilometer_formset.error_class(
+                    ['حداقل یک بازه کیلومتراژ باید ثبت شود.']
+                )
+            else:
+                decimal_ranges = [
+                    (Decimal(str(rng[0])), Decimal(str(rng[1])))
+                    for rng in valid_ranges
+                ]
+                project = form.cleaned_data.get('project')
+                layer = form.cleaned_data.get('layer')
+                
+                # بررسی محدوده کیلومتراژ پروژه
+                out_of_range = False
+                if project:
+                    project_start = float(project.start_kilometer) if project.start_kilometer else 0.0
+                    project_end = float(project.end_kilometer) if project.end_kilometer else project_start + 10.0
+                    
+                    # بررسی اینکه آیا کیلومتراژها در محدوده پروژه هستند
+                    for rng in decimal_ranges:
+                        if rng[0] < project_start or rng[1] > project_end:
+                            out_of_range = True
+                            break
+                    
+                    if out_of_range:
+                        kilometer_formset._non_form_errors = kilometer_formset.error_class(
+                            [f'کیلومتراژ باید در محدوده پروژه باشد ({project_start:.3f} تا {project_end:.3f})']
+                        )
+                
+                blocking_layers = []
+                if project and layer and not out_of_range:
+                    blocking_layers = find_blocking_lower_layers(project, layer, decimal_ranges)
+                if blocking_layers:
+                    names = [get_layer_display_name(blk) for blk in blocking_layers]
+                    form.add_error(
+                        None,
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
+                    )
+                elif not out_of_range:
+                    experiment_request = form.save(commit=False)
+                    start_values = [rng[0] for rng in decimal_ranges]
+                    end_values = [rng[1] for rng in decimal_ranges]
+                    experiment_request.start_kilometer = min(start_values)
+                    experiment_request.end_kilometer = max(end_values)
+                    experiment_request.save()
+                    form.save_m2m()
+                    kilometer_formset.instance = experiment_request
+                    kilometer_formset.save()
+                    file_formset.instance = experiment_request
+                    file_formset.save()
+                    messages.success(request, 'درخواست آزمایش با موفقیت بروزرسانی شد.')
+                    return redirect('experiment:experiment_request_list')
     else:
         form = forms.ExperimentRequestForm(instance=experiment_request, user=request.user)
+        kilometer_formset = ExperimentRequestKilometerFormSet(
+            prefix='kilometer',
+            instance=experiment_request
+        )
+        # اگر formset خالی است اما کیلومتراژ در model اصلی وجود دارد، آن را اضافه می‌کنیم
+        if not kilometer_formset.forms and experiment_request.start_kilometer and experiment_request.end_kilometer:
+            from experiment.models import ExperimentRequestKilometer
+            # بررسی اینکه آیا قبلاً ExperimentRequestKilometer وجود دارد یا نه
+            if not ExperimentRequestKilometer.objects.filter(experiment_request=experiment_request).exists():
+                # ایجاد یک formset با یک فرم که از model اصلی پر شده
+                ExperimentRequestKilometer.objects.create(
+                    experiment_request=experiment_request,
+                    start_kilometer=experiment_request.start_kilometer,
+                    end_kilometer=experiment_request.end_kilometer
+                )
+                # دوباره formset را ایجاد می‌کنیم
+                kilometer_formset = ExperimentRequestKilometerFormSet(
+                    prefix='kilometer',
+                    instance=experiment_request
+                )
+        file_formset = ExperimentRequestFileFormSet(
+            prefix='file',
+            instance=experiment_request
+        )
     return render(request, 'experiment/experiment_request_form.html', {
         'form': form,
+        'kilometer_formset': kilometer_formset,
+        'file_formset': file_formset,
         'user': request.user,
     })
 

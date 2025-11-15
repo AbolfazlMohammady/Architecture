@@ -14,19 +14,29 @@ import math
 def assign_layer_display_names(layers):
     """
     Attach display_name attribute to each layer with numbering for duplicate layer types.
+    Uses Persian numbers and converts "خاکریزی" to "خاک ریز".
     """
     layers = list(layers)
     name_counts = {}
     for layer in layers:
-        layer_name = layer.layer_type.name
+        # تبدیل "خاکریزی" به "خاک ریز"
+        layer_name = layer.layer_type.name.replace('خاکریزی', 'خاک ریز')
         name_counts[layer_name] = name_counts.get(layer_name, 0) + 1
 
     indices = {name: 0 for name in name_counts}
+    persian_numbers = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه', 'ده']
     for layer in layers:
-        layer_name = layer.layer_type.name
+        # تبدیل "خاکریزی" به "خاک ریز"
+        layer_name = layer.layer_type.name.replace('خاکریزی', 'خاک ریز')
         if name_counts[layer_name] > 1:
             indices[layer_name] += 1
-            layer.display_name = f"{layer_name} {indices[layer_name]}"
+            index = indices[layer_name]
+            # تبدیل عدد به فارسی
+            if index <= 10:
+                persian_index = persian_numbers[index]
+            else:
+                persian_index = str(index)
+            layer.display_name = f"{layer_name} {persian_index}"
         else:
             layer.display_name = layer_name
     return layers
@@ -293,24 +303,42 @@ class ProjectDashboardView(generic.DetailView):
             if layer_id not in experiment_data:
                 experiment_data[layer_id] = []
             
-            # بررسی وضعیت تایید
+            # محاسبه وضعیت واقعی بر اساس پاسخ‌ها و تاییدیه‌ها
+            actual_status = request.get_actual_status()
+            
+            # بررسی وضعیت تایید برای نمایش در داشبورد
             approval_status = None
+            has_rejected = False
             if hasattr(request, 'experimentresponse_set') and request.experimentresponse_set.exists():
-                response = request.experimentresponse_set.first()
-                if hasattr(response, 'experimentapproval_set') and response.experimentapproval_set.exists():
-                    approval = response.experimentapproval_set.first()
-                    approval_status = approval.status
+                latest_response = request.experimentresponse_set.order_by('-created_at').first()
+                if hasattr(latest_response, 'experimentapproval_set') and latest_response.experimentapproval_set.exists():
+                    # بررسی اینکه آیا هر کدام رد شده است
+                    has_rejected = latest_response.experimentapproval_set.filter(status=ExperimentApproval.REJECTED).exists()
+                    # بررسی وضعیت کامل تایید
+                    approval_status_by_role = latest_response.get_approval_status_by_role()
+                    if all(v == 'تایید شده' for v in approval_status_by_role.values() if v != 'تعریف نشده'):
+                        approval_status = ExperimentApproval.APPROVED
+                    elif has_rejected:
+                        approval_status = ExperimentApproval.REJECTED
+                    else:
+                        approval_status = None  # در حال بررسی
+            
+            # دریافت نام نمایشی لایه
+            from experiment.views import get_layer_display_name
+            layer_display_name = get_layer_display_name(request.layer) if request.layer else None
             
             experiment_data[layer_id].append({
                 'id': request.id,
                 'kilometer_start': float(request.start_kilometer),
                 'kilometer_end': float(request.end_kilometer),
-                'experiment_type': request.experiment_type.name,
-                'experiment_subtype': request.experiment_subtype.name if request.experiment_subtype else None,
-                'status': request.status,
+                'experiment_type': ', '.join([et.name for et in request.experiment_type.all()]),
+                'experiment_subtype': ', '.join([est.name for est in request.experiment_subtype.all()]) if request.experiment_subtype.exists() else None,
+                'status': actual_status,  # استفاده از وضعیت واقعی
                 'approval_status': approval_status,
+                'has_rejected': has_rejected,
                 'request_date': request.request_date.strftime('%Y/%m/%d') if request.request_date else None,
                 'description': request.description,
+                'layer_display_name': layer_display_name,
             })
         
         # ساخت executed_ranges برای هر لایه بر اساس آزمایش‌های همان لایه

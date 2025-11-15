@@ -64,4 +64,5 @@ urlpatterns = [
     path('experiment-approval/<int:pk>/delete/', views.experiment_approval_delete, name='experiment_approval_delete'),
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
+    path('update-kilometers/', views.update_experiment_kilometers, name='update_experiment_kilometers'),
 ]

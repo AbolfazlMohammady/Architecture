@@ -93,12 +93,7 @@
                                     <td>{{ request.order }}</td>
                                     <td>{{ request.project.name }}</td>
                                     <td>
-                                      {% if request.layer %}
-                                        {{ request.layer.layer_type.name }}
-                                        ({{ request.layer.thickness_cm }} سانتی‌متر، ترتیب: {{ request.layer.order_from_top }})
-                                      {% else %}
-                                        -
-                                      {% endif %}
+                                      {{ request.layer_display_name|default:"-" }}
                                     </td>
                                     <td>
                                         {% for t in request.experiment_type.all %}
@@ -111,15 +106,19 @@
                                     </td>
                                     <td>{{ request.request_date|date:"Y/m/d" }}</td>
                                     <td>
-                                        {% if request.status == 0 %}
-                                        <span class="badge bg-warning">در انتظار بررسی</span>
-                                        {% elif request.status == 1 %}
-                                        <span class="badge bg-info">در حال انجام</span>
-                                        {% elif request.status == 2 %}
-                                        <span class="badge bg-success">تکمیل شده</span>
-                                        {% elif request.status == 3 %}
-                                        <span class="badge bg-danger">رد شده</span>
-                                        {% endif %}
+                                        {% with actual_status=request.get_actual_status %}
+                                            {% if actual_status == 0 %}
+                                            <span class="badge bg-warning">در انتظار بررسی</span>
+                                            {% elif actual_status == 1 %}
+                                            <span class="badge bg-info">در حال انجام</span>
+                                            {% elif actual_status == 2 %}
+                                            <span class="badge bg-success">تکمیل شده</span>
+                                            {% elif actual_status == 3 %}
+                                            <span class="badge bg-danger">رد شده</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{{ request.get_status_display }}</span>
+                                            {% endif %}
+                                        {% endwith %}
                                     </td>
                                     <td>
                                         <a href="{% url 'experiment:experiment_request_detail' request.pk %}" class="btn btn-info btn-sm">

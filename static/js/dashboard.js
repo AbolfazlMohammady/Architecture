@@ -1239,8 +1239,19 @@ export class ProjectDashboard {
 
     drawExperiments() {
         if (!this.projectData.layers || !Array.isArray(this.projectData.layers)) {
+            console.log('No layers data or layers is not an array');
             return;
         }
+        
+        console.log(`Total layers: ${this.projectData.layers.length}`);
+        this.projectData.layers.forEach(layer => {
+            console.log(`Layer ${layer.id} (${layer.name}): ${layer.experiments?.length || 0} experiments`);
+            if (layer.experiments && layer.experiments.length > 0) {
+                layer.experiments.forEach(exp => {
+                    console.log(`  - Experiment ${exp.id}: km ${exp.kilometer_start} to ${exp.kilometer_end}, status=${exp.status}, has_rejected=${exp.has_rejected}`);
+                });
+            }
+        });
         
         if (!this.layerLayout) {
             this.layerLayout = this.buildLayerLayout();
@@ -1248,12 +1259,19 @@ export class ProjectDashboard {
 
         const { layers, thicknessPx } = this.layerLayout;
         if (!layers.length) {
+            console.log('No layers in layout');
             return;
         }
+        
+        console.log(`LayerIndexMap size: ${this.layerIndexMap.size}`);
+        this.layerIndexMap.forEach((index, layerId) => {
+            console.log(`  Layer ${layerId} -> index ${index}`);
+        });
         
         const ctx = this.canvas.ctx;
         const projectStart = parseFloat(this.projectData.start_kilometer) || 0;
         const projectEnd = parseFloat(this.projectData.end_kilometer) || projectStart;
+        console.log(`Project range: ${projectStart} to ${projectEnd}`);
         
         this.projectData.layers.forEach(layer => {
             if (!layer.experiments || !Array.isArray(layer.experiments)) {
@@ -1262,17 +1280,27 @@ export class ProjectDashboard {
 
             const layerIndex = this.layerIndexMap.get(layer.id);
             if (layerIndex === undefined) {
+                console.log(`Layer ${layer.id} not found in layerIndexMap`);
                 return;
             }
             
+            console.log(`Drawing experiments for layer ${layer.id} (${layer.name}): ${layer.experiments.length} experiments`);
+            
             layer.experiments.forEach(experiment => {
-                if (!experiment || !this.isExperimentInDateRange(experiment)) {
+                if (!experiment) {
+                    console.log('Experiment is null or undefined');
+                    return;
+                }
+                
+                if (!this.isExperimentInDateRange(experiment)) {
+                    console.log(`Experiment ${experiment.id} is not in date range`);
                     return;
                 }
                 
                 let kmStart = parseFloat(experiment.kilometer_start);
                 let kmEnd = parseFloat(experiment.kilometer_end);
                 if (!isFinite(kmStart) || !isFinite(kmEnd)) {
+                    console.log(`Experiment ${experiment.id} has invalid km values: ${kmStart}, ${kmEnd}`);
                     return;
                 }
                 
@@ -1280,30 +1308,50 @@ export class ProjectDashboard {
                     [kmStart, kmEnd] = [kmEnd, kmStart];
                 }
 
-                const withinProject =
-                    kmStart >= projectStart - 0.001 &&
-                    kmEnd <= projectEnd + 0.001;
+                // بررسی اینکه آیا آزمایش در محدوده قابل نمایش است
+                // محدوده قابل نمایش از originalXMin تا originalXMax است
+                const displayXMin = this.originalXMin || this.xMin || projectStart;
+                const displayXMax = this.originalXMax || this.xMax || projectEnd;
+                
+                const withinDisplayRange =
+                    kmStart >= displayXMin - 0.001 &&
+                    kmEnd <= displayXMax + 0.001;
 
-                if (!withinProject) {
-                    const offset = this.originalXMin || 0;
-                    kmStart = offset + kmStart;
-                    kmEnd = offset + kmEnd;
+                console.log(`Experiment ${experiment.id}: kmStart=${kmStart}, kmEnd=${kmEnd}, displayXMin=${displayXMin}, displayXMax=${displayXMax}, withinDisplayRange=${withinDisplayRange}`);
+
+                // اگر آزمایش خارج از محدوده قابل نمایش است، skip می‌کنیم
+                if (!withinDisplayRange) {
+                    console.log(`Experiment ${experiment.id} is outside display range, skipping`);
+                    return;
                 }
 
                 const xStart = this.transformX(kmStart);
                 const xEnd = this.transformX(kmEnd);
                 if (!isFinite(xStart) || !isFinite(xEnd)) {
+                    console.log(`Experiment ${experiment.id} has invalid x values: ${xStart}, ${xEnd}`);
                     return;
                 }
                 
                 const yStart = this.getLayerYPosition(layerIndex, kmStart);
                 const yEnd = this.getLayerYPosition(layerIndex, kmEnd);
                 if (yStart === null || yEnd === null) {
+                    console.log(`Experiment ${experiment.id} has null y values: yStart=${yStart}, yEnd=${yEnd}, layerIndex=${layerIndex}`);
                     return;
                 }
                 
+                console.log(`Drawing experiment ${experiment.id} from (${xStart}, ${yStart}) to (${xEnd}, ${yEnd})`);
+                
                 const color = this.getExperimentColor(experiment);
                 const lineWidth = Math.max(thicknessPx[layerIndex] * 0.9, 6);
+                
+                // بررسی اینکه آیا آزمایش رد شده است
+                const isRejected = experiment.has_rejected === true || experiment.has_rejected === 1 || 
+                                   experiment.status === 3 || experiment.approval_status === 2;
+                
+                // دیباگ برای آزمایشات رد شده
+                if (isRejected) {
+                    console.log(`Drawing REJECTED experiment ${experiment.id} with color: ${color}, isRejected: ${isRejected}`);
+                }
 
         ctx.save();
         ctx.beginPath();
@@ -1311,7 +1359,12 @@ export class ProjectDashboard {
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.lineWidth = lineWidth;
-                ctx.globalAlpha = 0.85;
+                // برای آزمایشات رد شده، alpha را بیشتر کنیم تا رنگ واضح‌تر باشد
+                ctx.globalAlpha = isRejected ? 1.0 : 0.85;
+                // برای آزمایشات رد شده، خط را ضخیم‌تر کنیم
+                if (isRejected) {
+                    ctx.lineWidth = lineWidth * 1.2;
+                }
                 ctx.moveTo(xStart, yStart);
                 ctx.lineTo(xEnd, yEnd);
             ctx.stroke();
@@ -1441,24 +1494,30 @@ export class ProjectDashboard {
 
     getExperimentColor(experiment) {
         const status = Number(experiment.status);
-        const approval = Number(experiment.approval_status);
+        const approval = experiment.approval_status !== null && experiment.approval_status !== undefined ? Number(experiment.approval_status) : null;
+        const hasRejected = experiment.has_rejected === true || experiment.has_rejected === 1 || experiment.has_rejected === 'true';
 
+        // اول بررسی می‌کنیم که آیا رد شده است یا نه
+        if (hasRejected || status === 3 || approval === 2) {
+            return '#ef4444'; // قرمز
+        }
+        
+        // اگر تکمیل شده و تایید شده باشد
         if (status === 2) {
-            if (approval === 2) {
-                return '#ef4444';
-            }
             if (approval === 1) {
-                return '#22c55e';
+                return '#22c55e'; // سبز
             }
-            return '#4ade80';
+            // اگر تکمیل شده اما هنوز تایید نشده
+            return '#4ade80'; // سبز روشن
         }
+        
+        // اگر در حال انجام باشد
         if (status === 1) {
-            return '#f97316';
+            return '#f97316'; // نارنجی
         }
-        if (status === 3) {
-            return '#ef4444';
-        }
-        return '#e2e8f0';
+        
+        // در انتظار
+        return '#e2e8f0'; // خاکستری روشن
     }
 
     getDistanceToTooltipItem(x, y, item) {

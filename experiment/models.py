@@ -81,6 +81,45 @@ class ExperimentRequest(models.Model):
 
     def __str__(self):
         return f"{self.project.name} - {self.order}"
+    
+    def get_actual_status(self):
+        """محاسبه وضعیت واقعی بر اساس پاسخ‌ها و تاییدیه‌ها"""
+        # اگر پاسخ وجود دارد
+        responses = self.experimentresponse_set.all()
+        if responses.exists():
+            # آخرین پاسخ را بررسی می‌کنیم
+            latest_response = responses.order_by('-created_at').first()
+            
+            # بررسی تاییدیه‌های آخرین پاسخ
+            approvals = latest_response.experimentapproval_set.all()
+            if approvals.exists():
+                # اگر هر کدام از تاییدیه‌ها رد شده باشد
+                if approvals.filter(status=ExperimentApproval.REJECTED).exists():
+                    return self.REJECTED
+                # اگر همه تایید شده باشند
+                approval_status = latest_response.get_approval_status_by_role()
+                if all(v == 'تایید شده' for v in approval_status.values() if v != 'تعریف نشده'):
+                    return self.COMPLETED
+                # در غیر این صورت در حال بررسی است
+                return self.IN_PROGRESS
+            # اگر پاسخ وجود دارد اما تاییدیه ندارد
+            return self.IN_PROGRESS
+        
+        # اگر پاسخ وجود ندارد، وضعیت درخواست را برمی‌گردانیم
+        return self.status
+    
+    def get_status_display_color(self):
+        """رنگ badge بر اساس وضعیت واقعی"""
+        actual_status = self.get_actual_status()
+        if actual_status == self.PENDING:
+            return 'bg-warning'
+        elif actual_status == self.IN_PROGRESS:
+            return 'bg-info'
+        elif actual_status == self.COMPLETED:
+            return 'bg-success'
+        elif actual_status == self.REJECTED:
+            return 'bg-danger'
+        return 'bg-secondary'
 
 class ExperimentRequestApproval(models.Model):
     APPROVED = 1
