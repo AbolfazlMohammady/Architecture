@@ -224,20 +224,27 @@ class ExperimentResponse(models.Model):
                 approvers.append(project.hsse_manager)
         
         # سپس از UserProjectRole استفاده می‌کنیم (برای نقش‌های جدید)
-        from core.models import UserProjectRole
-        # ابتدا نقش‌های مربوط به این پروژه خاص را پیدا می‌کنیم
-        project_roles = UserProjectRole.objects.filter(
-            role_name=role_name,
-            project=project
-        ).select_related('user')
-        approvers.extend([role.user for role in project_roles if role.user not in approvers])
-        
-        # سپس نقش‌هایی که برای همه پروژه‌ها تعریف شده‌اند (project=None)
-        global_roles = UserProjectRole.objects.filter(
-            role_name=role_name,
-            project__isnull=True
-        ).select_related('user')
-        approvers.extend([role.user for role in global_roles if role.user not in approvers])
+        from core.models import UserProjectRole, Role
+        try:
+            # پیدا کردن Role با نام داده شده
+            role_obj = Role.objects.get(name=role_name)
+            
+            # ابتدا نقش‌های مربوط به این پروژه خاص را پیدا می‌کنیم
+            project_roles = UserProjectRole.objects.filter(
+                role=role_obj,
+                projects=project
+            ).select_related('user')
+            approvers.extend([role.user for role in project_roles if role.user not in approvers])
+            
+            # سپس نقش‌هایی که برای همه پروژه‌ها تعریف شده‌اند (all_projects=True)
+            global_roles = UserProjectRole.objects.filter(
+                role=role_obj,
+                all_projects=True
+            ).select_related('user')
+            approvers.extend([role.user for role in global_roles if role.user not in approvers])
+        except Role.DoesNotExist:
+            # اگر نقش در Role model تعریف نشده باشد، از کد قدیمی استفاده می‌کنیم
+            pass
         
         return approvers
 

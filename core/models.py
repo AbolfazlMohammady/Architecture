@@ -26,19 +26,24 @@ class UserProjectRole(models.Model):
         related_name='project_roles',
         verbose_name="کاربر"
     )
-    project = models.ForeignKey(
-        'project.Project',
+    role = models.ForeignKey(
+        'Role',
         on_delete=models.CASCADE,
-        related_name='user_roles',
-        null=True,
-        blank=True,
-        verbose_name="پروژه",
-        help_text="اگر خالی باشد، این نقش برای همه پروژه‌ها اعمال می‌شود"
+        related_name='user_project_roles',
+        verbose_name="نقش",
+        help_text="نقش کاربر از لیست نقش‌های تعریف شده"
     )
-    role_name = models.CharField(
-        max_length=100,
-        verbose_name="نام نقش",
-        help_text="مثال: نظارت پیمانکار، نظارت کارفرما، نماینده پیمانکار و..."
+    projects = models.ManyToManyField(
+        'project.Project',
+        related_name='user_roles',
+        blank=True,
+        verbose_name="پروژه‌ها",
+        help_text="پروژه‌های مرتبط با این نقش"
+    )
+    all_projects = models.BooleanField(
+        default=False,
+        verbose_name="همه پروژه‌ها",
+        help_text="اگر فعال باشد، این نقش برای همه پروژه‌ها اعمال می‌شود"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ به‌روزرسانی")
@@ -46,12 +51,17 @@ class UserProjectRole(models.Model):
     class Meta:
         verbose_name = "نقش کاربر در پروژه"
         verbose_name_plural = "نقش‌های کاربران در پروژه‌ها"
-        ordering = ['user', 'project', 'role_name']
-        unique_together = [['user', 'project', 'role_name']]
+        ordering = ['user', 'role']
+        unique_together = [['user', 'role']]
 
     def __str__(self):
-        project_name = self.project.name if self.project else "همه پروژه‌ها"
-        return f"{self.user.get_full_name()} - {self.role_name} - {project_name}"
+        if self.all_projects:
+            project_names = "همه پروژه‌ها"
+        else:
+            project_names = ", ".join([p.name for p in self.projects.all()[:3]])
+            if self.projects.count() > 3:
+                project_names += f" و {self.projects.count() - 3} پروژه دیگر"
+        return f"{self.user.get_full_name()} - {self.role.name} - {project_names}"
 
 class User(AbstractUser):
     REQUIRED_FIELDS = []

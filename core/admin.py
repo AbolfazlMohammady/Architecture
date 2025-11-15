@@ -9,13 +9,14 @@ class MyModelAdminMixin(BaseUserAdmin,baseAdminModel.BtnDeleteSelected):
     pass
 
 
-class UserProjectRoleInline(admin.TabularInline):
+class UserProjectRoleInline(admin.StackedInline):
     """Inline برای مدیریت نقش‌های کاربر در پروژه‌ها"""
     model = models.UserProjectRole
     extra = 1
-    fields = ('project', 'role_name')
+    fields = ('role', 'all_projects', 'projects')
     verbose_name = "نقش در پروژه"
     verbose_name_plural = "نقش‌های کاربر در پروژه‌ها"
+    filter_horizontal = ('projects',)  # برای انتخاب چندتایی پروژه‌ها
 
 
 @admin.register(models.User)
@@ -41,9 +42,24 @@ class UserAdmin(MyModelAdminMixin):
 
 @admin.register(models.UserProjectRole)
 class UserProjectRoleAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role_name', 'project', 'created_at')
-    list_filter = ('role_name', 'project', 'created_at')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'role_name', 'project__name')
-    ordering = ('user', 'project', 'role_name')
+    list_display = ('user', 'role', 'all_projects', 'get_projects', 'created_at')
+    list_filter = ('role', 'all_projects', 'created_at')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'role__name', 'projects__name')
+    ordering = ('user', 'role')
+    filter_horizontal = ('projects',)  # برای انتخاب چندتایی پروژه‌ها
+    fields = ('user', 'role', 'all_projects', 'projects')
+    
+    def get_projects(self, obj):
+        """نمایش پروژه‌ها در لیست"""
+        if obj.all_projects:
+            return "همه پروژه‌ها"
+        projects = obj.projects.all()
+        if not projects.exists():
+            return "هیچ پروژه‌ای انتخاب نشده"
+        names = ", ".join([p.name for p in projects[:3]])
+        if projects.count() > 3:
+            names += f" و {projects.count() - 3} پروژه دیگر"
+        return names
+    get_projects.short_description = "پروژه‌ها"
     
 
