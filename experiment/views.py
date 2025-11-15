@@ -163,22 +163,44 @@ def experiment_request_list(request):
     experiment_requests = models.ExperimentRequest.objects.all()
     projects = models.Project.objects.all()
     
+    # دریافت پارامترهای GET
+    project_id = request.GET.get('project', '').strip()
+    status = request.GET.get('status', '').strip()
+    search = request.GET.get('search', '').strip()
+    
+    # دیباگ - چاپ مقادیر دریافتی
+    print(f"DEBUG: GET params - project_id: '{project_id}', status: '{status}', search: '{search}'")
+    print(f"DEBUG: All GET params: {dict(request.GET)}")
+    
     # فیلتر بر اساس پروژه
-    project_id = request.GET.get('project')
     if project_id:
-        experiment_requests = experiment_requests.filter(project_id=project_id)
+        try:
+            project_id_int = int(project_id)
+            experiment_requests = experiment_requests.filter(project_id=project_id_int)
+            print(f"DEBUG: Filtered by project_id: {project_id_int}, count: {experiment_requests.count()}")
+        except (ValueError, TypeError) as e:
+            print(f"DEBUG: Invalid project_id: {project_id}, error: {e}")
     
     # فیلتر بر اساس وضعیت
-    status = request.GET.get('status')
     if status:
-        experiment_requests = experiment_requests.filter(status=status)
+        try:
+            status_int = int(status)
+            experiment_requests = experiment_requests.filter(status=status_int)
+            print(f"DEBUG: Filtered by status: {status_int}, count: {experiment_requests.count()}")
+        except (ValueError, TypeError) as e:
+            print(f"DEBUG: Invalid status: {status}, error: {e}")
     
     # فیلتر بر اساس جستجو
-    search = request.GET.get('search')
-    if search and search.strip() and search != 'None':
+    if search and search != 'None':
         experiment_requests = experiment_requests.filter(
             Q(description__icontains=search) | Q(project__name__icontains=search)
         )
+        print(f"DEBUG: Filtered by search: {search}, count: {experiment_requests.count()}")
+    
+    # مرتب‌سازی بر اساس تاریخ ایجاد (جدیدترین اول)
+    experiment_requests = experiment_requests.order_by('-created_at')
+    
+    print(f"DEBUG: Final count: {experiment_requests.count()}")
     
     return render(request, 'experiment/experiment_request_list.html', {
         'experiment_requests': experiment_requests,
@@ -434,6 +456,20 @@ def experiment_response_create(request, pk):
 @login_required
 def experiment_approval_create(request, response_id):
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=response_id)
+    
+    # بررسی اینکه آیا کاربر مجاز به تایید است
+    can_approve = False
+    user_roles = []
+    for role in experiment_response.get_required_approval_roles():
+        approvers = experiment_response.get_approvers_for_role(role)
+        if request.user in approvers:
+            can_approve = True
+            user_roles.append(role)
+    
+    if not can_approve:
+        messages.error(request, 'شما مجاز به ثبت تاییدیه برای این پاسخ آزمایش نیستید.')
+        return redirect('experiment:experiment_response_detail', pk=response_id)
+    
     if request.method == 'POST':
         post_data = request.POST.copy()
         if not post_data.get('experiment_response'):
@@ -461,7 +497,8 @@ def experiment_approval_create(request, response_id):
         form = forms.ExperimentApprovalForm(initial={'experiment_response': experiment_response.pk})
     return render(request, 'experiment/experiment_approval_form.html', {
         'form': form,
-        'experiment_response': experiment_response
+        'experiment_response': experiment_response,
+        'user_roles': user_roles
     })
 
 @login_required
@@ -957,7 +994,31 @@ def experiment_response_list(request):
 def experiment_response_detail(request, pk):
     """نمایش جزئیات پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
-    return render(request, 'experiment/experiment_response_detail.html', {'experiment_response': experiment_response})
+    return render(request, 'experiment/experiment_response_detail.html', {
+        'experiment_response': experiment_response,
+        'user': request.user
+    })
+
+@login_required
+def experiment_approval_delete(request, pk):
+    """حذف تاییدیه"""
+    approval = get_object_or_404(models.ExperimentApproval, pk=pk)
+    experiment_response = approval.experiment_response
+    
+    # بررسی اینکه آیا کاربر مجاز به حذف است
+    if approval.approver != request.user and not request.user.is_superuser:
+        messages.error(request, 'شما مجاز به حذف این تاییدیه نیستید.')
+        return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
+    
+    if request.method == 'POST':
+        approval.delete()
+        messages.success(request, 'تاییدیه با موفقیت حذف شد.')
+        return redirect('experiment:experiment_response_detail', pk=experiment_response.pk)
+    
+    return render(request, 'experiment/experiment_approval_confirm_delete.html', {
+        'approval': approval,
+        'experiment_response': experiment_response
+    })
 
 @login_required
 @require_http_methods(["GET"])

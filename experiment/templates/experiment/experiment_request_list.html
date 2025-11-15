@@ -35,7 +35,7 @@
                                     <select name="project" id="project" class="form-select">
                                         <option value="">همه</option>
                                         {% for project in projects %}
-                                        <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"i" %}selected{% endif %}>
+                                        <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"s" %}selected{% endif %}>
                                             {{ project.name }}
                                         </option>
                                         {% endfor %}
@@ -158,6 +158,20 @@ $(document).ready(function() {
         theme: 'bootstrap4',
         width: '100%'
     });
+    
+    // اطمینان از اینکه فرم به درستی submit می‌شود
+    $('form').on('submit', function(e) {
+        // بررسی اینکه آیا فیلترها تغییر کرده‌اند
+        var project = $('#project').val();
+        var status = $('#status').val();
+        var search = $('#search').val();
+        console.log('Form submit - project:', project, 'status:', status, 'search:', search);
+    });
+    
+    // تغییر خودکار فیلترها (اختیاری - برای UX بهتر)
+    // $('#project, #status').on('change', function() {
+    //     $('form').submit();
+    // });
 });
 </script>
 {% endblock %} 

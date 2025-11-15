@@ -162,9 +162,7 @@ class ExperimentResponse(models.Model):
     def get_approvers_for_role(self, role_name):
         """بر اساس نقش، کاربر(ان) مرتبط با پروژه را برگردان"""
         project = self.experiment_request.project
-        # اینجا باید بر اساس ساختار پروژه و نقش‌ها، کاربر را پیدا کنیم
-        # نمونه: اگر نقش 'مسئول آزمایشگاه' باشد، از پروژه یا نقش‌های کاربر پیدا کن
-        # اینجا فقط نمونه ساده (نیاز به تکمیل بر اساس مدل پروژه واقعی)
+        # نقش‌ها بر اساس فیلدهای تعریف شده در مدل Project
         if role_name == 'نماینده پیمانکار':
             return [project.project_manager] if project.project_manager else []
         if role_name == 'نقشه بردار پیمانکار':
@@ -174,10 +172,9 @@ class ExperimentResponse(models.Model):
         if role_name == 'نظارت پروژه':
             return [project.quality_control_manager] if project.quality_control_manager else []
         if role_name == 'مسئول آزمایشگاه':
-            # فرض: اولین کاربر با نقش مسئول آزمایشگاه در پروژه
-            return [u for u in project.project_experts.all() if u.roles.filter(name='مسئول آزمایشگاه').exists()]
+            return [project.lab_manager] if project.lab_manager else []
         if role_name == 'مسئول HSSE پروژه':
-            return [u for u in project.project_experts.all() if u.roles.filter(name='مسئول HSSE پروژه').exists()]
+            return [project.hsse_manager] if project.hsse_manager else []
         return []
 
     def get_approval_status_by_role(self):
@@ -215,6 +212,7 @@ class ExperimentApproval(models.Model):
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
     approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
+    approval_date = jmodels.jDateField(verbose_name="تاریخ تایید")
     penalty_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="درصد جریمه")
     description = models.TextField(verbose_name="توضیحات", null=True, blank=True)
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")

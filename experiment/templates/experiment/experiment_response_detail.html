@@ -32,15 +32,27 @@
                                 </tr>
                                 <tr>
                                     <th>لایه</th>
-                                    <td>{{ experiment_response.experiment_request.layer.name|default:"-" }}</td>
+                                    <td>{{ experiment_response.experiment_request.layer.layer_type.name|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>نوع آزمایش</th>
-                                    <td>{{ experiment_response.experiment_request.experiment_type.name }}</td>
+                                    <td>
+                                        {% for exp_type in experiment_response.experiment_request.experiment_type.all %}
+                                            {{ exp_type.name }}{% if not forloop.last %}، {% endif %}
+                                        {% empty %}
+                                            -
+                                        {% endfor %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>زیرگروه آزمایش</th>
-                                    <td>{{ experiment_response.experiment_request.experiment_subtype.name|default:"-" }}</td>
+                                    <td>
+                                        {% for exp_subtype in experiment_response.experiment_request.experiment_subtype.all %}
+                                            {{ exp_subtype.name }}{% if not forloop.last %}، {% endif %}
+                                        {% empty %}
+                                            -
+                                        {% endfor %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>محل بتن‌ریزی</th>
@@ -144,6 +156,7 @@
                                             <th>درصد جریمه</th>
                                             <th>تاریخ تایید</th>
                                             <th>توضیحات</th>
+                                            <th>عملیات</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -164,8 +177,21 @@
                                                     -
                                                 {% endif %}
                                             </td>
-                                            <td>{{ approval.created_at|date:"Y/m/d H:i" }}</td>
+                                            <td>
+                                                {% if approval.approval_date %}
+                                                    {{ approval.approval_date|date:"Y/m/d" }}
+                                                {% else %}
+                                                    {{ approval.created_at|date:"Y/m/d" }}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ approval.description|default:"-" }}</td>
+                                            <td>
+                                                {% if approval.approver == user or user.is_superuser %}
+                                                    <a href="{% url 'experiment:experiment_approval_delete' approval.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('آیا از حذف این تاییدیه اطمینان دارید؟')">
+                                                        <i class="fas fa-trash"></i> حذف
+                                                    </a>
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
