@@ -39,37 +39,70 @@ def get_layer_display_name(layer):
 def find_blocking_lower_layers(project, target_layer, ranges):
     """
     ranges: list of (Decimal start, Decimal end)
-    Returns list of lower layers که تایید نشده‌اند برای بازه‌های همپوشان.
+    Returns list of lower layers (لایه‌های زیرین) که تایید نشده‌اند برای بازه‌های همپوشان.
+    
+    لایه‌های زیرین = لایه‌هایی که order_from_top بیشتر دارند (پایین‌تر هستند)
+    
+    فقط قسمت‌هایی که همپوشانی کیلومتراژ دارند بررسی می‌شوند، نه کل لایه.
     """
     if not ranges:
         return []
+    
+    # لایه‌های زیرین: order_from_top بیشتر = پایین‌تر
     lower_layers = ProjectLayer.objects.filter(
         project=project,
-        order_from_top__lt=target_layer.order_from_top
+        order_from_top__gt=target_layer.order_from_top  # تغییر از __lt به __gt
     )
+    
     blocking = []
     for lower in lower_layers:
+        # بررسی برای هر بازه کیلومتراژ که آیا این لایه زیرین blocking است
         layer_blocked = False
+        
         for start, end in ranges:
+            # پیدا کردن درخواست‌های آزمایش این لایه که با این بازه همپوشانی دارند
             overlap_requests = models.ExperimentRequest.objects.filter(
                 project=project,
                 layer=lower,
                 start_kilometer__lt=end,
                 end_kilometer__gt=start,
             )
-            approved = False
+            
+            # اگر هیچ درخواست آزمایشی برای این بازه همپوشان وجود نداشت، blocking نیست
+            if not overlap_requests.exists():
+                continue  # این بازه blocking نیست، به بازه بعدی برو
+            
+            # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده وجود دارد
+            approved_for_this_range = False
+            
             for req in overlap_requests:
-                for resp in req.experimentresponse_set.all():
-                    if resp.is_fully_approved():
-                        approved = True
+                # بررسی همپوشانی دقیق
+                req_start = float(req.start_kilometer)
+                req_end = float(req.end_kilometer)
+                
+                # محاسبه بازه همپوشانی واقعی
+                overlap_start = max(float(start), req_start)
+                overlap_end = min(float(end), req_end)
+                
+                # اگر همپوشانی واقعی وجود دارد
+                if overlap_start < overlap_end:
+                    # بررسی اینکه آیا این درخواست تایید شده است
+                    for resp in req.experimentresponse_set.all():
+                        if resp.is_fully_approved():
+                            approved_for_this_range = True
+                            break
+                    if approved_for_this_range:
                         break
-                if approved:
-                    break
-            if not approved:
+            
+            # اگر برای این بازه همپوشان تایید نشده، لایه blocking است
+            if not approved_for_this_range:
                 layer_blocked = True
-                break
+                break  # نیازی به بررسی بقیه بازه‌ها نیست
+        
+        # اگر لایه برای حداقل یک بازه blocking بود، به لیست اضافه می‌شود
         if layer_blocked:
             blocking.append(lower)
+    
     return blocking
 from .forms import (
     ExperimentResponseKilometerFormSet, 
