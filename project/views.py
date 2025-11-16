@@ -9,6 +9,7 @@ from django.forms.models import model_to_dict
 import pandas as pd
 import re
 import math
+from experiment.views import get_layer_display_name
 
 
 def assign_layer_display_names(layers):
@@ -334,7 +335,6 @@ class ProjectDashboardView(generic.DetailView):
                     is_recompact = True
             
             # دریافت نام نمایشی لایه
-            from experiment.views import get_layer_display_name
             layer_display_name = get_layer_display_name(request.layer) if request.layer else None
             
             experiment_data[layer_id].append({
