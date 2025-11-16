@@ -17,6 +17,19 @@ class UserProjectRoleInline(admin.StackedInline):
     verbose_name = "نقش در پروژه"
     verbose_name_plural = "نقش‌های کاربر در پروژه‌ها"
     filter_horizontal = ('projects',)  # برای انتخاب چندتایی پروژه‌ها
+    autocomplete_fields = ('role',)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'role':
+            kwargs['queryset'] = models.Role.objects.all()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(models.Role)
+class RoleAdmin(baseAdminModel.BtnDeleteSelected, admin.ModelAdmin):
+    list_display = ("name", "description")
+    search_fields = ("name", "description")
+    ordering = ("name",)
 
 
 @admin.register(models.User)
@@ -48,7 +61,8 @@ class UserProjectRoleAdmin(admin.ModelAdmin):
     ordering = ('user', 'role')
     filter_horizontal = ('projects',)  # برای انتخاب چندتایی پروژه‌ها
     fields = ('user', 'role', 'all_projects', 'projects')
-    
+    autocomplete_fields = ('role', 'user')
+
     def get_projects(self, obj):
         """نمایش پروژه‌ها در لیست"""
         if obj.all_projects:
