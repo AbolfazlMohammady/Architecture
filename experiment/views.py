@@ -510,6 +510,7 @@ def experiment_response_create(request, pk):
     # بررسی اینکه آیا آزمایش آسفالت است
     experiment_types = experiment_request.experiment_type.all()
     is_asphalt = any('آسفالت' in et.name for et in experiment_types)
+    is_relative_density = any('تراکم نسبی' in et.name for et in experiment_types)
     
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES, experiment_request=experiment_request)
@@ -586,6 +587,9 @@ def experiment_response_create(request, pk):
         'form': form,
         'kilometer_formset': kilometer_formset,
         'file_formset': file_formset,
+        'asphalt_formset': asphalt_formset,
+        'is_asphalt': is_asphalt,
+        'is_relative_density': is_relative_density,
         'experiment_request': experiment_request,
         'project': experiment_request.project,
         'layer': experiment_request.layer,
@@ -1281,6 +1285,7 @@ def experiment_response_update(request, pk):
         'file_formset': file_formset,
         'asphalt_formset': asphalt_formset,
         'is_asphalt': is_asphalt,
+        'is_relative_density': is_relative_density,
         'experiment_request': experiment_request,
         'project': experiment_request.project,
         'layer': experiment_request.layer,

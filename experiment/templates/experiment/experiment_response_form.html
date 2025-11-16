@@ -131,20 +131,22 @@
                                 </div>
                             </div>
                             <!-- فیلدهای تراکم نسبی (2 عدد: تراکم + ضخامت) -->
-                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی" style="display: none;">
+                            {% if is_relative_density %}
+                            <div class="col-md-4">
                                 <label class="form-label">نتیجه تراکم (%)</label>
                                 {{ form.density_result|add_class:"form-control" }}
                                 {% if form.density_result.errors %}
                                     <div class="invalid-feedback d-block">{{ form.density_result.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 result-field" data-experiment-types="تراکم نسبی" style="display: none;">
+                            <div class="col-md-4">
                                 <label class="form-label">نتیجه ضخامت (سانتی‌متر)</label>
                                 {{ form.thickness_result|add_class:"form-control" }}
                                 {% if form.thickness_result.errors %}
                                     <div class="invalid-feedback d-block">{{ form.thickness_result.errors }}</div>
                                 {% endif %}
                             </div>
+                            {% endif %}
                             <!-- فیلدهای مقاومت فشاری بتن (3 عدد) -->
                             <div class="col-md-4 result-field" data-experiment-types="مقاومت فشاری بتن و ملات" style="display: none;">
                                 <label class="form-label">مقاومت ۱ (کیلوگرم بر سانتی‌متر مربع)</label>

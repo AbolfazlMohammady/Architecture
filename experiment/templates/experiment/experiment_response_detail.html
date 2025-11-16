@@ -66,19 +66,27 @@
                         </div>
                         <div class="col-md-6">
                             <h4>اطلاعات پاسخ</h4>
+                            {% with type_names=experiment_response.experiment_request.experiment_type.all %}
+                            {% firstof type_names.0.name "" as first_type %}
                             <table class="table table-bordered">
                                 <tr>
                                     <th>تاریخ پاسخ</th>
                                     <td>{{ experiment_response.response_date|date:"Y/m/d" }}</td>
                                 </tr>
+                                {% comment %} تراکم نسبی {% endcomment %}
+                                {% if type_names|length and type_names|join:","|contains:"تراکم نسبی" %}
                                 <tr>
-                                    <th>چگالی</th>
+                                    <th>تراکم</th>
                                     <td>{{ experiment_response.density_result|default:"-" }}</td>
                                 </tr>
                                 <tr>
                                     <th>ضخامت</th>
                                     <td>{{ experiment_response.thickness_result|default:"-" }}</td>
                                 </tr>
+                                {% endif %}
+
+                                {% comment %} مقاومت فشاری بتن و ملات {% endcomment %}
+                                {% if type_names|length and (type_names|join:","|contains:"مقاومت فشاری") %}
                                 <tr>
                                     <th>مقاومت 1</th>
                                     <td>{{ experiment_response.strength_result1|default:"-" }}</td>
@@ -91,7 +99,9 @@
                                     <th>مقاومت 3</th>
                                     <td>{{ experiment_response.strength_result3|default:"-" }}</td>
                                 </tr>
+                                {% endif %}
                             </table>
+                            {% endwith %}
                         </div>
                     </div>
                     
