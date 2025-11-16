@@ -1736,9 +1736,10 @@ export class ProjectDashboard {
                 const layer = d.layer;
                 const stateMap = {0:'متغیر',1:'ثابت'};
                 const stateColor = layer.state === 1 ? '#2563eb' : '#f97316';
+                const layerDisplayName = layer.display_name || layer.name;
                 html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;">
                     <span style="font-size:18px;color:${stateColor}">▭</span>
-                    <span>${layer.name}</span>
+                    <span>${layerDisplayName}</span>
                 </div>`;
                 html += `<div style="font-size:12px;color:#555;">نوع لایه: <b style='color:${stateColor}'>${stateMap[layer.state] || 'نامشخص'}</b></div>`;
                 html += `<div style="font-size:12px;color:#555;">ضخامت اسمی: <b>${layer.thickness_cm} cm</b></div>`;
@@ -1752,9 +1753,10 @@ export class ProjectDashboard {
                 let statusColor = s.status === 2 ? '#7ed957' : s.status === 1 ? '#ffc107' : '#bdbdbd';
                 html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">🌉</span> <span>${s.name}</span></div>`;
                 html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[s.status]}</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
-                html += `<div style="font-size:12px;color:#555;">طول پل: <b>${(s.end_kilometer-s.start_kilometer).toFixed(2)} km</b></div>`;
+                const expCount = this.countExperimentsInRange(Number(s.start_kilometer)/1000, Number(s.end_kilometer)/1000);
+                const midKm = ((Number(s.start_kilometer) + Number(s.end_kilometer)) / 2000).toFixed(3);
+                html += `<div style="font-size:12px;color:#555;">کیلومتر: <b>${midKm}</b></div>`;
+                html += `<div style="font-size:12px;color:#555;">تعداد آزمایش ثبت‌شده: <b>${expCount}</b></div>`;
             } else if (d.type === 'structure') {
                 const s = d.structure;
                 const statusMap = {0:'شروع نشده',1:'در حال انجام',2:'تکمیل شده'};
@@ -1765,13 +1767,10 @@ export class ProjectDashboard {
                 else if (s.name.includes('تونل')) icon = '🚇';
                 html = `<div style="display:flex;align-items:center;gap:6px;font-weight:bold;"><span style="font-size:18px;color:${statusColor}">${icon}</span> <span>${s.name}</span></div>`;
                 html += `<div style="font-size:12px;color:#555;">وضعیت: <b style='color:${statusColor}'>${statusMap[s.status] || 'نامشخص'}</b></div>`;
-                if (s.kilometer_location) {
-                    html += `<div style="font-size:12px;color:#555;">کیلومتر: <b>${s.kilometer_location}</b></div>`;
-                }
-                if (s.start_kilometer && s.end_kilometer) {
-                    html += `<div style="font-size:12px;color:#555;">کیلومتر شروع: <b>${s.start_kilometer}</b></div>`;
-                    html += `<div style="font-size:12px;color:#555;">کیلومتر پایان: <b>${s.end_kilometer}</b></div>`;
-                }
+                const kmLoc = s.kilometer_location ? (Number(s.kilometer_location)/1000).toFixed(3) : null;
+                if (kmLoc) html += `<div style="font-size:12px;color:#555;">کیلومتر: <b>${kmLoc}</b></div>`;
+                const expCount = this.countExperimentsAtKm(Number(s.kilometer_location)/1000);
+                html += `<div style="font-size:12px;color:#555;">تعداد آزمایش ثبت‌شده: <b>${expCount}</b></div>`;
             } else if (d.type === 'experiment') {
                 const experiment = d.experiment;
                 const layer = d.layer;
@@ -1782,13 +1781,32 @@ export class ProjectDashboard {
                     <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};"></span>
                     <span style="font-weight:bold;color:${color}">آزمایش ${experiment.experiment_type}</span>
                 </div>`;
-                html += `<div style="font-size:13px;color:#555;">لایه: <b>${layer.name}</b></div>`;
+                const layerDisplayName = experiment.layer_display_name || layer.display_name || layer.name;
+                if (experiment.order !== undefined && experiment.order !== null) {
+                    html += `<div style="font-size:13px;color:#555;">شماره درخواست: <b>${experiment.order}</b></div>`;
+                }
+                html += `<div style="font-size:13px;color:#555;">لایه: <b>${layerDisplayName}</b></div>`;
                 html += `<div style="font-size:13px;color:#555;">کیلومتر: <b>${experiment.kilometer_start} تا ${experiment.kilometer_end}</b></div>`;
                 html += `<div style="font-size:13px;color:#555;">تاریخ درخواست: <b>${experiment.request_date || 'نامشخص'}</b></div>`;
-                html += `<div style="font-size:13px;color:#555;">وضعیت: <b>${statusMap[experiment.status] || 'نامشخص'}</b></div>`;
-                if (experiment.approval_status) {
-                    const approvalText = approvalMap[experiment.approval_status] || 'در انتظار تایید';
-                    html += `<div style="font-size:13px;color:#555;">وضعیت تایید: <b>${approvalText}</b></div>`;
+                // پاسخ
+                if (experiment.latest_response_date) {
+                    html += `<div style="font-size:13px;color:#555;">تاریخ پاسخ: <b>${experiment.latest_response_date}</b></div>`;
+                }
+                let respText = null, respColor = null;
+                if (experiment.is_recompact) {
+                    respText = 'ریکامپکت';
+                    respColor = '#7e57c2'; // بنفش
+                } else if (experiment.response_status === 'approved' || experiment.approval_status === 1) {
+                    respText = 'قابل قبول';
+                    respColor = '#2e7d32'; // سبز
+                } else if (experiment.response_status === 'rejected' || experiment.approval_status === 2 || experiment.has_rejected) {
+                    respText = 'غیر قابل قبول (ریتست)';
+                    respColor = '#c62828'; // قرمز
+                }
+                if (respText) {
+                    html += `<div style="font-size:13px;color:#555;">وضعیت پاسخ: <b style="color:${respColor}">${respText}</b></div>`;
+                } else {
+                    html += `<div style="font-size:13px;color:#555;">وضعیت: <b>${statusMap[experiment.status] || 'نامشخص'}</b></div>`;
                 }
                 if (experiment.description) {
                     html += `<div style='font-size:12px;color:#888;margin-top:2px;'>${experiment.description}</div>`;
@@ -1816,6 +1834,40 @@ export class ProjectDashboard {
             tooltip.style.display = 'none';
             this.hoveredTooltipItem = null;
         }
+    }
+
+    // شمارش آزمایش‌ها در یک کیلومتر مشخص
+    countExperimentsAtKm(km) {
+        if (!this.projectData.layers) return 0;
+        let count = 0;
+        this.projectData.layers.forEach(l => {
+            if (!l.experiments) return;
+            l.experiments.forEach(e => {
+                const s = parseFloat(e.kilometer_start);
+                const en = parseFloat(e.kilometer_end);
+                if (!isFinite(s) || !isFinite(en)) return;
+                if (km >= s && km <= en) count += 1;
+            });
+        });
+        return count;
+    }
+
+    // شمارش آزمایش‌ها در بازه کیلومتری
+    countExperimentsInRange(startKm, endKm) {
+        if (!this.projectData.layers) return 0;
+        if (!isFinite(startKm) || !isFinite(endKm)) return 0;
+        let count = 0;
+        this.projectData.layers.forEach(l => {
+            if (!l.experiments) return;
+            l.experiments.forEach(e => {
+                const s = parseFloat(e.kilometer_start);
+                const en = parseFloat(e.kilometer_end);
+                if (!isFinite(s) || !isFinite(en)) return;
+                // همپوشانی
+                if (s < endKm && en > startKm) count += 1;
+            });
+        });
+        return count;
     }
 
     getStatusText(status) {

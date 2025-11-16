@@ -309,8 +309,13 @@ class ProjectDashboardView(generic.DetailView):
             # بررسی وضعیت تایید برای نمایش در داشبورد
             approval_status = None
             has_rejected = False
+            latest_response = None
+            latest_response_date = None
+            response_status = None  # 'approved' | 'rejected' | None
+            is_recompact = False
             if hasattr(request, 'experimentresponse_set') and request.experimentresponse_set.exists():
                 latest_response = request.experimentresponse_set.order_by('-created_at').first()
+                latest_response_date = latest_response.response_date.strftime('%Y/%m/%d') if latest_response and latest_response.response_date else None
                 if hasattr(latest_response, 'experimentapproval_set') and latest_response.experimentapproval_set.exists():
                     # بررسی اینکه آیا هر کدام رد شده است
                     has_rejected = latest_response.experimentapproval_set.filter(status=ExperimentApproval.REJECTED).exists()
@@ -318,10 +323,15 @@ class ProjectDashboardView(generic.DetailView):
                     approval_status_by_role = latest_response.get_approval_status_by_role()
                     if all(v == 'تایید شده' for v in approval_status_by_role.values() if v != 'تعریف نشده'):
                         approval_status = ExperimentApproval.APPROVED
+                        response_status = 'approved'
                     elif has_rejected:
                         approval_status = ExperimentApproval.REJECTED
+                        response_status = 'rejected'
                     else:
                         approval_status = None  # در حال بررسی
+                # تشخیص ریکامپکت از توضیحات پاسخ
+                if latest_response and latest_response.description and 'ریکامپکت' in latest_response.description:
+                    is_recompact = True
             
             # دریافت نام نمایشی لایه
             from experiment.views import get_layer_display_name
@@ -329,6 +339,7 @@ class ProjectDashboardView(generic.DetailView):
             
             experiment_data[layer_id].append({
                 'id': request.id,
+                'order': request.order,
                 'kilometer_start': float(request.start_kilometer),
                 'kilometer_end': float(request.end_kilometer),
                 'experiment_type': ', '.join([et.name for et in request.experiment_type.all()]),
@@ -337,6 +348,9 @@ class ProjectDashboardView(generic.DetailView):
                 'approval_status': approval_status,
                 'has_rejected': has_rejected,
                 'request_date': request.request_date.strftime('%Y/%m/%d') if request.request_date else None,
+                'latest_response_date': latest_response_date,
+                'response_status': response_status,
+                'is_recompact': is_recompact,
                 'description': request.description,
                 'layer_display_name': layer_display_name,
             })
@@ -365,6 +379,7 @@ class ProjectDashboardView(generic.DetailView):
                 {
                     'id': layer.id,
                     'name': layer.layer_type.name,
+                    'display_name': get_layer_display_name(layer),
                     'thickness_cm': layer.thickness_cm,
                     'order_from_top': layer.order_from_top,
                     'state': layer.state,  # 0: متغیر, 1: ثابت
