@@ -60,6 +60,7 @@ urlpatterns = [
     path('ajax/get-types/', views.get_experiment_types, name='get_types'),
     path('ajax/get-places/', views.get_concrete_places, name='get_places'),
     path('asphalt-test/create/<int:response_id>/', views.asphalt_test_create, name='asphalt_test_create'),
+    path('asphalt-test/<int:test_id>/gradation/', views.asphalt_gradation_manage, name='asphalt_gradation_manage'),
     path('experiment-approval/create/<int:response_id>/', views.experiment_approval_create, name='experiment_approval_create'),
     path('experiment-approval/<int:pk>/delete/', views.experiment_approval_delete, name='experiment_approval_delete'),
     path('notifications/', views.notification_list, name='notification_list'),

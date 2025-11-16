@@ -1260,21 +1260,39 @@ def experiment_response_update(request, pk):
     """بروزرسانی پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
     experiment_request = experiment_response.experiment_request
+    # تشخیص نوع آزمایش‌ها برای نمایش فیلدهای مرتبط
+    experiment_types = experiment_request.experiment_type.all()
+    is_asphalt = any('آسفالت' in et.name for et in experiment_types)
+    is_relative_density = any('تراکم نسبی' in et.name for et in experiment_types)
+    is_concrete_strength = any('مقاومت فشاری بتن' in et.name or 'مقاومت فشاری' in et.name for et in experiment_types)
     
     if request.method == 'POST':
         form = forms.ExperimentResponseForm(request.POST, request.FILES, instance=experiment_response, experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(request.POST, prefix='kilometer', instance=experiment_response)
         file_formset = ExperimentResponseFileFormSet(request.POST, request.FILES, prefix='file', instance=experiment_response)
-        if form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid():
+        asphalt_formset = None
+        if is_asphalt:
+            from .forms import AsphaltTestFormSet
+            asphalt_formset = AsphaltTestFormSet(request.POST, instance=experiment_response, prefix='asphalt')
+        is_valid = form.is_valid() and kilometer_formset.is_valid() and file_formset.is_valid()
+        if is_asphalt and asphalt_formset:
+            is_valid = is_valid and asphalt_formset.is_valid()
+        if is_valid:
             form.save()
             kilometer_formset.save()
             file_formset.save()
+            if is_asphalt and asphalt_formset:
+                asphalt_formset.save()
             messages.success(request, 'پاسخ آزمایش با موفقیت بروزرسانی شد.')
             return redirect('experiment:experiment_response_detail', pk=pk)
     else:
         form = forms.ExperimentResponseForm(instance=experiment_response, experiment_request=experiment_request)
         kilometer_formset = ExperimentResponseKilometerFormSet(prefix='kilometer', instance=experiment_response)
         file_formset = ExperimentResponseFileFormSet(prefix='file', instance=experiment_response)
+        asphalt_formset = None
+        if is_asphalt:
+            from .forms import AsphaltTestFormSet
+            asphalt_formset = AsphaltTestFormSet(instance=experiment_response, prefix='asphalt')
     
     # آماده‌سازی context مشابه experiment_response_create
     layer_display_name = experiment_request.layer.layer_type.name
@@ -1296,6 +1314,7 @@ def experiment_response_update(request, pk):
         'asphalt_formset': asphalt_formset,
         'is_asphalt': is_asphalt,
         'is_relative_density': is_relative_density,
+        'is_concrete_strength': is_concrete_strength,
         'experiment_request': experiment_request,
         'project': experiment_request.project,
         'layer': experiment_request.layer,
@@ -1332,11 +1351,15 @@ def experiment_response_detail(request, pk):
     type_names = [et.name for et in experiment_response.experiment_request.experiment_type.all()]
     is_relative_density = any('تراکم نسبی' in name for name in type_names)
     is_concrete_strength = any('مقاومت فشاری بتن' in name or 'مقاومت فشاری' in name for name in type_names)
+    is_asphalt = any('آسفالت' in name for name in type_names)
+    asphalt_tests = experiment_response.asphalt_tests.all().prefetch_related('gradations') if is_asphalt else []
     return render(request, 'experiment/experiment_response_detail.html', {
         'experiment_response': experiment_response,
         'user': request.user,
         'is_relative_density': is_relative_density,
         'is_concrete_strength': is_concrete_strength,
+        'is_asphalt': is_asphalt,
+        'asphalt_tests': asphalt_tests,
     })
 
 @login_required
@@ -1453,6 +1476,25 @@ def asphalt_test_create(request, response_id):
     return render(request, 'experiment/asphalt_test_form.html', {
         'form': form,
         'experiment_response': experiment_response
+    })
+
+@login_required
+def asphalt_gradation_manage(request, test_id):
+    """افزودن/ویرایش دانه‌بندی‌های یک آزمایش آسفالت"""
+    asphalt_test = get_object_or_404(models.AsphaltTest, pk=test_id)
+    from .forms import AsphaltGradationFormSet
+    if request.method == 'POST':
+        formset = AsphaltGradationFormSet(request.POST, instance=asphalt_test, prefix='gradation')
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, 'دانه‌بندی‌ها با موفقیت ذخیره شدند.')
+            return redirect('experiment:experiment_response_detail', pk=asphalt_test.experiment_response.pk)
+    else:
+        formset = AsphaltGradationFormSet(instance=asphalt_test, prefix='gradation')
+    return render(request, 'experiment/asphalt_gradation_form.html', {
+        'formset': formset,
+        'asphalt_test': asphalt_test,
+        'experiment_response': asphalt_test.experiment_response,
     })
 
 @login_required

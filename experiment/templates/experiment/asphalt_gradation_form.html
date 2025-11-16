@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}دانه‌بندی آسفالت{% endblock %}
+{% block main %}
+<div class="container py-4">
+    <div class="page-toolbar">
+        <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+            <i class="bi bi-arrow-right me-2"></i>بازگشت
+        </button>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">ویرایش دانه‌بندی - {{ asphalt_test.get_layer_type_display }} | پاسخ #{{ experiment_response.pk }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width:40%">اندازه الک</th>
+                                <th style="width:40%">درصد عبوری</th>
+                                <th style="width:20%">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr>
+                                <td>{{ form.sieve_size }}</td>
+                                <td>{{ form.passing_percentage }}</td>
+                                <td>
+                                    {% if form.DELETE %}
+                                        <label class="form-check-label me-2">حذف</label>
+                                        {{ form.DELETE }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ذخیره</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
