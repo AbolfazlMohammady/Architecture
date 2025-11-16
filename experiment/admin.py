@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient, ExperimentRequestKilometer, ExperimentRequestFile, AsphaltTest, AsphaltGradation
+from .models import ExperimentType, ExperimentSubType, ConcretePlace, ExperimentRequest, ExperimentRequestApproval, ExperimentResponse, ExperimentApproval, PaymentCoefficient, ExperimentRequestKilometer, ExperimentRequestFile, AsphaltTest, AsphaltGradation, SieveSize
+from .forms import AsphaltGradationForm
 from utils import baseAdminModel
 
 class MyModelAdminMixin(admin.ModelAdmin, baseAdminModel.BtnDeleteSelected):
@@ -93,6 +94,7 @@ class AsphaltGradationInline(admin.TabularInline):
     model = AsphaltGradation
     extra = 1
     fields = ('sieve_size', 'passing_percentage')
+    form = AsphaltGradationForm
 
 
 @admin.register(AsphaltTest)
@@ -115,3 +117,9 @@ class AsphaltGradationAdmin(MyModelAdminMixin):
     search_fields = ('asphalt_test__experiment_response__experiment_request__project__name', 'sieve_size')
     ordering = ('asphalt_test', 'sieve_size')
     readonly_fields = ('created_at',)
+
+@admin.register(SieveSize)
+class SieveSizeAdmin(MyModelAdminMixin):
+    list_display = ('name', 'order', 'created_at')
+    search_fields = ('name',)
+    ordering = ('order', 'name')

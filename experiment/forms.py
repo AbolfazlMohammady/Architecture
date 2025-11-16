@@ -370,9 +370,39 @@ class AsphaltGradationForm(forms.ModelForm):
     """فرم دانه‌بندی آسفالت (الک‌ها)"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['sieve_size'].widget.attrs['class'] = 'form-control form-control-sm'
+        # اگر مدل SieveSize موجود باشد، فیلد الک را به دراپ‌داون مبتنی بر آن تبدیل کن
+        try:
+            from .models import SieveSize
+            self.fields['sieve_size'] = forms.ModelChoiceField(
+                queryset=SieveSize.objects.all(),
+                label='اندازه الک',
+                required=True,
+                widget=forms.Select(attrs={'class': 'form-select'})
+            )
+            # مقدار اولیه را از مقدار متنی فعلی (در حالت ویرایش) پر کن
+            if self.instance and self.instance.pk and self.instance.sieve_size:
+                try:
+                    self.fields['sieve_size'].initial = SieveSize.objects.get(name=self.instance.sieve_size)
+                except SieveSize.DoesNotExist:
+                    pass
+        except Exception:
+            # در صورت نبود مدل یا خطا، همان TextInput بماند
+            self.fields['sieve_size'].widget.attrs['class'] = 'form-control form-control-sm'
         self.fields['passing_percentage'].widget.attrs['class'] = 'form-control form-control-sm'
         self.fields['passing_percentage'].widget.attrs['step'] = '0.01'
+    
+    def clean_sieve_size(self):
+        """اگر فیلد از نوع ModelChoiceField باشد، نام را به رشته ذخیره‌ای تبدیل می‌کنیم"""
+        value = self.cleaned_data.get('sieve_size')
+        try:
+            # اگر آبجکت مدل است
+            from .models import SieveSize
+            if isinstance(value, SieveSize):
+                return value.name
+        except Exception:
+            pass
+        # در غیر این صورت همان مقدار متنی را برگردان
+        return value
     
     class Meta:
         model = models.AsphaltGradation

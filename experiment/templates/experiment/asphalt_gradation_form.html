@@ -16,7 +16,13 @@
             <form method="post">
                 {% csrf_token %}
                 {{ formset.management_form }}
-                <div class="table-responsive">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted small">اندازه‌های الک را می‌توانید از طریق ادمین مدیریت کنید.</div>
+                    <button type="button" id="add-gradation" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-plus"></i> اضافه کردن سطر
+                    </button>
+                </div>
+                <div class="table-responsive" id="gradation-formset">
                     <table class="table table-bordered align-middle">
                         <thead>
                             <tr>
@@ -47,5 +53,39 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    (function() {
+        const addBtn = document.getElementById('add-gradation');
+        const formsetTable = document.getElementById('gradation-formset').getElementsByTagName('tbody')[0];
+        const totalFormsInput = document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
+        addBtn.addEventListener('click', function() {
+            const total = parseInt(totalFormsInput.value, 10);
+            const newIndex = total;
+            // ساخت یک ردیف جدید ساده با دو ورودی و چک حذف
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <select name="{{ formset.prefix }}-${newIndex}-sieve_size" class="form-select"></select>
+                </td>
+                <td>
+                    <input type="number" step="0.01" name="{{ formset.prefix }}-${newIndex}-passing_percentage" class="form-control form-control-sm" />
+                </td>
+                <td>
+                    <input type="checkbox" name="{{ formset.prefix }}-${newIndex}-DELETE" />
+                </td>
+            `;
+            formsetTable.appendChild(row);
+            totalFormsInput.value = newIndex + 1;
+            // بارگذاری گزینه‌های الک از گزینه‌های موجود یا از یکی از سطرهای قبلی کپی کن
+            const anySelect = document.querySelector('select[name^="{{ formset.prefix }}-"][name$="-sieve_size"]');
+            if (anySelect) {
+                const optionsHTML = anySelect.innerHTML;
+                row.querySelector('select').innerHTML = optionsHTML;
+            }
+        });
+    })();
+</script>
 {% endblock %}
 

@@ -466,6 +466,21 @@ class AsphaltGradation(models.Model):
         verbose_name_plural = "دانه‌بندی‌های آسفالت"
         ordering = ['asphalt_test', 'sieve_size']
 
+
+class SieveSize(models.Model):
+    """لیست اندازه‌های الک قابل انتخاب در ادمین"""
+    name = models.CharField(max_length=50, unique=True, verbose_name="اندازه الک")
+    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    class Meta:
+        verbose_name = "اندازه الک"
+        verbose_name_plural = "اندازه‌های الک"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
 class ExperimentResponseKilometer(models.Model):
     experiment_response = models.ForeignKey('ExperimentResponse', on_delete=models.CASCADE, related_name='kilometer_ranges')
     start_kilometer = models.DecimalField(max_digits=20, decimal_places=3, verbose_name="کیلومتراژ شروع")
