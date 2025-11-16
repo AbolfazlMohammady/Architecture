@@ -489,6 +489,13 @@ def experiment_request_detail(request, pk):
     request_files = experiment_request.files.all()
     kilometer_ranges_list = list(kilometer_ranges.values('start_kilometer', 'end_kilometer', 'description'))
     request_files_list = list(request_files.values('file'))
+
+    # پرچم‌های نوع آزمایش برای نمایش شرطی فیلدها/ستون‌ها
+    type_names = [et.name for et in experiment_request.experiment_type.all()]
+    is_relative_density = any('تراکم نسبی' in name for name in type_names)
+    is_concrete_strength = any('مقاومت فشاری بتن' in name or 'مقاومت فشاری' in name for name in type_names)
+    is_asphalt = any('آسفالت' in name for name in type_names)
+
     logger.info(f"[experiment_request_detail] pk={pk}, kilometer_ranges={kilometer_ranges.count()}, request_files={request_files.count()}")
     return render(request, 'experiment/experiment_request_detail.html', {
         'experiment_request': experiment_request,
@@ -497,6 +504,9 @@ def experiment_request_detail(request, pk):
         'request_files': request_files,
         'kilometer_ranges_list': kilometer_ranges_list,
         'request_files_list': request_files_list,
+        'is_relative_density': is_relative_density,
+        'is_concrete_strength': is_concrete_strength,
+        'is_asphalt': is_asphalt,
     })
 
 @login_required

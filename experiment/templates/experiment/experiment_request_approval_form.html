@@ -3,7 +3,7 @@
 
 {% block title %}تایید درخواست آزمایش{% endblock %}
 
-{% block content %}
+{% block main %}
 <div class="container mt-4">
     <div class="page-toolbar">
         <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
@@ -20,8 +20,8 @@
                     <div class="mb-3">
                         <h5>جزئیات درخواست:</h5>
                         <p><strong>پروژه:</strong> {{ experiment_request.project.name }}</p>
-                        <p><strong>لایه:</strong> {{ experiment_request.layer.name }}</p>
-                        <p><strong>نوع آزمایش:</strong> {{ experiment_request.experiment_type.name }}</p>
+                        <p><strong>لایه:</strong> {{ experiment_request.layer.layer_type.name }}</p>
+                        <p><strong>نوع آزمایش:</strong> {% for t in experiment_request.experiment_type.all %}{% if not forloop.first %}، {% endif %}{{ t.name }}{% empty %}-{% endfor %}</p>
                         <p><strong>شماره اردر:</strong> {{ experiment_request.order }}</p>
                         <p><strong>تاریخ درخواست:</strong> {{ experiment_request.request_date }}</p>
                     </div>
@@ -73,5 +73,6 @@
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %} 
