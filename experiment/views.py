@@ -1329,9 +1329,14 @@ def experiment_response_list(request):
 def experiment_response_detail(request, pk):
     """نمایش جزئیات پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
+    type_names = [et.name for et in experiment_response.experiment_request.experiment_type.all()]
+    is_relative_density = any('تراکم نسبی' in name for name in type_names)
+    is_concrete_strength = any('مقاومت فشاری بتن' in name or 'مقاومت فشاری' in name for name in type_names)
     return render(request, 'experiment/experiment_response_detail.html', {
         'experiment_response': experiment_response,
-        'user': request.user
+        'user': request.user,
+        'is_relative_density': is_relative_density,
+        'is_concrete_strength': is_concrete_strength,
     })
 
 @login_required
