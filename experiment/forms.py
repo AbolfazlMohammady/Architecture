@@ -250,6 +250,7 @@ class ExperimentApprovalForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.user_roles = kwargs.pop('user_roles', [])
         super().__init__(*args, **kwargs)
         
         # تنظیم کلاس‌های فرم
@@ -261,14 +262,24 @@ class ExperimentApprovalForm(forms.ModelForm):
         
         # تنظیم فیلدهای خاص
         self.fields['experiment_response'].widget = forms.HiddenInput()
+        if 'role' in self.fields:
+            # اگر کاربر فقط یک نقش دارد، به صورت خودکار تنظیم می‌شود
+            if len(self.user_roles) == 1:
+                self.fields['role'].widget = forms.HiddenInput()
+                self.fields['role'].initial = self.user_roles[0]
+            else:
+                # اگر چند نقش دارد، باید انتخاب کند
+                self.fields['role'].widget = forms.Select(attrs={'class': 'form-select'})
+                self.fields['role'].choices = [(role, role) for role in self.user_roles]
         self.fields['status'].widget.attrs.update({'class': 'form-select'})
         self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 3})
         self.fields['penalty_percentage'].widget.attrs.update({'class': 'form-control'})
     
     class Meta:
         model = models.ExperimentApproval
-        fields = ['experiment_response', 'status', 'approval_date', 'penalty_percentage', 'description']
+        fields = ['experiment_response', 'role', 'status', 'approval_date', 'penalty_percentage', 'description']
         widgets = {
+            'role': forms.HiddenInput(),  # به صورت پیش‌فرض مخفی است، در __init__ تنظیم می‌شود
             'status': forms.Select(attrs={'class': 'form-select'}),
             'penalty_percentage': forms.NumberInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),

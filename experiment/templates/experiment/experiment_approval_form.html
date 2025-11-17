@@ -29,6 +29,30 @@
                     <form method="post">
                         {% csrf_token %}
                         {{ form.experiment_response }}
+                        {% if form.role %}{{ form.role }}{% endif %}
+                        
+                        {% if user_roles|length > 1 %}
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <strong>نکته:</strong> شما برای چند نقش می‌توانید تایید کنید. لطفاً نقش مورد نظر را انتخاب کنید.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.role.id_for_label }}">نقش تاییدکننده</label>
+                                    {% render_field form.role class="form-select" %}
+                                    {% if form.role.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.role.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <div class="row">
                             <div class="col-md-6">

@@ -195,7 +195,13 @@
                                     <tbody>
                                         {% for approval in experiment_request.experimentrequestapproval_set.all %}
                                         <tr>
-                                            <td>{{ approval.approver.get_full_name }}</td>
+                                            <td>
+                                                {% if approval.approver %}
+                                                    {{ approval.approver.get_full_name|default:approval.approver.username }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if approval.status == 1 %}
                                                     <span class="badge bg-success">تایید شده</span>
@@ -203,7 +209,13 @@
                                                     <span class="badge bg-danger">رد شده</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ approval.created_at|date:"Y/m/d H:i" }}</td>
+                                            <td>
+                                                {% if approval.approval_date %}
+                                                    {{ approval.approval_date|date:"Y/m/d" }}
+                                                {% else %}
+                                                    {{ approval.created_at|date:"Y/m/d H:i" }}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ approval.description|default:"-" }}</td>
                                         </tr>
                                         {% endfor %}

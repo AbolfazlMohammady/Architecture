@@ -622,11 +622,18 @@ def experiment_approval_create(request, response_id):
     user_roles = []
     for role in experiment_response.get_required_approval_roles():
         approvers = experiment_response.get_approvers_for_role(role)
+        # دیباگ: چاپ لیست approvers برای هر نقش
+        logger.debug(f"Role: {role}, Approvers: {[u.username for u in approvers]}, Current user: {request.user.username}")
         if request.user in approvers:
             can_approve = True
             user_roles.append(role)
     
     if not can_approve:
+        # دیباگ: چاپ اطلاعات بیشتر
+        logger.warning(f"User {request.user.username} cannot approve. Required roles: {experiment_response.get_required_approval_roles()}")
+        for role in experiment_response.get_required_approval_roles():
+            approvers = experiment_response.get_approvers_for_role(role)
+            logger.warning(f"  Role '{role}': approvers = {[u.username for u in approvers]}")
         messages.error(request, 'شما مجاز به ثبت تاییدیه برای این پاسخ آزمایش نیستید.')
         return redirect('experiment:experiment_response_detail', pk=response_id)
     
@@ -634,11 +641,17 @@ def experiment_approval_create(request, response_id):
         post_data = request.POST.copy()
         if not post_data.get('experiment_response'):
             post_data['experiment_response'] = experiment_response.pk
-        form = forms.ExperimentApprovalForm(post_data)
+        # اگر role در POST نباشد و کاربر فقط یک نقش دارد، به صورت خودکار اضافه می‌کنیم
+        if not post_data.get('role') and len(user_roles) == 1:
+            post_data['role'] = user_roles[0]
+        form = forms.ExperimentApprovalForm(post_data, user_roles=user_roles)
         if form.is_valid():
             approval = form.save(commit=False)
             approval.experiment_response = experiment_response
             approval.approver = request.user
+            # اگر role هنوز تنظیم نشده باشد، اولین نقش کاربر را استفاده می‌کنیم
+            if not approval.role and user_roles:
+                approval.role = user_roles[0]
             approval.save()
             # ارسال نوتیفیکیشن به همه نقش‌های کلیدی پروژه
             notified_users = set()
@@ -654,7 +667,11 @@ def experiment_approval_create(request, response_id):
             messages.success(request, 'تایید آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_response_detail', pk=response_id)
     else:
-        form = forms.ExperimentApprovalForm(initial={'experiment_response': experiment_response.pk})
+        initial = {'experiment_response': experiment_response.pk}
+        # اگر کاربر فقط یک نقش دارد، به صورت خودکار تنظیم می‌شود
+        if len(user_roles) == 1:
+            initial['role'] = user_roles[0]
+        form = forms.ExperimentApprovalForm(initial=initial, user_roles=user_roles)
     return render(request, 'experiment/experiment_approval_form.html', {
         'form': form,
         'experiment_response': experiment_response,
@@ -665,7 +682,10 @@ def experiment_approval_create(request, response_id):
 def experiment_request_approval_create(request, request_id):
     experiment_request = get_object_or_404(models.ExperimentRequest, pk=request_id)
     if request.method == 'POST':
-        form = forms.ExperimentRequestApprovalForm(request.POST)
+        post_data = request.POST.copy()
+        if not post_data.get('experiment_request'):
+            post_data['experiment_request'] = experiment_request.pk
+        form = forms.ExperimentRequestApprovalForm(post_data)
         if form.is_valid():
             approval = form.save(commit=False)
             approval.experiment_request = experiment_request
@@ -683,7 +703,7 @@ def experiment_request_approval_create(request, request_id):
             messages.success(request, 'تایید درخواست آزمایش با موفقیت ثبت شد.')
             return redirect('experiment:experiment_request_detail', pk=request_id)
     else:
-        form = forms.ExperimentRequestApprovalForm()
+        form = forms.ExperimentRequestApprovalForm(initial={'experiment_request': experiment_request.pk})
     return render(request, 'experiment/experiment_request_approval_form.html', {
         'form': form,
         'experiment_request': experiment_request

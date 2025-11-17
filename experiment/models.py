@@ -132,6 +132,7 @@ class ExperimentRequestApproval(models.Model):
     experiment_request = models.ForeignKey(ExperimentRequest, on_delete=models.CASCADE, verbose_name="درخواست آزمایش")
     approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
+    approval_date = jmodels.jDateField(verbose_name="تاریخ تایید", null=True, blank=True)
     description = models.TextField(verbose_name="توضیحات", null=True, blank=True)
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
 
@@ -203,27 +204,7 @@ class ExperimentResponse(models.Model):
         project = self.experiment_request.project
         approvers = []
         
-        # ابتدا از فیلدهای تعریف شده در مدل Project استفاده می‌کنیم (برای سازگاری با کد قدیمی)
-        if role_name == 'نماینده پیمانکار':
-            if project.project_manager:
-                approvers.append(project.project_manager)
-        elif role_name == 'نقشه بردار پیمانکار':
-            if project.technical_manager:
-                approvers.append(project.technical_manager)
-        elif role_name == 'نقشه بردار نظارت':
-            if project.quality_control_manager:
-                approvers.append(project.quality_control_manager)
-        elif role_name == 'نظارت پروژه':
-            if project.quality_control_manager:
-                approvers.append(project.quality_control_manager)
-        elif role_name == 'مسئول آزمایشگاه':
-            if project.lab_manager:
-                approvers.append(project.lab_manager)
-        elif role_name == 'مسئول HSSE پروژه':
-            if project.hsse_manager:
-                approvers.append(project.hsse_manager)
-        
-        # سپس از UserProjectRole استفاده می‌کنیم (برای نقش‌های جدید)
+        # ابتدا از UserProjectRole استفاده می‌کنیم (اولویت با نقش‌های تعریف شده در ادمین)
         from core.models import UserProjectRole, Role
         try:
             # پیدا کردن Role با نام داده شده
@@ -243,8 +224,29 @@ class ExperimentResponse(models.Model):
             ).select_related('user')
             approvers.extend([role.user for role in global_roles if role.user not in approvers])
         except Role.DoesNotExist:
-            # اگر نقش در Role model تعریف نشده باشد، از کد قدیمی استفاده می‌کنیم
+            # اگر نقش در Role model تعریف نشده باشد، از فیلدهای مستقیم پروژه استفاده می‌کنیم
             pass
+        
+        # اگر از UserProjectRole کسی پیدا نشد، از فیلدهای تعریف شده در مدل Project استفاده می‌کنیم (برای سازگاری با کد قدیمی)
+        if not approvers:
+            if role_name == 'نماینده پیمانکار':
+                if project.project_manager:
+                    approvers.append(project.project_manager)
+            elif role_name == 'نقشه بردار پیمانکار':
+                if project.technical_manager:
+                    approvers.append(project.technical_manager)
+            elif role_name == 'نقشه بردار نظارت':
+                if project.quality_control_manager:
+                    approvers.append(project.quality_control_manager)
+            elif role_name == 'نظارت پروژه':
+                if project.quality_control_manager:
+                    approvers.append(project.quality_control_manager)
+            elif role_name == 'مسئول آزمایشگاه':
+                if project.lab_manager:
+                    approvers.append(project.lab_manager)
+            elif role_name == 'مسئول HSSE پروژه':
+                if project.hsse_manager:
+                    approvers.append(project.hsse_manager)
         
         return approvers
 
@@ -256,7 +258,11 @@ class ExperimentResponse(models.Model):
             if not approvers:
                 status[role] = 'تعریف نشده'
                 continue
-            approvals = self.experimentapproval_set.filter(approver__in=approvers)
+            # فیلتر کردن تاییدیه‌ها بر اساس نقش
+            approvals = self.experimentapproval_set.filter(
+                approver__in=approvers,
+                role=role
+            )
             if not approvals.exists():
                 status[role] = 'در انتظار'
             elif approvals.filter(status=ExperimentApproval.REJECTED).exists():
@@ -282,6 +288,7 @@ class ExperimentApproval(models.Model):
     
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")
     approver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="تایید کننده")
+    role = models.CharField(max_length=100, verbose_name="نقش تاییدکننده", help_text="نقش کاربر هنگام ثبت تاییدیه")
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, verbose_name="وضعیت")
     approval_date = jmodels.jDateField(verbose_name="تاریخ تایید")
     penalty_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="درصد جریمه")
@@ -289,12 +296,13 @@ class ExperimentApproval(models.Model):
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
 
     def __str__(self):
-        return f"تایید {self.experiment_response} توسط {self.approver}"
+        return f"تایید {self.experiment_response} توسط {self.approver} ({self.role})"
     
     class Meta:
         verbose_name = "تایید آزمایش"
         verbose_name_plural = "تاییدهای آزمایش"
         ordering = ['-created_at']
+        unique_together = [('experiment_response', 'approver', 'role')]
 
 class PaymentCoefficient(models.Model):
     LAYER_CHOICES = [
