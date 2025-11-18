@@ -23,6 +23,7 @@ export class ProjectDashboard {
         
         // تنظیمات زوم و پن
         this.zoomLevel = 1.0;
+        this.zoomLevelY = 1.0; // زوم جداگانه برای محور Y
         this.panX = 0;
         this.panY = 0;
         this.zoomCenterX = null;
@@ -31,6 +32,7 @@ export class ProjectDashboard {
         this.originalXMax = null;
         this.originalYMin = null;
         this.originalYMax = null;
+        this.originalYCenter = null; // مرکز محور Y برای زوم
         this.baseDrawingWidth = null;
         
         // موقعیت موس
@@ -422,6 +424,9 @@ export class ProjectDashboard {
         this.xMin = this.originalXMin;
         this.xMax = this.originalXMax;
         
+        // محاسبه مرکز محور Y برای زوم (قبل از اعمال تغییرات)
+        this.originalYCenter = (this.originalYMin + this.originalYMax) / 2;
+        
         // برای محور Y، باید مطمئن شویم که صفر دقیقاً در مرکز محدوده است
         // یا حداقل در محدوده باشد
         this.yMin = this.originalYMin;
@@ -443,6 +448,14 @@ export class ProjectDashboard {
             this.yMax = maxAbs;
         }
         
+        // به‌روزرسانی originalYMin و originalYMax با مقادیر نهایی (بعد از اعمال محدودیت‌ها)
+        // این برای زوم استفاده می‌شود
+        const finalYMin = this.yMin;
+        const finalYMax = this.yMax;
+        this.originalYMin = finalYMin;
+        this.originalYMax = finalYMax;
+        this.originalYCenter = (finalYMin + finalYMax) / 2;
+        
         // اطمینان از اعتبار محدوده‌ها
         if (this.xMin >= this.xMax) {
             console.error('محدوده X نامعتبر است!', { xMin: this.xMin, xMax: this.xMax });
@@ -453,6 +466,30 @@ export class ProjectDashboard {
             console.error('محدوده Y نامعتبر است!', { yMin: this.yMin, yMax: this.yMax });
             this.yMin = -10;
             this.yMax = 10;
+        }
+        
+        // اعمال زوم به محور Y
+        // محاسبه محدوده Y با در نظر گیری زوم
+        const originalYRange = this.originalYMax - this.originalYMin;
+        const zoomedYRange = originalYRange / this.zoomLevelY;
+        const yCenter = this.originalYCenter || (this.originalYMin + this.originalYMax) / 2;
+        
+        // تنظیم محدوده Y با اعمال زوم (حفظ مرکز)
+        this.yMin = yCenter - zoomedYRange / 2;
+        this.yMax = yCenter + zoomedYRange / 2;
+        
+        // اطمینان از اینکه صفر در محدوده Y است (در صورت امکان)
+        if (this.originalYMin <= 0 && this.originalYMax >= 0) {
+            // اگر صفر در محدوده اصلی بود، سعی کنیم آن را حفظ کنیم
+            if (this.yMin > 0) {
+                const diff = this.yMin;
+                this.yMin = 0;
+                this.yMax += diff;
+            } else if (this.yMax < 0) {
+                const diff = -this.yMax;
+                this.yMax = 0;
+                this.yMin -= diff;
+            }
         }
         
         // محاسبه مقیاس‌ها
@@ -1944,6 +1981,7 @@ export class ProjectDashboard {
         const minZoom = 1.0;
         const maxZoom = 500.0; // افزایش حد زوم به 500
         this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoom);
+        this.zoomLevelY = Math.min(Math.max(this.zoomLevelY, minZoom), maxZoom); // اعمال محدودیت به زوم Y
         this.drawingWidth = this.baseDrawingWidth * this.zoomLevel;
         this.updateZoomLayout();
         this._scalesCalculated = false;
@@ -1952,28 +1990,33 @@ export class ProjectDashboard {
 
     // متدهای زوم
     zoomIn() {
-        // افزایش سطح زوم
+        // افزایش سطح زوم برای هر دو محور
         const nextZoom = Math.min(this.zoomLevel * 1.2, 500.0); // حداکثر 500 برابر
-        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
+        const nextZoomY = Math.min(this.zoomLevelY * 1.2, 500.0); // حداکثر 500 برابر برای Y
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6 && Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
             return;
         }
         this.zoomLevel = nextZoom;
+        this.zoomLevelY = nextZoomY; // اعمال زوم به محور Y
         this.applyZoomLevel();
     }
 
     zoomOut() {
-        // کاهش سطح زوم
+        // کاهش سطح زوم برای هر دو محور
         const nextZoom = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
-        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
+        const nextZoomY = Math.max(this.zoomLevelY / 1.2, 1.0); // حداقل 1 برابر برای Y
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6 && Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
             return;
         }
         this.zoomLevel = nextZoom;
+        this.zoomLevelY = nextZoomY; // اعمال زوم به محور Y
         this.applyZoomLevel();
     }
 
     resetZoom() {
         // بازنشانی زوم به حالت اولیه
         this.zoomLevel = 1.0;
+        this.zoomLevelY = 1.0; // بازنشانی زوم Y
         this.zoomCenterX = null;
         this.zoomCenterY = null;
         this.applyZoomLevel();
