@@ -89,18 +89,6 @@
           <input id="yinput" type="text" class="coordinate-field" readonly>
         </div>
       </div>
-      <div class="zoom-buttons-section">
-        <div class="zoom-buttons-group">
-          <button type="button" class="btn-toggle-modern" id="zoomInBtn">
-            <i class="bi bi-zoom-in"></i>
-            <span>زوم بیشتر</span>
-          </button>
-          <button type="button" class="btn-toggle-modern" id="zoomOutBtn">
-            <i class="bi bi-zoom-out"></i>
-            <span>زوم کمتر</span>
-          </button>
-        </div>
-      </div>
       
       <div class="toggle-buttons-section">
         <div class="toggle-buttons-group">
@@ -156,9 +144,21 @@
   <!-- نمودار اصلی -->
   <div class="chart-container-modern">
     <div class="chart-header-modern">
-      <h5 class="chart-title">
-        <i class="bi bi-graph-up-arrow me-2"></i>نمودار پروفیل طولی پروژه
-      </h5>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <h5 class="chart-title" style="margin: 0;">
+          <i class="bi bi-graph-up-arrow me-2"></i>نمودار پروفیل طولی پروژه
+        </h5>
+        <div class="zoom-buttons-group" style="display: flex; gap: 8px;">
+          <button type="button" class="btn-toggle-modern" id="zoomInBtn" style="margin: 0;">
+            <i class="bi bi-zoom-in"></i>
+            <span>زوم بیشتر</span>
+          </button>
+          <button type="button" class="btn-toggle-modern" id="zoomOutBtn" style="margin: 0;">
+            <i class="bi bi-zoom-out"></i>
+            <span>زوم کمتر</span>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="chart-body-modern">
       <div class="chart-wrapper-modern">

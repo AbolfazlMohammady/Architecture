@@ -1942,7 +1942,7 @@ export class ProjectDashboard {
             this.baseDrawingWidth = this.drawingWidth || (this.dynamicWidth - this.margin * 2);
         }
         const minZoom = 1.0;
-        const maxZoom = 5.0;
+        const maxZoom = 500.0; // افزایش حد زوم به 500
         this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoom);
         this.drawingWidth = this.baseDrawingWidth * this.zoomLevel;
         this.updateZoomLayout();
@@ -1953,7 +1953,7 @@ export class ProjectDashboard {
     // متدهای زوم
     zoomIn() {
         // افزایش سطح زوم
-        const nextZoom = Math.min(this.zoomLevel * 1.2, 5.0); // حداکثر 5 برابر
+        const nextZoom = Math.min(this.zoomLevel * 1.2, 500.0); // حداکثر 500 برابر
         if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
             return;
         }

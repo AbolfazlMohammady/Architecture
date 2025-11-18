@@ -112,6 +112,45 @@ export class XAxisCanvas {
     const baselineY = this.height - 12;
     const labelY = baselineY - 20;
 
+    // رسم تقسیم‌بندی 100 متری بین کیلومترها
+    if (labels.length > 0) {
+      for (let i = 0; i < labels.length - 1; i++) {
+        const km1 = labels[i];
+        const km2 = labels[i + 1];
+        
+        // محاسبه موقعیت X برای کیلومتر اول
+        let x1;
+        if (this.xScale !== null && this.xScale !== undefined && this.xMin !== null && this.xMin !== undefined) {
+          x1 = this.margin + (km1 - this.xMin) * this.xScale;
+        } else {
+          x1 = this.margin + ((km1 - this.start_km) / range) * (actualCanvasWidth - this.margin * 2);
+        }
+        
+        // محاسبه موقعیت X برای کیلومتر دوم
+        let x2;
+        if (this.xScale !== null && this.xScale !== undefined && this.xMin !== null && this.xMin !== undefined) {
+          x2 = this.margin + (km2 - this.xMin) * this.xScale;
+        } else {
+          x2 = this.margin + ((km2 - this.start_km) / range) * (actualCanvasWidth - this.margin * 2);
+        }
+        
+        // رسم 9 خط کوچک بین دو کیلومتر (هر 100 متر)
+        const segmentLength = x2 - x1;
+        for (let j = 1; j < 10; j++) {
+          const x = x1 + (segmentLength * j / 10);
+          
+          ctx.save();
+          ctx.strokeStyle = '#999';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(x, baselineY - 1);
+          ctx.lineTo(x, baselineY + 4); // خط کوچک‌تر از خط اصلی
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
     labels.forEach((km) => {
       // محاسبه موقعیت X بر اساس xScale و xMin (مثل transformX)
       let x;
@@ -137,10 +176,12 @@ export class XAxisCanvas {
       // رسم لیبل - همه لیبل‌ها را نمایش بده (بدون محدودیت)
       ctx.fillText(kmLabel, x, labelY);
       
-      // خط کوچک زیر لیبل
+      // خط بزرگ زیر لیبل (کیلومتر کامل)
       ctx.beginPath();
       ctx.moveTo(x, baselineY - 2);
       ctx.lineTo(x, baselineY + 6);
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
       ctx.stroke();
       
       ctx.shadowBlur = 0;
