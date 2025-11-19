@@ -921,38 +921,41 @@ export class ProjectDashboard {
             const landY = Number.isFinite(landElevation)
                 ? Math.max(this.transformY(landElevation), roadY)
                 : fallbackLandY;
-            const totalAvailable = Math.max(landY - roadY, 0);
 
             boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
 
-            let allocatedPx = 0;
+            // برای لایه‌های ثابت، از لایه قبلی استفاده می‌کنیم تا صاف باشند
+            let currentTopY = roadY;
 
             for (let l = 0; l < sortedLayers.length; l++) {
                 const layer = sortedLayers[l];
                 const desiredPx = desiredThicknessPx[l];
                 const isFixed = layer.state === 1;
 
-                let effectivePx = desiredPx;
-                const remaining = Math.max(totalAvailable - allocatedPx, 0);
+                let effectivePx;
+                let actualThickness;
 
-                if (!isFixed) {
+                if (isFixed) {
+                    // لایه ثابت: همیشه ضخامت ثابت داشته باشد، بر اساس لایه قبلی محاسبه شود
+                    effectivePx = desiredPx;
+                    actualThickness = desiredPx;
+                } else {
+                    // لایه متغیر: محدود به فضای باقی‌مانده تا خط زمین
+                    const remaining = Math.max(landY - currentTopY, 0);
                     effectivePx = Math.min(desiredPx, remaining);
-                } else if (remaining < desiredPx && remaining > 0) {
-                    effectivePx = Math.min(desiredPx, remaining);
+                    actualThickness = effectivePx > 0.6 ? effectivePx : 0;
                 }
 
-                if (!Number.isFinite(effectivePx) || effectivePx < 0) {
-                    effectivePx = 0;
+                if (!Number.isFinite(actualThickness) || actualThickness < 0) {
+                    actualThickness = 0;
                 }
 
-                const bottomTarget = roadY + allocatedPx + effectivePx;
-                const clampedBottom = Math.min(bottomTarget, landY);
-                const actualThickness = Math.max(clampedBottom - (roadY + allocatedPx), 0);
+                const bottomY = currentTopY + actualThickness;
                 const hasThickness = isFixed ? desiredPx > 0 : actualThickness > 0.6;
 
                 const bottomPoint = {
                     x,
-                    y: roadY + allocatedPx + actualThickness,
+                    y: bottomY,
                     km,
                     valid: isFixed || hasThickness,
                     index: i
@@ -961,19 +964,20 @@ export class ProjectDashboard {
 
                 const centerPoint = {
                     x,
-                    y: roadY + allocatedPx + actualThickness / 2,
+                    y: currentTopY + actualThickness / 2,
                     km,
                     valid: hasThickness,
                     index: i
                 };
                 centers[l].push(centerPoint);
 
+                // برای لایه بعدی، از bottomY استفاده می‌کنیم (لایه قبلی)
+                currentTopY = bottomY;
+
                 if (actualThickness > 0) {
-                    allocatedPx += actualThickness;
                     thicknessAccumulator[l] += actualThickness;
                     thicknessSamples[l] += 1;
                 } else if (isFixed) {
-                    allocatedPx += desiredPx;
                     thicknessAccumulator[l] += desiredPx;
                     thicknessSamples[l] += 1;
                 }
