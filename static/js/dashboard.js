@@ -34,6 +34,8 @@ export class ProjectDashboard {
         this.originalYMax = null;
         this.originalYCenter = null; // مرکز محور Y برای زوم
         this.baseDrawingWidth = null;
+        this.baseHeight = null; // ارتفاع پایه برای محاسبه ارتفاع داینامیک
+        this.dynamicHeight = null; // ارتفاع داینامیک بر اساس زوم Y
         
         // موقعیت موس
         this.mouseX = null;
@@ -178,6 +180,10 @@ export class ProjectDashboard {
         this.baseDrawingWidth = baseDrawingWidth;
         this.drawingWidth = baseDrawingWidth;
         
+        // ذخیره ارتفاع پایه
+        this.baseHeight = this.height;
+        this.dynamicHeight = this.height;
+        
         // padding اضافی برای حاشیه‌های چپ/راست و کمی فضای باز در انتهای نمودار
         this.extraScrollPadding = Math.max(this.margin, 200);
         this.dynamicWidth = this.drawingWidth + this.margin * 2;
@@ -221,15 +227,28 @@ export class ProjectDashboard {
             return;
         }
         this.dynamicWidth = this.drawingWidth + this.margin * 2;
+        
+        // محاسبه ارتفاع داینامیک بر اساس زوم Y
+        if (this.baseHeight && Number.isFinite(this.zoomLevelY)) {
+            this.dynamicHeight = this.baseHeight * this.zoomLevelY;
+        } else {
+            this.dynamicHeight = this.height;
+        }
+        
         const padding = Number.isFinite(this.extraScrollPadding) ? this.extraScrollPadding : this.margin;
+        const paddingY = Math.max(this.margin, 50); // padding عمودی
 
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             const innerWidth = this.dynamicWidth + padding;
+            const innerHeight = this.dynamicHeight + paddingY;
             chartInner.style.width = innerWidth + 'px';
             chartInner.style.minWidth = innerWidth + 'px';
             chartInner.style.maxWidth = innerWidth + 'px';
+            chartInner.style.height = innerHeight + 'px';
+            chartInner.style.minHeight = innerHeight + 'px';
             chartInner.style.paddingRight = padding + 'px';
+            chartInner.style.paddingBottom = paddingY + 'px';
             chartInner.style.display = 'block';
             chartInner.style.position = 'relative';
         }
@@ -237,7 +256,12 @@ export class ProjectDashboard {
         const scrollContainer = this.chartScrollContainer || document.getElementById('chart-scroll-x');
         if (scrollContainer) {
             scrollContainer.style.setProperty('overflow-x', 'auto', 'important');
-            scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
+            // فعال کردن اسکرول عمودی وقتی زوم Y بیشتر از 1 است
+            if (this.zoomLevelY > 1.0) {
+                scrollContainer.style.setProperty('overflow-y', 'auto', 'important');
+            } else {
+                scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
+            }
             scrollContainer.style.width = '100%';
             scrollContainer.style.height = '100%';
         }
@@ -247,12 +271,14 @@ export class ProjectDashboard {
             mainCanvas.style.width = this.dynamicWidth + 'px';
             mainCanvas.style.minWidth = this.dynamicWidth + 'px';
             mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
+            mainCanvas.style.height = this.dynamicHeight + 'px';
+            mainCanvas.style.minHeight = this.dynamicHeight + 'px';
             mainCanvas.style.display = 'block';
             mainCanvas.style.flexShrink = '0';
         }
 
         if (!skipCanvasResize && this.canvas && typeof this.canvas.resize === 'function') {
-            this.canvas.resize(this.dynamicWidth, this.height);
+            this.canvas.resize(this.dynamicWidth, this.dynamicHeight);
         }
 
         const xAxisCanvas = document.getElementById('xAxisCanvas');
@@ -262,6 +288,20 @@ export class ProjectDashboard {
             xAxisCanvas.style.maxWidth = this.dynamicWidth + 'px';
             xAxisCanvas.style.display = 'block';
             xAxisCanvas.style.flexShrink = '0';
+        }
+        
+        // به‌روزرسانی محور Y با ارتفاع جدید
+        if (this.yAxis && typeof this.yAxis.update === 'function') {
+            // ارتفاع محور Y را هم به‌روزرسانی کن
+            const yAxisCanvas = document.getElementById('yAxisCanvas');
+            if (yAxisCanvas) {
+                yAxisCanvas.style.height = this.dynamicHeight + 'px';
+                yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
+            }
+            // اگر yAxis متد resize دارد، آن را فراخوانی کن
+            if (typeof this.yAxis.resize === 'function') {
+                this.yAxis.resize(50, this.dynamicHeight);
+            }
         }
     }
 
@@ -494,7 +534,7 @@ export class ProjectDashboard {
         
         // محاسبه مقیاس‌ها
         const effectiveDrawingWidth = this.drawingWidth || ((this.dynamicWidth || this.width) - this.margin * 2);
-        const canvasHeight = this.height - this.margin * 2 - 30;
+        const canvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
@@ -597,7 +637,7 @@ export class ProjectDashboard {
         this.yMax = finalYMax;
         
         // محاسبه مجدد yScale بر اساس finalYMin و finalYMax
-        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         const currentYRange = this.yMax - this.yMin;
         if (currentYRange > 0) {
             this.yScale = mainCanvasHeight / currentYRange;
@@ -1643,13 +1683,13 @@ export class ProjectDashboard {
                 yMax: this.yMax,
                 yMin: this.yMin
             });
-            return this.margin + this.height / 2;
+            return this.margin + (this.dynamicHeight || this.height) / 2;
         }
         const yRange = this.yMax - this.yMin;
         if (yRange <= 0) {
-            return this.margin + this.height / 2;
+            return this.margin + (this.dynamicHeight || this.height) / 2;
         }
-        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         const normalizedY = (y - this.yMin) / yRange;
         const rawY = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
         return rawY;
@@ -1664,7 +1704,7 @@ export class ProjectDashboard {
             });
             return 0;
         }
-        const mainCanvasHeight = this.height - this.margin * 2 - 30;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
         const distanceFromTop = clampedPixelY - this.margin;
         const normalized = distanceFromTop / mainCanvasHeight;
@@ -1684,7 +1724,7 @@ export class ProjectDashboard {
         
         // اطمینان از اینکه موس در محدوده canvas است
         const canvasLogicalWidth = this.dynamicWidth || this.width;
-        const canvasLogicalHeight = this.height;
+        const canvasLogicalHeight = this.dynamicHeight || this.height;
         if (this.mouseX < 0 || this.mouseX > canvasLogicalWidth || this.mouseY < 0 || this.mouseY > canvasLogicalHeight) {
             this.mouseX = null;
             this.mouseY = null;
@@ -2027,6 +2067,7 @@ export class ProjectDashboard {
         ctx.save();
         // نشانگر ساده و دقیق - فقط علامت + در مرکز
         const canvasWidth = this.dynamicWidth || this.width;
+        const canvasHeight = this.dynamicHeight || this.height;
         
         // خطوط راهنما (کمرنگ)
         ctx.strokeStyle = 'rgba(44,62,80,0.2)';
@@ -2034,7 +2075,7 @@ export class ProjectDashboard {
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, this.height);
+        ctx.lineTo(x, canvasHeight);
         ctx.moveTo(0, y);
         ctx.lineTo(canvasWidth, y);
         ctx.stroke();

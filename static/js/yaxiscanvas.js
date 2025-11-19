@@ -31,6 +31,30 @@ export class YAxisCanvas {
     this.draw();
   }
   
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    
+    // تنظیم canvas با در نظر گیری devicePixelRatio برای کیفیت بالا (حداقل 2)
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    
+    // تنظیم scale برای context
+    this.ctx.scale(dpr, dpr);
+    
+    // بهبود کیفیت رندرینگ - حرفه‌ای
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+    
+    // رسم مجدد اگر داده‌ها وجود دارند
+    if (this.data && this.data.length > 0) {
+      this.draw();
+    }
+  }
+  
   getYPosition(value) {
     const margin = this.margin;
     const mainCanvasHeight = this.height - margin * 2 - 30;
