@@ -1260,7 +1260,26 @@ export class ProjectDashboard {
                     return;
                 }
                 const x = this.transformX(targetKm);
-                const y = this.height / 2;
+                // پیدا کردن ارتفاع واقعی جاده در این نقطه برای ثابت ماندن با زوم Y
+                let y = null;
+                if (profileData.road_points && profileData.road_points.length > 0) {
+                    let minDist = Infinity;
+                    for (let p = 0; p < profileData.road_points.length; p++) {
+                        const dist = Math.abs(profileData.road_points[p].x - targetKm);
+                        if (dist < minDist) { 
+                            minDist = dist; 
+                            y = this.transformY(profileData.road_points[p].y); 
+                        }
+                    }
+                }
+                // اگر پیدا نشد، از ارتفاع جاده در نزدیک‌ترین نقطه استفاده کن
+                if (y === null) {
+                    // استفاده از ارتفاع واقعی 0 (خط جاده) که با transformY تبدیل می‌شود
+                    y = this.transformY(0);
+                }
+                // آبرو کمی بالاتر از جاده نمایش داده شود
+                const offsetAboveRoad = 25;
+                y = y - offsetAboveRoad;
                 this.drawStructureSymbol(structure, x, y);
             }
         });
