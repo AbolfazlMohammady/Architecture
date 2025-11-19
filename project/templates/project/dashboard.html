@@ -148,15 +148,29 @@
         <h5 class="chart-title" style="margin: 0;">
           <i class="bi bi-graph-up-arrow me-2"></i>نمودار پروفیل طولی پروژه
         </h5>
-        <div class="zoom-buttons-group" style="display: flex; gap: 8px;">
-          <button type="button" class="btn-toggle-modern" id="zoomInBtn" style="margin: 0;">
-            <i class="bi bi-zoom-in"></i>
-            <span>زوم بیشتر</span>
-          </button>
-          <button type="button" class="btn-toggle-modern" id="zoomOutBtn" style="margin: 0;">
-            <i class="bi bi-zoom-out"></i>
-            <span>زوم کمتر</span>
-          </button>
+        <div class="zoom-buttons-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <span style="font-size: 12px; color: #666; margin-right: 4px;">محور Y:</span>
+            <button type="button" class="btn-toggle-modern" id="zoomInBtn" style="margin: 0;">
+              <i class="bi bi-zoom-in"></i>
+              <span>زوم بیشتر</span>
+            </button>
+            <button type="button" class="btn-toggle-modern" id="zoomOutBtn" style="margin: 0;">
+              <i class="bi bi-zoom-out"></i>
+              <span>زوم کمتر</span>
+            </button>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <span style="font-size: 12px; color: #666; margin-right: 4px;">محور X:</span>
+            <button type="button" class="btn-toggle-modern" id="zoomInXBtn" style="margin: 0;">
+              <i class="bi bi-zoom-in"></i>
+              <span>زوم بیشتر</span>
+            </button>
+            <button type="button" class="btn-toggle-modern" id="zoomOutXBtn" style="margin: 0;">
+              <i class="bi bi-zoom-out"></i>
+              <span>زوم کمتر</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -330,6 +344,8 @@
 
     document.getElementById('zoomInBtn').addEventListener('click', () => dashboard.zoomIn());
     document.getElementById('zoomOutBtn').addEventListener('click', () => dashboard.zoomOut());
+    document.getElementById('zoomInXBtn').addEventListener('click', () => dashboard.zoomInX());
+    document.getElementById('zoomOutXBtn').addEventListener('click', () => dashboard.zoomOutX());
     
     // کنترل‌های فیلتر زمانی
     document.getElementById('applyDateFilter').addEventListener('click', () => dashboard.applyDateFilter());

@@ -2030,26 +2030,42 @@ export class ProjectDashboard {
 
     // متدهای زوم
     zoomIn() {
-        // افزایش سطح زوم برای هر دو محور
-        const nextZoom = Math.min(this.zoomLevel * 1.2, 500.0); // حداکثر 500 برابر
+        // افزایش سطح زوم برای محور Y
         const nextZoomY = Math.min(this.zoomLevelY * 1.2, 500.0); // حداکثر 500 برابر برای Y
-        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6 && Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
+        if (Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
             return;
         }
-        this.zoomLevel = nextZoom;
         this.zoomLevelY = nextZoomY; // اعمال زوم به محور Y
         this.applyZoomLevel();
     }
 
     zoomOut() {
-        // کاهش سطح زوم برای هر دو محور
-        const nextZoom = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
+        // کاهش سطح زوم برای محور Y
         const nextZoomY = Math.max(this.zoomLevelY / 1.2, 1.0); // حداقل 1 برابر برای Y
-        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6 && Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
+        if (Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
+            return;
+        }
+        this.zoomLevelY = nextZoomY; // اعمال زوم به محور Y
+        this.applyZoomLevel();
+    }
+
+    zoomInX() {
+        // افزایش سطح زوم برای محور X
+        const nextZoom = Math.min(this.zoomLevel * 1.2, 500.0); // حداکثر 500 برابر
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
             return;
         }
         this.zoomLevel = nextZoom;
-        this.zoomLevelY = nextZoomY; // اعمال زوم به محور Y
+        this.applyZoomLevel();
+    }
+
+    zoomOutX() {
+        // کاهش سطح زوم برای محور X
+        const nextZoom = Math.max(this.zoomLevel / 1.2, 1.0); // حداقل 1 برابر (بدون زوم)
+        if (Math.abs(nextZoom - this.zoomLevel) < 1e-6) {
+            return;
+        }
+        this.zoomLevel = nextZoom;
         this.applyZoomLevel();
     }
 
