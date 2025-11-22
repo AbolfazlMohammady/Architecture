@@ -654,7 +654,7 @@ html, body {
 
 .chart-scroll-container {
   overflow-x: auto !important;
-  overflow-y: hidden !important; /* فقط اسکرول افقی */
+  overflow-y: auto !important; /* اسکرول افقی و عمودی */
   width: 100%;
   height: 520px; /* ارتفاع ثابت */
   scrollbar-width: thin;

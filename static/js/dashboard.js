@@ -269,9 +269,8 @@ export class ProjectDashboard {
         const scrollContainer = this.chartScrollContainer || document.getElementById('chart-scroll-x');
         if (scrollContainer) {
             scrollContainer.style.setProperty('overflow-x', 'auto', 'important');
-            // اسکرول عمودی فقط وقتی نیاز باشه (نه همیشه)
-            // چون canvas با ارتفاع ثابت رسم میشه، نیازی به اسکرول عمودی نیست
-            scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
+            // اسکرول عمودی برای محور Y
+            scrollContainer.style.setProperty('overflow-y', 'auto', 'important');
             scrollContainer.style.width = '100%';
             scrollContainer.style.height = '100%';
         }
