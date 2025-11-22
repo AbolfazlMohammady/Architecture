@@ -250,10 +250,11 @@ export class ProjectDashboard {
         // ارتفاع chartInner بر اساس dynamicHeight محاسبه می‌شه (مثل عرض که بر اساس dynamicWidth است)
         // این باعث می‌شود که اسکرول عمودی کامل کار کنه وقتی zoomLevelY > 1
         const chartInner = document.getElementById('chart-canvas-inner');
+        const xAxisHeight = 50; // ارتفاع محور X
         if (chartInner) {
             const innerWidth = this.dynamicWidth + padding;
-            // ارتفاع inner باید بر اساس dynamicHeight باشه (مثل عرض که بر اساس dynamicWidth است)
-            const innerHeight = this.dynamicHeight + paddingY;
+            // ارتفاع inner باید بر اساس dynamicHeight + ارتفاع محور X باشه تا اسکرول کامل کار کنه
+            const innerHeight = this.dynamicHeight + paddingY + xAxisHeight;
             chartInner.style.width = innerWidth + 'px';
             chartInner.style.minWidth = innerWidth + 'px';
             chartInner.style.maxWidth = innerWidth + 'px';
@@ -261,7 +262,8 @@ export class ProjectDashboard {
             chartInner.style.minHeight = innerHeight + 'px';
             chartInner.style.paddingRight = padding + 'px';
             chartInner.style.paddingBottom = paddingY + 'px';
-            chartInner.style.display = 'block';
+            chartInner.style.display = 'flex';
+            chartInner.style.flexDirection = 'column';
             chartInner.style.position = 'relative';
         }
 
@@ -274,34 +276,28 @@ export class ProjectDashboard {
             scrollContainer.style.height = '100%';
         }
 
-        // canvas باید با ارتفاع ثابت رسم بشه (برای جلوگیری از کش اومدن)
-        // اما محتوای داخلی با yScale زوم میشه
+        // canvas باید با ارتفاع dynamicHeight رسم بشه (مثل عرض که dynamicWidth است)
+        // این باعث می‌شود که وقتی زوم می‌کنه، canvas بزرگ بشه و کل محتوا قابل مشاهده باشه
         const mainCanvas = document.getElementById('mainCanvas');
         if (mainCanvas) {
             mainCanvas.style.width = this.dynamicWidth + 'px';
             mainCanvas.style.minWidth = this.dynamicWidth + 'px';
             mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
-            // ارتفاع canvas همیشه ثابت (fixedCanvasHeight) برای جلوگیری از کش اومدن
-            mainCanvas.style.height = fixedCanvasHeight + 'px';
-            mainCanvas.style.minHeight = fixedCanvasHeight + 'px';
-            mainCanvas.style.maxHeight = fixedCanvasHeight + 'px';
+            // ارتفاع canvas بر اساس dynamicHeight (مثل عرض که dynamicWidth است)
+            mainCanvas.style.height = this.dynamicHeight + 'px';
+            mainCanvas.style.minHeight = this.dynamicHeight + 'px';
+            mainCanvas.style.maxHeight = this.dynamicHeight + 'px';
             mainCanvas.style.display = 'block';
             mainCanvas.style.flexShrink = '0';
             mainCanvas.style.position = 'relative';
         }
 
         if (!skipCanvasResize && this.canvas && typeof this.canvas.resize === 'function') {
-            // canvas با ارتفاع ثابت resize می‌شه (نه dynamicHeight)
-            this.canvas.resize(this.dynamicWidth, fixedCanvasHeight);
+            // canvas با ارتفاع dynamicHeight resize می‌شه (مثل عرض که dynamicWidth است)
+            this.canvas.resize(this.dynamicWidth, this.dynamicHeight);
         }
 
-        // تنظیم chartInner برای sticky
-        if (chartInner) {
-            // برای اینکه sticky کار کنه، باید parent container scroll باشه
-            // chartInner باید flex باشه تا sticky درست کار کنه
-            chartInner.style.display = 'flex';
-            chartInner.style.flexDirection = 'column';
-        }
+        // chartInner قبلاً به flex تنظیم شده
         
         const xAxisCanvas = document.getElementById('xAxisCanvas');
         if (xAxisCanvas) {
@@ -322,25 +318,27 @@ export class ProjectDashboard {
             xAxisCanvas.style.marginTop = 'auto';
         }
         
-        // محور Y باید با ارتفاع ثابت باشه (baseHeight) نه dynamicHeight
-        // چون محور Y خارج از scroll container هست و باید همیشه ثابت بمونه
-        // ارتفاع dynamicHeight فقط برای canvas اصلی استفاده میشه
-        if (this.yAxis && typeof this.yAxis.update === 'function') {
+        // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
+        // تا با canvas اصلی هماهنگ باشه و اسکرول کامل کار کنه
+        if (this.yAxis) {
             const yAxisCanvas = document.getElementById('yAxisCanvas');
             if (yAxisCanvas) {
-                // محور Y باید با ارتفاع ثابت baseHeight باشه (نه dynamicHeight)
-                // تا همیشه قابل مشاهده باشه و از بین نره
-                yAxisCanvas.style.height = fixedCanvasHeight + 'px';
-                yAxisCanvas.style.minHeight = fixedCanvasHeight + 'px';
-                yAxisCanvas.style.maxHeight = fixedCanvasHeight + 'px';
+                // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
+                yAxisCanvas.style.height = this.dynamicHeight + 'px';
+                yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
+                yAxisCanvas.style.maxHeight = this.dynamicHeight + 'px';
                 // اطمینان از اینکه محور Y قابل مشاهده هست
                 yAxisCanvas.style.display = 'block';
                 yAxisCanvas.style.visibility = 'visible';
                 yAxisCanvas.style.opacity = '1';
             }
-            // اگر yAxis متد resize دارد، آن را فراخوانی کن با ارتفاع ثابت
+            // اگر yAxis متد resize دارد، آن را فراخوانی کن با ارتفاع dynamicHeight
             if (typeof this.yAxis.resize === 'function') {
-                this.yAxis.resize(50, fixedCanvasHeight);
+                this.yAxis.resize(50, this.dynamicHeight);
+            }
+            // اگر داده‌های قبلی وجود دارند، update را دوباره فراخوانی کن تا لیبل‌ها با ارتفاع جدید رسم شوند
+            if (typeof this.yAxis.update === 'function' && this.yAxis.data && this.yAxis.data.length > 0) {
+                this.yAxis.update(this.yAxis.data, this.yAxis.min, this.yAxis.max);
             }
         }
     }
@@ -706,17 +704,21 @@ export class ProjectDashboard {
         
         // استفاده از finalYMin و finalYMax برای yAxis.update
         // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
-        // محور Y باید با ارتفاع ثابت canvas (fixedCanvasHeight) update بشه
-        // نه dynamicHeight، تا همیشه قابل مشاهده باشه
+        // محور Y باید با ارتفاع dynamicHeight update بشه (مثل canvas اصلی)
         if (this.yAxis && typeof this.yAxis.update === 'function') {
+            // ابتدا resize کن تا ارتفاع درست شود
+            if (typeof this.yAxis.resize === 'function') {
+                this.yAxis.resize(50, this.dynamicHeight);
+            }
+            // سپس update کن تا لیبل‌ها با ارتفاع جدید رسم شوند
             this.yAxis.update(yLabels, finalYMin, finalYMax);
             // اطمینان از اینکه محور Y canvas درست تنظیم شده
             const yAxisCanvas = document.getElementById('yAxisCanvas');
             if (yAxisCanvas) {
-                const fixedHeight = this.baseHeight || this.height;
-                yAxisCanvas.style.height = fixedHeight + 'px';
-                yAxisCanvas.style.minHeight = fixedHeight + 'px';
-                yAxisCanvas.style.maxHeight = fixedHeight + 'px';
+                // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
+                yAxisCanvas.style.height = this.dynamicHeight + 'px';
+                yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
+                yAxisCanvas.style.maxHeight = this.dynamicHeight + 'px';
                 yAxisCanvas.style.display = 'block';
                 yAxisCanvas.style.visibility = 'visible';
                 yAxisCanvas.style.opacity = '1';
@@ -1792,23 +1794,21 @@ export class ProjectDashboard {
                 yMax: this.yMax,
                 yMin: this.yMin
             });
-            const fixedHeight = this.baseHeight || this.height;
-            return this.margin + fixedHeight / 2;
+            const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
+            return this.margin + canvasHeight / 2;
         }
         const yRange = this.yMax - this.yMin;
         if (yRange <= 0) {
-            const fixedHeight = this.baseHeight || this.height;
-            return this.margin + fixedHeight / 2;
+            const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
+            return this.margin + canvasHeight / 2;
         }
-        // استفاده از ارتفاع ثابت canvas (نه dynamicHeight)
-        // yScale بر اساس dynamicHeight محاسبه شده، پس باید نسبت تبدیل کنیم
-        const fixedHeight = this.baseHeight || this.height;
-        const mainCanvasHeight = fixedHeight - this.margin * 2 - 30;
-        // محاسبه موقعیت بر اساس yScale و ارتفاع ثابت canvas
+        // استفاده از dynamicHeight برای محاسبه موقعیت Y
+        // این باعث می‌شود که وقتی زوم می‌کنیم، موقعیت‌ها درست محاسبه شوند
+        const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
+        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
+        // محاسبه موقعیت بر اساس yScale و dynamicHeight
         const yFromMin = y - this.yMin;
-        // yScale بر اساس dynamicHeight محاسبه شده، پس باید به ارتفاع ثابت تبدیل کنیم
-        const scaleRatio = mainCanvasHeight / ((this.dynamicHeight || fixedHeight) - this.margin * 2 - 30);
-        const pixelY = yFromMin * this.yScale * scaleRatio;
+        const pixelY = yFromMin * this.yScale;
         const rawY = this.margin + mainCanvasHeight - pixelY;
         return rawY;
     }
@@ -1822,16 +1822,14 @@ export class ProjectDashboard {
             });
             return 0;
         }
-        // استفاده از ارتفاع ثابت canvas
-        const fixedHeight = this.baseHeight || this.height;
-        const mainCanvasHeight = fixedHeight - this.margin * 2 - 30;
+        // استفاده از dynamicHeight برای محاسبه معکوس موقعیت Y
+        const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
+        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
         const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
         const distanceFromTop = clampedPixelY - this.margin;
-        // استفاده از yScale برای تبدیل معکوس
-        // yScale بر اساس dynamicHeight محاسبه شده، پس باید نسبت تبدیل کنیم
-        const scaleRatio = mainCanvasHeight / ((this.dynamicHeight || fixedHeight) - this.margin * 2 - 30);
+        // استفاده از yScale برای تبدیل معکوس (بدون scaleRatio چون yScale بر اساس dynamicHeight است)
         const pixelYFromBottom = mainCanvasHeight - distanceFromTop;
-        const yFromMin = pixelYFromBottom / (this.yScale * scaleRatio);
+        const yFromMin = pixelYFromBottom / this.yScale;
         const value = this.yMin + yFromMin;
         return value;
     }
