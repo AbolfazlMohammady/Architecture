@@ -247,14 +247,13 @@ export class ProjectDashboard {
         const padding = Number.isFinite(this.extraScrollPadding) ? this.extraScrollPadding : this.margin;
         const paddingY = Math.max(this.margin, 50); // padding عمودی
 
-        // ارتفاع chartInner بر اساس fixedCanvasHeight محاسبه می‌شه
-        // چون canvas با ارتفاع ثابت رسم میشه، chartInner هم باید ارتفاع ثابت داشته باشه
-        // اسکرول فقط برای محتوای افقی (X) استفاده میشه
+        // ارتفاع chartInner بر اساس dynamicHeight محاسبه می‌شه (مثل عرض که بر اساس dynamicWidth است)
+        // این باعث می‌شود که اسکرول عمودی کامل کار کنه وقتی zoomLevelY > 1
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             const innerWidth = this.dynamicWidth + padding;
-            // ارتفاع inner باید برابر fixedCanvasHeight باشه (هماهنگ با canvas)
-            const innerHeight = fixedCanvasHeight + paddingY;
+            // ارتفاع inner باید بر اساس dynamicHeight باشه (مثل عرض که بر اساس dynamicWidth است)
+            const innerHeight = this.dynamicHeight + paddingY;
             chartInner.style.width = innerWidth + 'px';
             chartInner.style.minWidth = innerWidth + 'px';
             chartInner.style.maxWidth = innerWidth + 'px';
