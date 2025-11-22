@@ -891,18 +891,26 @@ export class ProjectDashboard {
             return layout;
         }
 
-                const canvasHeight = this.height - this.margin * 2 - 30;
-        const maxLayerThicknessPx = canvasHeight * 0.14;
-        const minLayerThicknessPx = 1.2;
+        // اطمینان از محاسبه مقیاس‌ها قبل از استفاده
+        if (!this._scalesCalculated) {
+            this.calculateScales();
+        }
 
-        const desiredThicknessPx = sortedLayers.map(layer =>
-            Math.max(
-                Math.min((layer.thickness_cm || 0) * (this.yScale || 0) / 100, maxLayerThicknessPx),
-                minLayerThicknessPx
-            )
+        // محاسبه ضخامت لایه‌ها بر اساس ارتفاع واقعی (سانتیمتر به متر)
+        // و تبدیل با transformY برای حفظ دقت با زوم Y
+        const desiredThicknessMeters = sortedLayers.map(layer => (layer.thickness_cm || 0) / 100);
+        
+        // برای محدودیت حداکثر ضخامت نمایشی در پیکسل
+        const canvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
+        const maxLayerThicknessMeters = (canvasHeight * 0.14) / (this.yScale || 1);
+        
+        // محاسبه ضخامت به متر (محدود شده)
+        const limitedThicknessMeters = desiredThicknessMeters.map(thickness => 
+            Math.min(thickness, maxLayerThicknessMeters)
         );
 
-        const cumulativeDesiredPx = desiredThicknessPx.reduce((acc, val) => acc + val, 0);
+        // محاسبه ارتفاع تجمعی لایه‌ها به متر (برای fallback)
+        const cumulativeThicknessMeters = limitedThicknessMeters.reduce((acc, val) => acc + val, 0);
 
         const boundaries = Array.from({ length: sortedLayers.length + 1 }, () => []);
         const centers = Array.from({ length: sortedLayers.length }, () => []);
@@ -917,7 +925,9 @@ export class ProjectDashboard {
             const x = this.transformX(km);
             const roadY = this.transformY(point.y);
             const landElevation = this.getLandElevationAt(km);
-            const fallbackLandY = roadY + cumulativeDesiredPx + 40;
+            // محاسبه fallback بر اساس ارتفاع واقعی (متر)
+            const fallbackElevationM = cumulativeThicknessMeters + 0.4; // 40 سانتیمتر اضافی
+            const fallbackLandY = this.transformY(fallbackElevationM);
             const landY = Number.isFinite(landElevation)
                 ? Math.max(this.transformY(landElevation), roadY)
                 : fallbackLandY;
@@ -925,33 +935,43 @@ export class ProjectDashboard {
             boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
 
             // برای لایه‌های ثابت، از لایه قبلی استفاده می‌کنیم تا صاف باشند
-            let currentTopY = roadY;
+            // استفاده از ارتفاع واقعی به متر برای دقت بیشتر
+            let currentTopElevation = 0; // ارتفاع واقعی جاده در این نقطه (متر)
 
             for (let l = 0; l < sortedLayers.length; l++) {
                 const layer = sortedLayers[l];
-                const desiredPx = desiredThicknessPx[l];
+                const desiredThicknessM = limitedThicknessMeters[l];
                 const isFixed = layer.state === 1;
 
-                let effectivePx;
-                let actualThickness;
+                let actualThicknessM;
 
                 if (isFixed) {
-                    // لایه ثابت: همیشه ضخامت ثابت داشته باشد، بر اساس لایه قبلی محاسبه شود
-                    effectivePx = desiredPx;
-                    actualThickness = desiredPx;
+                    // لایه ثابت: همیشه ضخامت ثابت داشته باشد بر اساس ارتفاع واقعی
+                    actualThicknessM = desiredThicknessM;
                 } else {
                     // لایه متغیر: محدود به فضای باقی‌مانده تا خط زمین
-                    const remaining = Math.max(landY - currentTopY, 0);
-                    effectivePx = Math.min(desiredPx, remaining);
-                    actualThickness = effectivePx > 0.6 ? effectivePx : 0;
+                    const landElevationReal = landElevation !== null && Number.isFinite(landElevation) ? landElevation : (currentTopElevation + cumulativeThicknessMeters);
+                    const remainingMeters = Math.max(landElevationReal - currentTopElevation, 0);
+                    actualThicknessM = Math.min(desiredThicknessM, remainingMeters);
+                    // اگر ضخامت خیلی کم است، صفر کنیم
+                    if (actualThicknessM < 0.006) { // کمتر از 0.6 سانتیمتر
+                        actualThicknessM = 0;
+                    }
                 }
 
-                if (!Number.isFinite(actualThickness) || actualThickness < 0) {
-                    actualThickness = 0;
+                if (!Number.isFinite(actualThicknessM) || actualThicknessM < 0) {
+                    actualThicknessM = 0;
                 }
 
-                const bottomY = currentTopY + actualThickness;
-                const hasThickness = isFixed ? desiredPx > 0 : actualThickness > 0.6;
+                // محاسبه ارتفاع پایین لایه به متر
+                const bottomElevationM = currentTopElevation + actualThicknessM;
+                
+                // تبدیل به پیکسل با transformY
+                const currentTopY = this.transformY(currentTopElevation);
+                const bottomY = this.transformY(bottomElevationM);
+                const actualThicknessPx = Math.abs(bottomY - currentTopY);
+                
+                const hasThickness = isFixed ? desiredThicknessM > 0 : actualThicknessM > 0.006;
 
                 const bottomPoint = {
                     x,
@@ -964,21 +984,23 @@ export class ProjectDashboard {
 
                 const centerPoint = {
                     x,
-                    y: currentTopY + actualThickness / 2,
+                    y: currentTopY + actualThicknessPx / 2,
                     km,
                     valid: hasThickness,
                     index: i
                 };
                 centers[l].push(centerPoint);
 
-                // برای لایه بعدی، از bottomY استفاده می‌کنیم (لایه قبلی)
-                currentTopY = bottomY;
+                // برای لایه بعدی، از bottomElevationM استفاده می‌کنیم (لایه قبلی)
+                currentTopElevation = bottomElevationM;
 
-                if (actualThickness > 0) {
-                    thicknessAccumulator[l] += actualThickness;
+                if (actualThicknessPx > 0) {
+                    thicknessAccumulator[l] += actualThicknessPx;
                     thicknessSamples[l] += 1;
                 } else if (isFixed) {
-                    thicknessAccumulator[l] += desiredPx;
+                    // حتی اگر پیکسل صفر بود، ضخامت واقعی را ثبت کنیم
+                    const fixedThicknessPx = Math.abs(this.transformY(desiredThicknessM) - this.transformY(0));
+                    thicknessAccumulator[l] += fixedThicknessPx;
                     thicknessSamples[l] += 1;
                 }
             }
@@ -988,7 +1010,9 @@ export class ProjectDashboard {
             if (thicknessSamples[idx] > 0) {
                 return thicknessAccumulator[idx] / thicknessSamples[idx];
             }
-            return desiredThicknessPx[idx];
+            // اگر نمونه‌ای نبود، از ضخامت محدود شده به متر استفاده و به پیکسل تبدیل کن
+            const thicknessM = limitedThicknessMeters[idx];
+            return Math.abs(this.transformY(thicknessM) - this.transformY(0));
         });
 
         this.layerIndexMap = new Map(sortedLayers.map((layer, index) => [layer.id, index]));
