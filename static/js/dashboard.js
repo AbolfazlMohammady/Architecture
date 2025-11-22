@@ -228,20 +228,33 @@ export class ProjectDashboard {
         }
         this.dynamicWidth = this.drawingWidth + this.margin * 2;
         
-        // محاسبه ارتفاع داینامیک بر اساس زوم Y
+        // محدود کردن dynamicHeight برای امنیت
+        // dynamicHeight برای محاسبه مقیاس‌ها استفاده می‌شه
+        // اما canvas با ارتفاع ثابت رسم میشه تا کش نیاد
         if (this.baseHeight && Number.isFinite(this.zoomLevelY)) {
             this.dynamicHeight = this.baseHeight * this.zoomLevelY;
+            // محدود کردن dynamicHeight به حداکثر 10 برابر baseHeight برای امنیت
+            const maxDynamicHeight = this.baseHeight * 10;
+            this.dynamicHeight = Math.min(this.dynamicHeight, maxDynamicHeight);
         } else {
             this.dynamicHeight = this.height;
         }
         
+        // ارتفاع ثابت canvas برای نمایش (بدون کش)
+        // canvas همیشه با ارتفاع baseHeight رسم میشه
+        const fixedCanvasHeight = this.baseHeight || this.height;
+        
         const padding = Number.isFinite(this.extraScrollPadding) ? this.extraScrollPadding : this.margin;
         const paddingY = Math.max(this.margin, 50); // padding عمودی
 
+        // ارتفاع chartInner بر اساس fixedCanvasHeight محاسبه می‌شه
+        // چون canvas با ارتفاع ثابت رسم میشه، chartInner هم باید ارتفاع ثابت داشته باشه
+        // اسکرول فقط برای محتوای افقی (X) استفاده میشه
         const chartInner = document.getElementById('chart-canvas-inner');
         if (chartInner) {
             const innerWidth = this.dynamicWidth + padding;
-            const innerHeight = this.dynamicHeight + paddingY;
+            // ارتفاع inner باید برابر fixedCanvasHeight باشه (هماهنگ با canvas)
+            const innerHeight = fixedCanvasHeight + paddingY;
             chartInner.style.width = innerWidth + 'px';
             chartInner.style.minWidth = innerWidth + 'px';
             chartInner.style.maxWidth = innerWidth + 'px';
@@ -256,31 +269,42 @@ export class ProjectDashboard {
         const scrollContainer = this.chartScrollContainer || document.getElementById('chart-scroll-x');
         if (scrollContainer) {
             scrollContainer.style.setProperty('overflow-x', 'auto', 'important');
-            // فعال کردن اسکرول عمودی وقتی زوم Y بیشتر از 1 است
-            if (this.zoomLevelY > 1.0) {
-                scrollContainer.style.setProperty('overflow-y', 'auto', 'important');
-            } else {
-                scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
-            }
+            // اسکرول عمودی فقط وقتی نیاز باشه (نه همیشه)
+            // چون canvas با ارتفاع ثابت رسم میشه، نیازی به اسکرول عمودی نیست
+            scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
             scrollContainer.style.width = '100%';
             scrollContainer.style.height = '100%';
         }
 
+        // canvas باید با ارتفاع ثابت رسم بشه (برای جلوگیری از کش اومدن)
+        // اما محتوای داخلی با yScale زوم میشه
         const mainCanvas = document.getElementById('mainCanvas');
         if (mainCanvas) {
             mainCanvas.style.width = this.dynamicWidth + 'px';
             mainCanvas.style.minWidth = this.dynamicWidth + 'px';
             mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
-            mainCanvas.style.height = this.dynamicHeight + 'px';
-            mainCanvas.style.minHeight = this.dynamicHeight + 'px';
+            // ارتفاع canvas همیشه ثابت (fixedCanvasHeight) برای جلوگیری از کش اومدن
+            mainCanvas.style.height = fixedCanvasHeight + 'px';
+            mainCanvas.style.minHeight = fixedCanvasHeight + 'px';
+            mainCanvas.style.maxHeight = fixedCanvasHeight + 'px';
             mainCanvas.style.display = 'block';
             mainCanvas.style.flexShrink = '0';
+            mainCanvas.style.position = 'relative';
         }
 
         if (!skipCanvasResize && this.canvas && typeof this.canvas.resize === 'function') {
-            this.canvas.resize(this.dynamicWidth, this.dynamicHeight);
+            // canvas با ارتفاع ثابت resize می‌شه (نه dynamicHeight)
+            this.canvas.resize(this.dynamicWidth, fixedCanvasHeight);
         }
 
+        // تنظیم chartInner برای sticky
+        if (chartInner) {
+            // برای اینکه sticky کار کنه، باید parent container scroll باشه
+            // chartInner باید flex باشه تا sticky درست کار کنه
+            chartInner.style.display = 'flex';
+            chartInner.style.flexDirection = 'column';
+        }
+        
         const xAxisCanvas = document.getElementById('xAxisCanvas');
         if (xAxisCanvas) {
             xAxisCanvas.style.width = this.dynamicWidth + 'px';
@@ -288,19 +312,37 @@ export class ProjectDashboard {
             xAxisCanvas.style.maxWidth = this.dynamicWidth + 'px';
             xAxisCanvas.style.display = 'block';
             xAxisCanvas.style.flexShrink = '0';
+            // محور X باید sticky باشه و در پایین scroll container ثابت بمونه
+            // sticky باید نسبت به scroll container (chart-scroll-x) باشه
+            xAxisCanvas.style.position = 'sticky';
+            xAxisCanvas.style.bottom = '0';
+            xAxisCanvas.style.zIndex = '10';
+            xAxisCanvas.style.backgroundColor = '#ffffff';
+            // اضافه کردن سایه کوچک برای جدا شدن بهتر از محتوا
+            xAxisCanvas.style.boxShadow = '0 -2px 4px rgba(0,0,0,0.1)';
+            // اطمینان از اینکه sticky کار می‌کنه
+            xAxisCanvas.style.marginTop = 'auto';
         }
         
-        // به‌روزرسانی محور Y با ارتفاع جدید
+        // محور Y باید با ارتفاع ثابت باشه (baseHeight) نه dynamicHeight
+        // چون محور Y خارج از scroll container هست و باید همیشه ثابت بمونه
+        // ارتفاع dynamicHeight فقط برای canvas اصلی استفاده میشه
         if (this.yAxis && typeof this.yAxis.update === 'function') {
-            // ارتفاع محور Y را هم به‌روزرسانی کن
             const yAxisCanvas = document.getElementById('yAxisCanvas');
             if (yAxisCanvas) {
-                yAxisCanvas.style.height = this.dynamicHeight + 'px';
-                yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
+                // محور Y باید با ارتفاع ثابت baseHeight باشه (نه dynamicHeight)
+                // تا همیشه قابل مشاهده باشه و از بین نره
+                yAxisCanvas.style.height = fixedCanvasHeight + 'px';
+                yAxisCanvas.style.minHeight = fixedCanvasHeight + 'px';
+                yAxisCanvas.style.maxHeight = fixedCanvasHeight + 'px';
+                // اطمینان از اینکه محور Y قابل مشاهده هست
+                yAxisCanvas.style.display = 'block';
+                yAxisCanvas.style.visibility = 'visible';
+                yAxisCanvas.style.opacity = '1';
             }
-            // اگر yAxis متد resize دارد، آن را فراخوانی کن
+            // اگر yAxis متد resize دارد، آن را فراخوانی کن با ارتفاع ثابت
             if (typeof this.yAxis.resize === 'function') {
-                this.yAxis.resize(50, this.dynamicHeight);
+                this.yAxis.resize(50, fixedCanvasHeight);
             }
         }
     }
@@ -534,12 +576,16 @@ export class ProjectDashboard {
         
         // محاسبه مقیاس‌ها
         const effectiveDrawingWidth = this.drawingWidth || ((this.dynamicWidth || this.width) - this.margin * 2);
+        // استفاده از dynamicHeight برای محاسبه yScale (نه fixedHeight)
+        // چون canvas الان ارتفاع dynamicHeight داره
         const canvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
         
         this.xScale = effectiveDrawingWidth / xRange;
+        // yScale بر اساس ارتفاع dynamicHeight محاسبه میشه
+        // چون محدوده Y با zoomLevelY تغییر کرده، yScale خودکار بزرگتر میشه
         this.yScale = canvasHeight / yRange;
         
         // لاگ برای دیباگ
@@ -637,7 +683,10 @@ export class ProjectDashboard {
         this.yMax = finalYMax;
         
         // محاسبه مجدد yScale بر اساس finalYMin و finalYMax
-        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
+        // yScale بر اساس dynamicHeight محاسبه میشه (برای زوم)
+        // اما transformY از ارتفاع ثابت استفاده می‌کنه و نسبت تبدیل می‌کنه
+        const canvasHeight = this.dynamicHeight || this.height;
+        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
         const currentYRange = this.yMax - this.yMin;
         if (currentYRange > 0) {
             this.yScale = mainCanvasHeight / currentYRange;
@@ -659,7 +708,22 @@ export class ProjectDashboard {
         
         // استفاده از finalYMin و finalYMax برای yAxis.update
         // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
-        this.yAxis.update(yLabels, finalYMin, finalYMax);
+        // محور Y باید با ارتفاع ثابت canvas (fixedCanvasHeight) update بشه
+        // نه dynamicHeight، تا همیشه قابل مشاهده باشه
+        if (this.yAxis && typeof this.yAxis.update === 'function') {
+            this.yAxis.update(yLabels, finalYMin, finalYMax);
+            // اطمینان از اینکه محور Y canvas درست تنظیم شده
+            const yAxisCanvas = document.getElementById('yAxisCanvas');
+            if (yAxisCanvas) {
+                const fixedHeight = this.baseHeight || this.height;
+                yAxisCanvas.style.height = fixedHeight + 'px';
+                yAxisCanvas.style.minHeight = fixedHeight + 'px';
+                yAxisCanvas.style.maxHeight = fixedHeight + 'px';
+                yAxisCanvas.style.display = 'block';
+                yAxisCanvas.style.visibility = 'visible';
+                yAxisCanvas.style.opacity = '1';
+            }
+        }
 
         const yMain0 = this.transformY(0);
         const debugAxisZero = (typeof this.yAxis.getYPosition === 'function') ? this.yAxis.getYPosition(0) : null;
@@ -1730,15 +1794,24 @@ export class ProjectDashboard {
                 yMax: this.yMax,
                 yMin: this.yMin
             });
-            return this.margin + (this.dynamicHeight || this.height) / 2;
+            const fixedHeight = this.baseHeight || this.height;
+            return this.margin + fixedHeight / 2;
         }
         const yRange = this.yMax - this.yMin;
         if (yRange <= 0) {
-            return this.margin + (this.dynamicHeight || this.height) / 2;
+            const fixedHeight = this.baseHeight || this.height;
+            return this.margin + fixedHeight / 2;
         }
-        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
-        const normalizedY = (y - this.yMin) / yRange;
-        const rawY = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
+        // استفاده از ارتفاع ثابت canvas (نه dynamicHeight)
+        // yScale بر اساس dynamicHeight محاسبه شده، پس باید نسبت تبدیل کنیم
+        const fixedHeight = this.baseHeight || this.height;
+        const mainCanvasHeight = fixedHeight - this.margin * 2 - 30;
+        // محاسبه موقعیت بر اساس yScale و ارتفاع ثابت canvas
+        const yFromMin = y - this.yMin;
+        // yScale بر اساس dynamicHeight محاسبه شده، پس باید به ارتفاع ثابت تبدیل کنیم
+        const scaleRatio = mainCanvasHeight / ((this.dynamicHeight || fixedHeight) - this.margin * 2 - 30);
+        const pixelY = yFromMin * this.yScale * scaleRatio;
+        const rawY = this.margin + mainCanvasHeight - pixelY;
         return rawY;
     }
 
@@ -1751,11 +1824,17 @@ export class ProjectDashboard {
             });
             return 0;
         }
-        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
+        // استفاده از ارتفاع ثابت canvas
+        const fixedHeight = this.baseHeight || this.height;
+        const mainCanvasHeight = fixedHeight - this.margin * 2 - 30;
         const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
         const distanceFromTop = clampedPixelY - this.margin;
-        const normalized = distanceFromTop / mainCanvasHeight;
-        const value = this.yMax - normalized * (this.yMax - this.yMin);
+        // استفاده از yScale برای تبدیل معکوس
+        // yScale بر اساس dynamicHeight محاسبه شده، پس باید نسبت تبدیل کنیم
+        const scaleRatio = mainCanvasHeight / ((this.dynamicHeight || fixedHeight) - this.margin * 2 - 30);
+        const pixelYFromBottom = mainCanvasHeight - distanceFromTop;
+        const yFromMin = pixelYFromBottom / (this.yScale * scaleRatio);
+        const value = this.yMin + yFromMin;
         return value;
     }
 
@@ -2066,9 +2145,11 @@ export class ProjectDashboard {
             this.baseDrawingWidth = this.drawingWidth || (this.dynamicWidth - this.margin * 2);
         }
         const minZoom = 1.0;
-        const maxZoom = 500.0; // افزایش حد زوم به 500
-        this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoom);
-        this.zoomLevelY = Math.min(Math.max(this.zoomLevelY, minZoom), maxZoom); // اعمال محدودیت به زوم Y
+        const maxZoomX = 500.0; // حد زوم برای X
+        // محدود کردن زوم Y به یک مقدار معقول (حداکثر 10) تا محور Y از کادر خارج نشه
+        const maxZoomY = 10.0; // حد زوم برای Y - محدود برای امنیت
+        this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoomX);
+        this.zoomLevelY = Math.min(Math.max(this.zoomLevelY, minZoom), maxZoomY); // اعمال محدودیت امن به زوم Y
         this.drawingWidth = this.baseDrawingWidth * this.zoomLevel;
         this.updateZoomLayout();
         this._scalesCalculated = false;
@@ -2078,7 +2159,8 @@ export class ProjectDashboard {
     // متدهای زوم
     zoomIn() {
         // افزایش سطح زوم برای محور Y
-        const nextZoomY = Math.min(this.zoomLevelY * 1.2, 500.0); // حداکثر 500 برابر برای Y
+        const maxZoomY = 10.0; // حداکثر 10 برابر برای Y (محدوده امن)
+        const nextZoomY = Math.min(this.zoomLevelY * 1.2, maxZoomY);
         if (Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
             return;
         }
