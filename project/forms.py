@@ -36,6 +36,20 @@ class ProjectForm(forms.ModelForm):
         
         self.fields['name'].widget.attrs["class"] = "form-control form-control-sm"
         
+        # فیلد پروژه اصلی - فقط پروژه‌های اصلی (بدون parent) را نشان می‌دهد
+        self.fields["parent_project"] = forms.ModelChoiceField(
+            queryset=project_models.Project.objects.filter(parent_project__isnull=True),
+            required=False,
+            label="پروژه اصلی",
+            help_text="اگر این پروژه زیرپروژه است، پروژه اصلی را انتخاب کنید",
+            widget=Select2Widget(attrs={'class': 'form-select'})
+        )
+        # اگر در حال ویرایش هستیم، نباید خود پروژه را در لیست parent_project نشان دهیم
+        if self.instance and self.instance.pk:
+            self.fields["parent_project"].queryset = project_models.Project.objects.filter(
+                parent_project__isnull=True
+            ).exclude(pk=self.instance.pk)
+        
         self.fields["project_manager"].widget = Select2Widget()
         self.fields["project_manager"].queryset = core_models.User.objects.all()
         self.fields["project_manager"].widget.attrs["class"] = "form-select"
@@ -74,6 +88,7 @@ class ProjectForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
+        parent_project = cleaned_data.get('parent_project')
         project_manager = cleaned_data.get('project_manager')
         technical_manager = cleaned_data.get('technical_manager')
         quality_control_manager = cleaned_data.get('quality_control_manager')
@@ -85,10 +100,40 @@ class ProjectForm(forms.ModelForm):
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
         
-        if name and project_manager and technical_manager and quality_control_manager and budget and masafat and width and start_kilometer and end_kilometer and start_date:
-            # بررسی وجود پروژه مشابه با همان مشخصات
+        # بررسی اینکه parent_project باید یک پروژه اصلی باشد (نه زیرپروژه)
+        if parent_project:
+            if parent_project.parent_project is not None:
+                raise forms.ValidationError(
+                    f"پروژه '{parent_project.name}' خود یک زیرپروژه است. فقط می‌توانید پروژه‌های اصلی را به عنوان پروژه اصلی انتخاب کنید."
+                )
+            # بررسی اینکه پروژه نمی‌تواند والد خودش باشد
+            if self.instance.pk and parent_project.pk == self.instance.pk:
+                raise forms.ValidationError(
+                    "یک پروژه نمی‌تواند پروژه اصلی خودش باشد."
+                )
+        
+        # بررسی یکتایی نام در پروژه اصلی (یا پروژه‌های اصلی)
+        if name:
             existing_project = project_models.Project.objects.filter(
                 name=name,
+                parent_project=parent_project
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+            
+            if existing_project.exists():
+                if parent_project:
+                    raise forms.ValidationError(
+                        f"زیرپروژه‌ای با نام '{name}' در پروژه اصلی '{parent_project.name}' قبلاً وجود دارد."
+                    )
+                else:
+                    raise forms.ValidationError(
+                        f"پروژه اصلی‌ای با نام '{name}' قبلاً وجود دارد."
+                    )
+        
+        if name and project_manager and technical_manager and quality_control_manager and budget and masafat and width and start_kilometer and end_kilometer and start_date:
+            # بررسی وجود پروژه مشابه با همان مشخصات (اختیاری - برای جلوگیری از تکرار کامل)
+            existing_project = project_models.Project.objects.filter(
+                name=name,
+                parent_project=parent_project,
                 project_manager=project_manager,
                 technical_manager=technical_manager,
                 quality_control_manager=quality_control_manager,
@@ -110,6 +155,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = project_models.Project
         fields = ['name',
+                  'parent_project',
                   'project_manager',
                   'technical_manager',
                   'quality_control_manager',

@@ -28,12 +28,19 @@
         </div>
         {% endif %}
         <div class="row g-4">
-          {% for project in projects %}
+          {% for project in main_projects %}
           <div class="col-12 col-md-6 col-lg-4">
-            <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card project-card border-0 shadow-lg rounded-4 overflow-hidden main-project-card" data-project-id="{{ project.id }}">
               <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">{{ project.name }}</h6>
-                <span class="badge bg-light text-dark fw-bold">{% if project.status == 'active' %}در حال اجرا{% else %}تکمیل شده{% endif %}</span>
+                <div class="d-flex align-items-center gap-2">
+                  {% if sub_projects_dict|get_item:project.id %}
+                  <button class="btn btn-sm btn-light toggle-sub-projects" type="button" data-project-id="{{ project.id }}" title="نمایش زیرپروژه‌ها">
+                    <i class="bi bi-chevron-down" id="icon-{{ project.id }}"></i>
+                  </button>
+                  {% endif %}
+                  <span class="badge bg-light text-dark fw-bold">{% if project.end_date %}تکمیل شده{% else %}در حال اجرا{% endif %}</span>
+                </div>
               </div>
               <div class="card-body">
                 <label class="form-label fw-bold mb-1">پیشرفت پروژه</label>
@@ -52,6 +59,37 @@
                   <a href="{% url 'dashboard' pk=project.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3">داشبورد</a>
                 </div>
               </div>
+              <!-- زیرپروژه‌ها -->
+              {% if sub_projects_dict|get_item:project.id %}
+              <div class="sub-projects-container" id="sub-projects-{{ project.id }}" style="display: none;">
+                <div class="card-body border-top bg-light">
+                  <h6 class="fw-bold mb-3">زیرپروژه‌ها:</h6>
+                  <div class="row g-3">
+                    {% for sub_project in sub_projects_dict|get_item:project.id %}
+                    <div class="col-12">
+                      <div class="card sub-project-card border shadow-sm rounded-3">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                          <h6 class="mb-0 small">{{ sub_project.name }}</h6>
+                          <span class="badge bg-secondary small">{% if sub_project.end_date %}تکمیل شده{% else %}در حال اجرا{% endif %}</span>
+                        </div>
+                        <div class="card-body p-3">
+                          <div class="progress mb-2" style="height: 8px; border-radius: 4px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ project_progress|get_item:sub_project.id }}%;" aria-valuenow="{{ project_progress|get_item:sub_project.id }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                          </div>
+                          <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-primary rounded-pill px-2" href="{% url 'project-detail' pk=sub_project.pk %}">جزئیات</a>
+                            <a href="{% url 'project-layer-list' pk=sub_project.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-2">لایه‌ها</a>
+                            <a href="{% url 'dashboard' pk=sub_project.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-2">داشبورد</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endif %}
             </div>
           </div>
           {% empty %}
@@ -81,5 +119,43 @@
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
+.sub-project-card {
+  transition: all 0.2s ease;
+}
+.sub-project-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.toggle-sub-projects {
+  padding: 0.25rem 0.5rem;
+  transition: transform 0.3s ease;
+}
+.toggle-sub-projects.rotated {
+  transform: rotate(180deg);
+}
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButtons = document.querySelectorAll('.toggle-sub-projects');
+  toggleButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const projectId = this.getAttribute('data-project-id');
+      const subProjectsContainer = document.getElementById('sub-projects-' + projectId);
+      const icon = document.getElementById('icon-' + projectId);
+      
+      if (subProjectsContainer.style.display === 'none') {
+        subProjectsContainer.style.display = 'block';
+        icon.classList.add('bi-chevron-up');
+        icon.classList.remove('bi-chevron-down');
+        this.classList.add('rotated');
+      } else {
+        subProjectsContainer.style.display = 'none';
+        icon.classList.add('bi-chevron-down');
+        icon.classList.remove('bi-chevron-up');
+        this.classList.remove('rotated');
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

@@ -4,7 +4,16 @@ from django_jalali.db import models as jmodels
 from .validators import validate_excel_file
 # Create your models here.
 class Project(models.Model):
-    name = models.CharField(max_length=100, unique=True,verbose_name="نام پروژه")
+    name = models.CharField(max_length=100, verbose_name="نام پروژه")
+    parent_project = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='sub_projects',
+        verbose_name="پروژه اصلی",
+        help_text="اگر این پروژه زیرپروژه است، پروژه اصلی را انتخاب کنید"
+    )
     start_date = jmodels.jDateField(verbose_name="تاریخ شروع",null=True,blank=True)
     end_date = jmodels.jDateField(verbose_name="تاریخ پایان",null=True,blank=True)
     budget = models.DecimalField(max_digits=50, decimal_places=0, blank=True, null=True, verbose_name="بودجه")
@@ -83,9 +92,20 @@ class Project(models.Model):
     def __str__(self):
         return self.name
     
+    def is_main_project(self):
+        """بررسی اینکه آیا این پروژه اصلی است یا زیرپروژه"""
+        return self.parent_project is None
+    
+    def get_display_name(self):
+        """دریافت نام نمایشی پروژه"""
+        if self.parent_project:
+            return f"{self.parent_project.name} - {self.name}"
+        return self.name
+    
     class Meta:
         verbose_name = "پروژه"
         verbose_name_plural = "پروژه‌ها"
+        unique_together = [['name', 'parent_project']]  # نام باید در هر پروژه اصلی یکتا باشد
         
 
 class ProjectEx(models.Model):

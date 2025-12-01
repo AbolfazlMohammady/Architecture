@@ -88,13 +88,39 @@ class ProjectListView(generic.ListView):
             context['error_message'] = 'برای مشاهده لیست پروژه‌ها، لطفاً ابتدا وارد حساب کاربری خود شوید.'
             context['projects'] = []
             context['project_progress'] = {}
+            context['main_projects'] = []
+            context['sub_projects_dict'] = {}
             return context
         
         projects = context['projects']
+        
+        # جدا کردن پروژه‌های اصلی و زیرپروژه‌ها
+        main_projects = []
+        sub_projects_dict = {}  # {parent_id: [sub_projects]}
+        main_project_ids = set()  # برای ردیابی پروژه‌های اصلی که باید نمایش داده شوند
+        
+        for project in projects:
+            if project.is_main_project():
+                main_projects.append(project)
+                main_project_ids.add(project.id)
+            else:
+                parent_id = project.parent_project.id
+                if parent_id not in sub_projects_dict:
+                    sub_projects_dict[parent_id] = []
+                sub_projects_dict[parent_id].append(project)
+                # اگر کاربر به زیرپروژه دسترسی دارد اما به پروژه اصلی دسترسی ندارد،
+                # پروژه اصلی را هم به لیست اضافه کن (فقط برای نمایش)
+                if parent_id not in main_project_ids:
+                    parent_project = project.parent_project
+                    if parent_project not in main_projects:
+                        main_projects.append(parent_project)
+                        main_project_ids.add(parent_id)
 
         project_progress_dict = {}
 
-        for project in projects:
+        # محاسبه پیشرفت برای همه پروژه‌ها (اصلی و زیرپروژه‌ها)
+        all_projects = list(projects)
+        for project in all_projects:
             project_layers = project_models.ProjectLayer.objects.filter(project=project)
             completed_layers = project_layers.filter(status=project_models.ProjectLayer.COMPLETED)
             if project_layers.exists():
@@ -104,6 +130,8 @@ class ProjectListView(generic.ListView):
             project_progress_dict[project.id] = progress
 
         context['project_progress'] = project_progress_dict
+        context['main_projects'] = main_projects
+        context['sub_projects_dict'] = sub_projects_dict
         return context
 
 class CreateProjectView(generic.CreateView):

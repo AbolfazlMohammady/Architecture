@@ -384,7 +384,10 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         for p in user.accessible_projects.all():
             projects.add(p)
             project_roles.setdefault(p.id, []).append('دسترسی دستی')
-        user_projects = []
+        # جدا کردن پروژه‌های اصلی و زیرپروژه‌ها
+        main_projects_list = []
+        sub_projects_dict = {}
+        
         for p in projects:
             roles_in_project = project_roles.get(p.id, [])
             accesses = []
@@ -408,15 +411,28 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             total_layers = ProjectLayer.objects.filter(project=p).count()
             completed_layers = ProjectLayer.objects.filter(project=p, status=ProjectLayer.COMPLETED).count()
             progress = round((completed_layers / total_layers) * 100) if total_layers > 0 else 0
-            user_projects.append({
+            
+            project_data = {
                 'id': p.id,
                 'name': p.name,
                 'roles': roles_in_project,
                 'accesses': unique_accesses,
                 'status': 'active' if not p.end_date else 'completed',
                 'progress': progress,
-            })
-        context['user_projects'] = user_projects
+            }
+            
+            # اگر پروژه اصلی است
+            if p.is_main_project():
+                main_projects_list.append(project_data)
+            else:
+                # زیرپروژه است
+                parent_id = p.parent_project.id
+                if parent_id not in sub_projects_dict:
+                    sub_projects_dict[parent_id] = []
+                sub_projects_dict[parent_id].append(project_data)
+        
+        context['user_projects'] = main_projects_list
+        context['sub_projects_dict'] = sub_projects_dict
         # --- KPI: Project Status ---
         all_projects = Project.objects.all()
         total_projects = all_projects.count()
