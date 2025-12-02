@@ -55,7 +55,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <span class="text-muted small">انواع آزمایش</span>
+                                <span class="text-muted small">آزمایشات</span>
                                 <div>
                                     {% for t in experiment_types %}
                                         <span class="badge bg-primary-light text-dark me-1 mb-1">{{ t.name }}</span>
@@ -127,7 +127,7 @@
                                 <h5 class="fw-bold mb-3"><i class="fas fa-vial me-2"></i>نتایج آزمایش</h5>
                                 <div class="alert alert-warning small mb-3">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    فیلدهای زیر بر اساس نوع آزمایش انتخاب شده در درخواست نمایش داده می‌شوند.
+                                    فیلدهای زیر بر اساس آزمایش انتخاب شده در درخواست نمایش داده می‌شوند.
                                 </div>
                             </div>
                             <!-- فیلدهای تراکم نسبی (2 عدد: تراکم + ضخامت) -->
@@ -425,7 +425,7 @@
             }
         });
         
-        // نمایش/مخفی کردن فیلدهای پاسخ بر اساس نوع آزمایش
+        // نمایش/مخفی کردن فیلدهای پاسخ بر اساس آزمایش
         var experimentTypes = [
             {% for t in experiment_types %}
                 "{{ t.name }}"{% if not forloop.last %},{% endif %}
@@ -444,7 +444,7 @@
                 
                 console.log('Field ' + index + ' - Required type:', requiredTypes);
                 
-                // بررسی اینکه آیا نوع آزمایش مورد نیاز در لیست انواع آزمایش انتخاب شده وجود دارد
+                // بررسی اینکه آیا آزمایش مورد نیاز در لیست آزمایشات انتخاب شده وجود دارد
                 if (requiredTypes && experimentTypes.length > 0) {
                     // بررسی دقیق: فقط وقتی که نام نوع آزمایش دقیقاً مطابقت داشته باشد
                     shouldShow = experimentTypes.some(function(type) {

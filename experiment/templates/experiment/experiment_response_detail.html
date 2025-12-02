@@ -35,7 +35,7 @@
                                     <td>{{ experiment_response.experiment_request.layer.layer_type.name|default:"-" }}</td>
                                 </tr>
                                 <tr>
-                                    <th>نوع آزمایش</th>
+                                    <th>آزمایش</th>
                                     <td>
                                         {% for exp_type in experiment_response.experiment_request.experiment_type.all %}
                                             {{ exp_type.name }}{% if not forloop.last %}، {% endif %}

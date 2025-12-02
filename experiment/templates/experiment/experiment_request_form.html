@@ -409,7 +409,7 @@ $(document).ready(function() {
         }
     });
 
-    // نمایش داینامیک فیلدها بر اساس نوع آزمایش و زیرنوع
+    // نمایش داینامیک فیلدها بر اساس آزمایش و زیرنوع
     function toggleFieldsByExperimentType() {
         var selectedTypes = $('#id_experiment_type').select2('data').map(function(item){ return item.text; });
         var selectedSubtypes = $('#id_experiment_subtype').select2('data').map(function(item){ return item.text; });
@@ -449,7 +449,7 @@ $(document).ready(function() {
         }
     }
     
-    // اجرای تابع هنگام تغییر نوع آزمایش
+    // اجرای تابع هنگام تغییر آزمایش
     $('#id_experiment_type').on('change', toggleFieldsByExperimentType);
     
     // اجرای تابع هنگام تغییر زیرنوع

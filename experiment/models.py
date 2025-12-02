@@ -6,18 +6,18 @@ from django_jalali.db import models as jmodels
 # Create your models here.
 
 class ExperimentType(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="نام آزمایش")
+    name = models.CharField(max_length=100, unique=True, verbose_name="نام نوع آزمایش")
 
     def __str__(self):
         return self.name
     
     class Meta:
-        verbose_name = "نوع آزمایش"
-        verbose_name_plural = "انواع آزمایشات"
+        verbose_name = "آزمایش"
+        verbose_name_plural = "آزمایشات"
 
 class ExperimentSubType(models.Model):
     name = models.CharField(max_length=100, verbose_name="نام زیرنوع")
-    experiment_type = models.ForeignKey(ExperimentType, on_delete=models.CASCADE, verbose_name="نوع آزمایش")
+    experiment_type = models.ForeignKey(ExperimentType, on_delete=models.CASCADE, verbose_name="آزمایش")
     
     def __str__(self):
         return f"{self.experiment_type.name} - {self.name}"
@@ -52,7 +52,7 @@ class ExperimentRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="پروژه")
     layer = models.ForeignKey(ProjectLayer, on_delete=models.CASCADE, verbose_name="لایه")
-    experiment_type = models.ManyToManyField(ExperimentType, verbose_name="نوع آزمایش")
+    experiment_type = models.ManyToManyField(ExperimentType, verbose_name="آزمایش")
     experiment_subtype = models.ManyToManyField(ExperimentSubType, verbose_name="زیرنوع آزمایش", blank=True)
     concrete_place = models.ForeignKey(ConcretePlace, on_delete=models.CASCADE, verbose_name="محل بتن‌ریزی", null=True, blank=True)
     status = models.PositiveSmallIntegerField(choices=EXPERIMENT_STATUS, default=PENDING, verbose_name="وضعیت")

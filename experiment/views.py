@@ -490,7 +490,7 @@ def experiment_request_detail(request, pk):
     kilometer_ranges_list = list(kilometer_ranges.values('start_kilometer', 'end_kilometer', 'description'))
     request_files_list = list(request_files.values('file'))
 
-    # پرچم‌های نوع آزمایش برای نمایش شرطی فیلدها/ستون‌ها
+    # پرچم‌های آزمایش برای نمایش شرطی فیلدها/ستون‌ها
     type_names = [et.name for et in experiment_request.experiment_type.all()]
     is_relative_density = any('تراکم نسبی' in name for name in type_names)
     is_concrete_strength = any('مقاومت فشاری بتن' in name or 'مقاومت فشاری' in name for name in type_names)
@@ -1027,18 +1027,18 @@ def simple_test(request):
 
 @login_required
 def experiment_type_list(request):
-    """نمایش لیست انواع آزمایشات"""
+    """نمایش لیست آزمایشات"""
     experiment_types = models.ExperimentType.objects.all()
     return render(request, 'experiment/experiment_type_list.html', {'experiment_types': experiment_types})
 
 @login_required
 def experiment_type_create(request):
-    """ایجاد نوع آزمایش جدید"""
+    """ایجاد آزمایش جدید"""
     if request.method == 'POST':
         form = forms.ExperimentTypeForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'نوع آزمایش با موفقیت ایجاد شد.')
+            messages.success(request, 'آزمایش با موفقیت ایجاد شد.')
             return redirect('experiment:experiment_type_list')
     else:
         form = forms.ExperimentTypeForm()
@@ -1046,13 +1046,13 @@ def experiment_type_create(request):
 
 @login_required
 def experiment_type_update(request, pk):
-    """بروزرسانی نوع آزمایش"""
+    """بروزرسانی آزمایش"""
     experiment_type = get_object_or_404(models.ExperimentType, pk=pk)
     if request.method == 'POST':
         form = forms.ExperimentTypeForm(request.POST, instance=experiment_type)
         if form.is_valid():
             form.save()
-            messages.success(request, 'نوع آزمایش با موفقیت بروزرسانی شد.')
+            messages.success(request, 'آزمایش با موفقیت بروزرسانی شد.')
             return redirect('experiment:experiment_type_list')
     else:
         form = forms.ExperimentTypeForm(instance=experiment_type)
@@ -1060,11 +1060,11 @@ def experiment_type_update(request, pk):
 
 @login_required
 def experiment_type_delete(request, pk):
-    """حذف نوع آزمایش"""
+    """حذف آزمایش"""
     experiment_type = get_object_or_404(models.ExperimentType, pk=pk)
     if request.method == 'POST':
         experiment_type.delete()
-        messages.success(request, 'نوع آزمایش با موفقیت حذف شد.')
+        messages.success(request, 'آزمایش با موفقیت حذف شد.')
         return redirect('experiment:experiment_type_list')
     return render(request, 'experiment/experiment_type_confirm_delete.html', {'experiment_type': experiment_type})
 
@@ -1280,7 +1280,7 @@ def experiment_response_update(request, pk):
     """بروزرسانی پاسخ آزمایش"""
     experiment_response = get_object_or_404(models.ExperimentResponse, pk=pk)
     experiment_request = experiment_response.experiment_request
-    # تشخیص نوع آزمایش‌ها برای نمایش فیلدهای مرتبط
+    # تشخیص آزمایش‌ها برای نمایش فیلدهای مرتبط
     experiment_types = experiment_request.experiment_type.all()
     is_asphalt = any('آسفالت' in et.name for et in experiment_types)
     is_relative_density = any('تراکم نسبی' in et.name for et in experiment_types)
@@ -1456,7 +1456,7 @@ def get_project_layers(request):
 
 @login_required
 def get_experiment_types(request):
-    """دریافت انواع آزمایش برای AJAX"""
+    """دریافت آزمایشات برای AJAX"""
     experiment_types = models.ExperimentType.objects.all()
     data = [{'id': exp_type.id, 'name': exp_type.name} for exp_type in experiment_types]
     return JsonResponse({'experiment_types': data})

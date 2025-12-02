@@ -280,7 +280,7 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             {'name': 'ایجاد پروژه', 'url_name': 'create-project'},
             {'name': 'لیست آزمایشات', 'url_name': 'experiment:experiment_request_list'},
             {'name': 'ثبت درخواست آزمایش', 'url_name': 'experiment:experiment_request_create'},
-            {'name': 'انواع آزمایشات', 'url_name': 'experiment:experiment_type_list'},
+            {'name': 'آزمایشات', 'url_name': 'experiment:experiment_type_list'},
             {'name': 'اعلان‌ها', 'url_name': 'experiment:notification_list'},
         ],
         'مدیر عامل موسسه': [

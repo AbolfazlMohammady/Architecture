@@ -67,7 +67,7 @@ class ExperimentRequestForm(forms.ModelForm):
         elif self.instance.pk and self.instance.project:
             self._set_layer_queryset(self.instance.project.projectlayer_set.all())
         
-        # فیلتر کردن زیرنوع‌ها بر اساس نوع آزمایش انتخاب شده
+        # فیلتر کردن زیرنوع‌ها بر اساس آزمایش انتخاب شده
         if 'experiment_type' in self.data:
             try:
                 experiment_type_id = int(self.data.get('experiment_type'))
@@ -80,11 +80,11 @@ class ExperimentRequestForm(forms.ModelForm):
         experiment_types = cleaned_data.get('experiment_type')
         experiment_subtypes = cleaned_data.get('experiment_subtype')
         
-        # اگر هیچ نوع آزمایشی انتخاب نشده باشد، اعتبارسنجی انجام نمی‌شود
+        # اگر هیچ آزمایشی انتخاب نشده باشد، اعتبارسنجی انجام نمی‌شود
         if not experiment_types:
             return cleaned_data
         
-        # نام انواع آزمایش انتخاب شده را به صورت لیست رشته بگیر
+        # نام آزمایشات انتخاب شده را به صورت لیست رشته بگیر
         type_names = [et.name for et in experiment_types]
         subtype_names = [est.name for est in experiment_subtypes] if experiment_subtypes else []
         
@@ -198,7 +198,7 @@ class ExperimentResponseForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         
-        # اگر experiment_request موجود باشد، بررسی نوع آزمایش
+        # اگر experiment_request موجود باشد، بررسی آزمایش
         if self.experiment_request:
             experiment_types = self.experiment_request.experiment_type.all()
             type_names = [et.name for et in experiment_types]
