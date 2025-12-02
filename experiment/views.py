@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from . import models, forms
 from project.models import ProjectLayer
 from django.contrib import messages
@@ -142,8 +143,9 @@ class ExperimentRequestListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
         
         # فقط پروژه‌های قابل دسترسی کاربر
+        from project.models import Project
         if user.is_superuser:
-            context['projects'] = models.Project.objects.all()
+            context['projects'] = Project.objects.all()
         else:
             context['projects'] = user.accessible_projects.all()
         return context
@@ -229,9 +231,10 @@ def experiment_request_list(request):
     user = request.user
     
     # فیلتر کردن بر اساس دسترسی کاربر به پروژه‌ها
+    from project.models import Project
     if user.is_superuser:
         experiment_requests = models.ExperimentRequest.objects.all()
-        projects = models.Project.objects.all()
+        projects = Project.objects.all()
     else:
         experiment_requests = models.ExperimentRequest.objects.filter(project__in=user.accessible_projects.all())
         projects = user.accessible_projects.all()
@@ -747,7 +750,8 @@ def payment_coefficient_list(request):
             coefficients = []
         
         try:
-            projects = models.Project.objects.all()
+            from project.models import Project
+            projects = Project.objects.filter(parent_project__isnull=True).order_by('name')
             logger.info(f"Successfully fetched {projects.count()} projects")
         except Exception as db_error:
             logger.error(f"Projects database error: {str(db_error)}")
@@ -770,7 +774,10 @@ def payment_coefficient_list(request):
         if layer and coefficients:
             coefficients = coefficients.filter(layer=layer)
         
-        # محاسبه آمار ضرایب
+        # مرتب‌سازی بر اساس تاریخ ایجاد (جدیدترین اول)
+        coefficients = coefficients.order_by('-created_at')
+        
+        # محاسبه آمار ضرایب (قبل از pagination)
         total_coefficients = coefficients.count()
         excellent_coefficients = coefficients.filter(coefficient__gte=1.0).count()
         weak_coefficients = coefficients.filter(coefficient__lt=0.6).count()
@@ -778,8 +785,14 @@ def payment_coefficient_list(request):
         
         logger.info(f"Calculated statistics - Total: {total_coefficients}, Excellent: {excellent_coefficients}, Weak: {weak_coefficients}, Needs Review: {needs_review_coefficients}")
         
+        # صفحه‌بندی
+        paginator = Paginator(coefficients, 20)  # 20 مورد در هر صفحه
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
         context = {
-            'coefficients': coefficients,
+            'coefficients': page_obj,
+            'page_obj': page_obj,
             'projects': projects,
             'layers': layers,
             'selected_project': project_id,
@@ -903,14 +916,49 @@ def update_experiment_kilometers(request):
     return redirect('experiment:experiment_request_list')
 
 def dashboard_charts(request):
-    """نمایش نمودارهای ضریب پرداخت با میانگین ضرایب پرداخت"""
+    """نمایش نمودارهای ضریب پرداخت با میانگین وزنی ضرایب پرداخت"""
     logger.info(f"Accessing dashboard_charts view by user: {request.user}")
     try:
-        # محاسبه میانگین ضرایب پرداخت برای هر لایه
-        asphalt_avg = models.PaymentCoefficient.objects.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        base_avg = models.PaymentCoefficient.objects.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        subbase_avg = models.PaymentCoefficient.objects.filter(layer='SUBBASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        embankment_avg = models.PaymentCoefficient.objects.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        from project.models import Project
+        
+        # تابع محاسبه میانگین وزنی برای یک لایه
+        def calculate_weighted_average(layer_type):
+            """
+            محاسبه میانگین وزنی برای یک لایه
+            فرمول: (مجموع (contract_amount × coefficient)) / مجموع contract_amount
+            """
+            # فقط پروژه‌های اصلی (بدون parent) را در نظر می‌گیریم
+            main_projects = Project.objects.filter(parent_project__isnull=True, contract_amount__isnull=False)
+            
+            total_weighted_sum = 0
+            total_contract_amount = 0
+            
+            for project in main_projects:
+                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه
+                latest_coefficient = models.PaymentCoefficient.objects.filter(
+                    project=project,
+                    layer=layer_type
+                ).order_by('-created_at').first()
+                
+                if latest_coefficient and project.contract_amount:
+                    contract_amount = float(project.contract_amount)
+                    coefficient = float(latest_coefficient.coefficient)
+                    
+                    # اضافه کردن به مجموع وزنی
+                    total_weighted_sum += contract_amount * coefficient
+                    total_contract_amount += contract_amount
+            
+            # محاسبه میانگین وزنی
+            if total_contract_amount > 0:
+                weighted_avg = total_weighted_sum / total_contract_amount
+                return round(weighted_avg, 2)
+            return 0
+        
+        # محاسبه میانگین وزنی ضرایب پرداخت برای هر لایه
+        asphalt_avg = calculate_weighted_average('ASPHALT')
+        base_avg = calculate_weighted_average('BASE')
+        subbase_avg = calculate_weighted_average('SUBBASE')
+        embankment_avg = calculate_weighted_average('EMBANKMENT')
         
         # داده‌های نمودار توزیع
         coefficients = models.PaymentCoefficient.objects.all()
@@ -923,10 +971,10 @@ def dashboard_charts(request):
             distribution_data.append(count)
         
         # داده‌های نمودار پروژه‌ها برای هر لایه
-        projects = models.Project.objects.all()
+        projects = Project.objects.filter(parent_project__isnull=True).order_by('name')
         project_labels = [project.name for project in projects]
         
-        # محاسبه میانگین ضرایب برای هر پروژه و هر لایه
+        # محاسبه آخرین ضریب پرداخت برای هر پروژه و هر لایه
         project_data_by_layer = {
             'ASPHALT': [],
             'BASE': [],
@@ -935,21 +983,25 @@ def dashboard_charts(request):
         }
         
         for project in projects:
-            # آسفالت گرم
-            asphalt_coeff = project.paymentcoefficient_set.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data_by_layer['ASPHALT'].append(float(round(asphalt_coeff, 2)))
+            # آسفالت گرم - آخرین ضریب پرداخت
+            latest_asphalt = project.paymentcoefficient_set.filter(layer='ASPHALT').order_by('-created_at').first()
+            asphalt_coeff = float(latest_asphalt.coefficient) if latest_asphalt else 0
+            project_data_by_layer['ASPHALT'].append(round(asphalt_coeff, 2))
             
-            # اساس
-            base_coeff = project.paymentcoefficient_set.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data_by_layer['BASE'].append(float(round(base_coeff, 2)))
+            # اساس - آخرین ضریب پرداخت
+            latest_base = project.paymentcoefficient_set.filter(layer='BASE').order_by('-created_at').first()
+            base_coeff = float(latest_base.coefficient) if latest_base else 0
+            project_data_by_layer['BASE'].append(round(base_coeff, 2))
             
-            # زیراساس
-            subbase_coeff = project.paymentcoefficient_set.filter(layer='SUBBASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data_by_layer['SUBBASE'].append(float(round(subbase_coeff, 2)))
+            # زیراساس - آخرین ضریب پرداخت
+            latest_subbase = project.paymentcoefficient_set.filter(layer='SUBBASE').order_by('-created_at').first()
+            subbase_coeff = float(latest_subbase.coefficient) if latest_subbase else 0
+            project_data_by_layer['SUBBASE'].append(round(subbase_coeff, 2))
             
-            # خاکریزی
-            embankment_coeff = project.paymentcoefficient_set.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-            project_data_by_layer['EMBANKMENT'].append(float(round(embankment_coeff, 2)))
+            # خاکریزی - آخرین ضریب پرداخت
+            latest_embankment = project.paymentcoefficient_set.filter(layer='EMBANKMENT').order_by('-created_at').first()
+            embankment_coeff = float(latest_embankment.coefficient) if latest_embankment else 0
+            project_data_by_layer['EMBANKMENT'].append(round(embankment_coeff, 2))
         
         logger.info(f"Calculated payment coefficients by layer and project")
         

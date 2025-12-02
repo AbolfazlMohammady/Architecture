@@ -65,12 +65,52 @@
       </div>
     </div>
 
+    <!-- فیلترها -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-4">
+            <label for="project" class="form-label">پروژه</label>
+            <select name="project" id="project" class="form-select">
+              <option value="">همه پروژه‌ها</option>
+              {% for project in projects %}
+              <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"s" %}selected{% endif %}>
+                {{ project.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="layer" class="form-label">لایه</label>
+            <select name="layer" id="layer" class="form-select">
+              <option value="">همه لایه‌ها</option>
+              {% for layer_code, layer_name in layers %}
+              <option value="{{ layer_code }}" {% if selected_layer == layer_code %}selected{% endif %}>
+                {{ layer_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex flex-column justify-content-end">
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary flex-fill">
+                <i class="bi bi-search me-1"></i>جستجو
+              </button>
+              <a href="{% url 'experiment:payment_coefficient_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i>پاک کردن
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- جدول ضرایب پرداخت -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
       <div class="card-header bg-gradient text-white text-center">
         <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
           <h6 class="mb-0">لیست ضرایب پرداخت</h6>
-          <span class="badge bg-light text-dark">{{ coefficients|length }} ضریب</span>
+          <span class="badge bg-light text-dark">{{ total_coefficients }} ضریب</span>
         </div>
       </div>
       <div class="card-body p-0">
@@ -81,7 +121,6 @@
                 <th class="border-0">پروژه</th>
                 <th class="border-0">لایه</th>
                 <th class="border-0">ضریب پرداخت</th>
-                <th class="border-0">رتبه</th>
                 <th class="border-0">کیلومتراژ شروع</th>
                 <th class="border-0">کیلومتراژ پایان</th>
                 <th class="border-0">تاریخ محاسبه</th>
@@ -105,17 +144,6 @@
                     {{ coefficient.coefficient }}
                   </span>
                 </td>
-                <td>
-                  {% if coefficient.coefficient >= 1.0 %}
-                    <span class="badge bg-success">عالی</span>
-                  {% elif coefficient.coefficient >= 0.8 %}
-                    <span class="badge bg-info">خوب</span>
-                  {% elif coefficient.coefficient >= 0.6 %}
-                    <span class="badge bg-warning">نیاز بررسی</span>
-                  {% else %}
-                    <span class="badge bg-danger">ضعیف</span>
-                  {% endif %}
-                </td>
                 <td>{{ coefficient.start_kilometer }}</td>
                 <td>{{ coefficient.end_kilometer }}</td>
                 <td>{{ coefficient.calculation_date }}</td>
@@ -132,7 +160,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="8" class="text-center py-5">
+                <td colspan="7" class="text-center py-5">
                   <div class="text-muted">
                     <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                     <h6>هیچ ضریب پرداختی یافت نشد</h6>
@@ -145,6 +173,56 @@
           </table>
         </div>
       </div>
+      {% if page_obj.has_other_pages %}
+      <div class="card-footer bg-light">
+        <nav aria-label="صفحه‌بندی ضرایب پرداخت">
+          <ul class="pagination justify-content-center mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_project %}&project={{ selected_project }}{% endif %}{% if selected_layer %}&layer={{ selected_layer }}{% endif %}" aria-label="قبلی">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link" aria-label="قبلی">
+                <span aria-hidden="true">&laquo;</span>
+              </span>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if selected_project %}&project={{ selected_project }}{% endif %}{% if selected_layer %}&layer={{ selected_layer }}{% endif %}">{{ num }}</a>
+              </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_project %}&project={{ selected_project }}{% endif %}{% if selected_layer %}&layer={{ selected_layer }}{% endif %}" aria-label="بعدی">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link" aria-label="بعدی">
+                <span aria-hidden="true">&raquo;</span>
+              </span>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        <div class="text-center mt-3 text-muted">
+          <small>نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} ضریب</small>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </section>
 </div>
