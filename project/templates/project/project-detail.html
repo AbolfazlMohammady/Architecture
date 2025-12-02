@@ -23,7 +23,7 @@
               <div class="d-flex flex-column gap-2">
                 <span><strong>تاریخ ایجاد:</strong> {{ project.created_at|date:"Y/m/d - H:i" }}</span>
                 <span><strong>تاریخ به‌روزرسانی:</strong> {{ project.updated_at|date:"Y/m/d - H:i" }}</span>
-                <span><strong>بودجه:</strong> <span id="budget-value">{{ project.budget|floatformat:'-3'|default:"تنظیم نشده" }}</span></span>
+                <span><strong>رقم قرارداد:</strong> <span id="contract-amount-value">{{ project.contract_amount|floatformat:'-3'|default:"تنظیم نشده" }}</span></span>
                 <span><strong>تاریخ شروع:</strong> {% if project.start_date %}{{ project.start_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
                 <span><strong>تاریخ پایان:</strong> {% if project.end_date %}{{ project.end_date|date:"Y/m/d" }}{% else %}تنظیم نشده{% endif %}</span>
               </div>
@@ -127,7 +127,7 @@ window.addEventListener('DOMContentLoaded', function() {
             el.innerText = formatted + (val && !isNaN(val) ? ' ' + unit : '');
         }
     }
-    updateField('budget-value', 'ریال');
+    updateField('contract-amount-value', 'ریال');
     updateField('masafat-value', 'کیلومتر');
     updateField('width-value', 'متر');
     updateField('start-kilometer-value', 'کیلومتر');

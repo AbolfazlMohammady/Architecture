@@ -9,7 +9,7 @@ class MyModelAdminMixin(admin.ModelAdmin,baseAdminModel.BtnDeleteSelected):
 # کلاس ادمین برای مدل Project
 @admin.register(Project)
 class ProjectAdmin(MyModelAdminMixin):
-    list_display = ('name', 'parent_project', 'start_date', 'end_date', 'budget', 'project_manager', 'technical_manager', 'quality_control_manager')
+    list_display = ('name', 'parent_project', 'start_date', 'end_date', 'contract_amount', 'project_manager', 'technical_manager', 'quality_control_manager')
     search_fields = ('name', 'parent_project__name', 'project_manager__username', 'technical_manager__username', 'quality_control_manager__username')
     list_filter = ('start_date', 'end_date', 'parent_project', 'project_manager', 'technical_manager', 'quality_control_manager','project_experts')
     autocomplete_fields = ['project_experts', 'parent_project']

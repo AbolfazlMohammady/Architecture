@@ -145,7 +145,7 @@
                 </h3>
                 <div class="row g-3">
                     {% for field in form %}
-                        {% if forloop.counter <= 3 %}
+                        {% if field.name == 'name' or field.name == 'parent_project' or field.name == 'project_manager' or field.name == 'technical_manager' or field.name == 'quality_control_manager' or field.name == 'lab_manager' or field.name == 'hsse_manager' or field.name == 'project_experts' %}
                             <div class="col-md-4">
                                 <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
@@ -190,7 +190,7 @@
                 </h3>
                 <div class="row g-3">
                     {% for field in form %}
-                        {% if forloop.counter > 3 and forloop.counter <= 6 %}
+                        {% if field.name == 'contract_amount' %}
                             <div class="col-md-4">
                                 <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
@@ -349,7 +349,7 @@ function formatNumberInput(input) {
 
 // Attach formatting to relevant fields
 window.addEventListener('DOMContentLoaded', function() {
-    const fields = ['id_budget', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer'];
+    const fields = ['id_contract_amount', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer'];
     fields.forEach(function(fieldId) {
         const el = document.getElementById(fieldId);
         if (el) {
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalPreview = document.getElementById('modalNumericInputPreview');
 
     // Attach click to relevant fields
-    ['id_budget', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer', 'id_width'].forEach(function(fieldId) {
+    ['id_contract_amount', 'id_masafat', 'id_start_kilometer', 'id_end_kilometer', 'id_width'].forEach(function(fieldId) {
         const el = document.getElementById(fieldId);
         if (el) {
             el.readOnly = true;
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentTargetInput = el;
                 modalInput.value = el.value.replace(/,/g, '');
                 modalInput.focus();
-                if(fieldId === 'id_budget') {
+                if(fieldId === 'id_contract_amount') {
                   modalHelp.innerText = 'مقدار را به ریال وارد کنید.';
                 } else if(fieldId === 'id_width') {
                   modalHelp.innerText = 'مقدار را به متر وارد کنید.';

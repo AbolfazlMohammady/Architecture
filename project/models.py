@@ -16,7 +16,7 @@ class Project(models.Model):
     )
     start_date = jmodels.jDateField(verbose_name="تاریخ شروع",null=True,blank=True)
     end_date = jmodels.jDateField(verbose_name="تاریخ پایان",null=True,blank=True)
-    budget = models.DecimalField(max_digits=50, decimal_places=0, blank=True, null=True, verbose_name="بودجه")
+    contract_amount = models.DecimalField(max_digits=50, decimal_places=0, blank=True, null=True, verbose_name="رقم قرارداد")
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ به‌روزرسانی")
     

@@ -146,6 +146,27 @@ class CreateProjectView(generic.CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         project = self.object
+        user = self.request.user
+        
+        # اگر project_manager تنظیم نشده باشد، کاربر فعلی را به عنوان project_manager تنظیم کن
+        if not project.project_manager:
+            project.project_manager = user
+            project.save(update_fields=['project_manager'])
+        
+        # اگر technical_manager تنظیم نشده باشد، کاربر فعلی را به عنوان technical_manager تنظیم کن
+        if not project.technical_manager:
+            project.technical_manager = user
+            project.save(update_fields=['technical_manager'])
+        
+        # اگر quality_control_manager تنظیم نشده باشد، کاربر فعلی را به عنوان quality_control_manager تنظیم کن
+        if not project.quality_control_manager:
+            project.quality_control_manager = user
+            project.save(update_fields=['quality_control_manager'])
+        
+        # اضافه کردن کاربر به کارشناسان پروژه اگر نیست
+        if user not in project.project_experts.all():
+            project.project_experts.add(user)
+        
         lab_manager = form.cleaned_data.get('lab_manager')
         hsse_manager = form.cleaned_data.get('hsse_manager')
         # اگر مسئول آزمایشگاه انتخاب شده و جزو کارشناسان پروژه نیست اضافه کن
@@ -562,7 +583,7 @@ class ProjectDashboardView(generic.DetailView):
     
 class ProjectUpdateView(generic.UpdateView):
     model = project_models.Project
-    # fields = ['name', 'budget', 'start_date', 'end_date', 'project_manager']  # به‌دلخواه
+    # fields = ['name', 'contract_amount', 'start_date', 'end_date', 'project_manager']  # به‌دلخواه
     # fields = "__all__"
     form_class = project_forms.ProjectForm
     template_name = 'project/project-update.html'

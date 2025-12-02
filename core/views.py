@@ -99,7 +99,7 @@ class HomeView(LoginRequiredMixin,generic.ListView):
         context['experiment_quality'] = experiment_quality
         
         # محاسبه وضعیت مالی (فعلاً تخمینی)
-        total_budget = sum(project.budget or 0 for project in self.model.objects.all())
+        total_budget = sum(project.contract_amount or 0 for project in self.model.objects.all())
         if total_budget > 0:
             context['financial_status'] = {
                 'spent': 60,  # فعلاً تخمینی - 60% کل بودجه
@@ -455,7 +455,7 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         # Add remaining for chart
         context['project_progress_kpi_remaining'] = 100 - context['project_progress_kpi']
         # --- KPI: Financial (dummy, can be replaced with real) ---
-        total_budget = sum([p.budget or 0 for p in all_projects])
+        total_budget = sum([p.contract_amount or 0 for p in all_projects])
         context['financial_kpi'] = {
             'spent': 60 if total_budget else 0,
             'remaining': 35 if total_budget else 0,
