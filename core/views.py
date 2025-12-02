@@ -113,35 +113,68 @@ class HomeView(LoginRequiredMixin,generic.ListView):
                 'unexpected': 0
             }
         
-        # محاسبه میانگین ضرایب پرداخت برای هر لایه
+        # محاسبه میانگین وزنی ضرایب پرداخت برای هر لایه
+        # فرمول: (مجموع (مبلغ قرارداد پروژه × ضریب پرداخت پروژه)) / مجموع مبلغ قراردادها
         from experiment.models import PaymentCoefficient
-        from django.db.models import Avg
+        from project.models import Project
         
-        embankment_avg = PaymentCoefficient.objects.filter(layer='EMBANKMENT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        subbase_avg = PaymentCoefficient.objects.filter(layer='SUBBASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        base_avg = PaymentCoefficient.objects.filter(layer='BASE').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
-        asphalt_avg = PaymentCoefficient.objects.filter(layer='ASPHALT').aggregate(Avg('coefficient'))['coefficient__avg'] or 0
+        def calculate_weighted_average(layer_type):
+            """
+            محاسبه میانگین وزنی برای یک لایه
+            فرمول: (مجموع (contract_amount × coefficient)) / مجموع contract_amount
+            """
+            # فقط پروژه‌های اصلی (بدون parent) را در نظر می‌گیریم
+            main_projects = Project.objects.filter(parent_project__isnull=True, contract_amount__isnull=False)
+            
+            total_weighted_sum = 0
+            total_contract_amount = 0
+            
+            for project in main_projects:
+                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه
+                latest_coefficient = PaymentCoefficient.objects.filter(
+                    project=project,
+                    layer=layer_type
+                ).order_by('-created_at').first()
+                
+                if latest_coefficient and project.contract_amount:
+                    contract_amount = float(project.contract_amount)
+                    coefficient = float(latest_coefficient.coefficient)
+                    
+                    # اضافه کردن به مجموع وزنی
+                    total_weighted_sum += contract_amount * coefficient
+                    total_contract_amount += contract_amount
+            
+            # محاسبه میانگین وزنی
+            if total_contract_amount > 0:
+                weighted_avg = total_weighted_sum / total_contract_amount
+                return round(weighted_avg, 2)
+            return 0
+        
+        embankment_avg = calculate_weighted_average('EMBANKMENT')
+        subbase_avg = calculate_weighted_average('SUBBASE')
+        base_avg = calculate_weighted_average('BASE')
+        asphalt_avg = calculate_weighted_average('ASPHALT')
         
         context['payment_coefficients'] = {
             'embankment': {
                 'name': 'خاکریزی',
-                'avg': round(float(embankment_avg), 2),
-                'remaining': round(1.2 - float(embankment_avg), 2) if embankment_avg > 0 else 1.2
+                'avg': embankment_avg,
+                'remaining': round(1.2 - embankment_avg, 2) if embankment_avg > 0 else 1.2
             },
             'subbase': {
                 'name': 'زیر اساس',
-                'avg': round(float(subbase_avg), 2),
-                'remaining': round(1.2 - float(subbase_avg), 2) if subbase_avg > 0 else 1.2
+                'avg': subbase_avg,
+                'remaining': round(1.2 - subbase_avg, 2) if subbase_avg > 0 else 1.2
             },
             'base': {
                 'name': 'اساس',
-                'avg': round(float(base_avg), 2),
-                'remaining': round(1.2 - float(base_avg), 2) if base_avg > 0 else 1.2
+                'avg': base_avg,
+                'remaining': round(1.2 - base_avg, 2) if base_avg > 0 else 1.2
             },
             'asphalt': {
                 'name': 'آسفالت گرم',
-                'avg': round(float(asphalt_avg), 2),
-                'remaining': round(1.2 - float(asphalt_avg), 2) if asphalt_avg > 0 else 1.2
+                'avg': asphalt_avg,
+                'remaining': round(1.2 - asphalt_avg, 2) if asphalt_avg > 0 else 1.2
             }
         }
 
