@@ -8,4 +8,6 @@ urlpatterns = [
     path('profile/', views.ProfileView.as_view(),name="profile"),
     path('experiment/', include('experiment.urls')),
     path('dashboard/', views.DashboardView.as_view(), name="dashboard"),
+    path('dashboard/experiment-status-detail/', views.dashboard_experiment_status_detail, name="dashboard_experiment_status_detail"),
+    path('dashboard/volume-detail/', views.dashboard_volume_detail, name="dashboard_volume_detail"),
 ]

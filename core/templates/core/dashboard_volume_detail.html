@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}جزئیات حجم {{ volume_name }}{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+  <div class="page-toolbar mb-4">
+    <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+      <i class="bi bi-arrow-right me-2"></i>بازگشت
+    </button>
+  </div>
+
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-header bg-gradient text-white">
+      <h4 class="mb-0"><i class="bi bi-bar-chart me-2"></i>جزئیات حجم {{ volume_name }}</h4>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <span class="badge bg-info">فیلتر زمانی: {{ days_filter }} روز اخیر</span>
+        <span class="badge bg-primary ms-2">تعداد کل: {{ experiments|length }} مورد</span>
+        {% if experiments %}
+        <span class="badge bg-success ms-2">حجم کل: {{ total_volume|floatformat:2 }} کیلومتر</span>
+        {% endif %}
+      </div>
+      
+      {% if experiments %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>شماره درخواست</th>
+              <th>پروژه</th>
+              <th>لایه</th>
+              <th>کیلومتراژ شروع</th>
+              <th>کیلومتراژ پایان</th>
+              <th>حجم (کیلومتر)</th>
+              <th>تاریخ درخواست</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in experiments %}
+            <tr>
+              <td>{{ item.experiment.order }}</td>
+              <td>{{ item.experiment.project.name }}</td>
+              <td>{{ item.experiment.layer.layer_type.name }}</td>
+              <td>{{ item.experiment.start_kilometer }}</td>
+              <td>{{ item.experiment.end_kilometer }}</td>
+              <td>
+                {% if item.volume > 0 %}
+                  <span class="badge bg-info">{{ item.volume|floatformat:2 }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">-</span>
+                {% endif %}
+              </td>
+              <td>{{ item.experiment.request_date|date:"Y/m/d" }}</td>
+              <td>
+                <a href="{% url 'experiment:experiment_request_detail' item.experiment.pk %}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i> جزئیات
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info text-center">
+        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+        <h5>هیچ آزمایشی یافت نشد</h5>
+        <p class="mb-0">در بازه زمانی انتخاب شده، هیچ آزمایشی برای {{ volume_name }} وجود ندارد.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+</style>
+{% endblock %}
+

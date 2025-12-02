@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}جزئیات آزمایشات {{ status_name }}{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+  <div class="page-toolbar mb-4">
+    <button type="button" class="btn btn-outline-secondary rounded-pill page-back-btn" onclick="history.back()">
+      <i class="bi bi-arrow-right me-2"></i>بازگشت
+    </button>
+  </div>
+
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-header bg-gradient text-white">
+      <h4 class="mb-0"><i class="bi bi-list-check me-2"></i>جزئیات آزمایشات {{ status_name }}</h4>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <span class="badge bg-info">فیلتر زمانی: {{ days_filter }} روز اخیر</span>
+        <span class="badge bg-primary ms-2">تعداد کل: {{ experiments|length }} مورد</span>
+      </div>
+      
+      {% if experiments %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>شماره درخواست</th>
+              <th>پروژه</th>
+              <th>لایه</th>
+              <th>نوع آزمایش</th>
+              <th>کیلومتراژ شروع</th>
+              <th>کیلومتراژ پایان</th>
+              <th>تاریخ درخواست</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exp in experiments %}
+            <tr>
+              <td>{{ exp.order }}</td>
+              <td>{{ exp.project.name }}</td>
+              <td>{{ exp.layer.layer_type.name }}</td>
+              <td>
+                {% for t in exp.experiment_type.all %}
+                  <span class="badge bg-primary">{{ t.name }}</span>{% if not forloop.last %}، {% endif %}
+                {% endfor %}
+              </td>
+              <td>{{ exp.start_kilometer }}</td>
+              <td>{{ exp.end_kilometer }}</td>
+              <td>{{ exp.request_date|date:"Y/m/d" }}</td>
+              <td>
+                <a href="{% url 'experiment:experiment_request_detail' exp.pk %}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i> جزئیات
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info text-center">
+        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+        <h5>هیچ آزمایشی یافت نشد</h5>
+        <p class="mb-0">در بازه زمانی انتخاب شده، هیچ آزمایشی با وضعیت {{ status_name }} وجود ندارد.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #43a047 100%) !important;
+}
+</style>
+{% endblock %}
+

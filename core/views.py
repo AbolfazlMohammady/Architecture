@@ -4,9 +4,10 @@ from django.contrib.auth.views import LoginView as Login
 from django.contrib.auth.views import LogoutView as logout
 from . import forms
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from project import models as project_models
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.utils.decorators import method_decorator
 from .permissions import role_required
@@ -526,7 +527,7 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             context['experiment_quality_last_approval_rate'] = 0
             context['experiment_quality_last_remaining'] = 100
         # --- User's Latest Projects (limit 5, with progress) ---
-        latest_projects = sorted(user_projects, key=lambda x: x['progress'], reverse=True)[:5]
+        latest_projects = sorted(main_projects_list, key=lambda x: x['progress'], reverse=True)[:5]
         context['latest_projects'] = latest_projects
         # --- User's Latest Experiment Requests (limit 5) ---
         user_experiment_requests = ExperimentRequest.objects.filter(user=user).order_by('-created_at')[:5]
@@ -611,4 +612,97 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         context['days_filter'] = days_filter
         
         return context
+
+@login_required
+def dashboard_experiment_status_detail(request):
+    """نمایش جزئیات وضعیت آزمایشات بر اساس فیلتر زمانی"""
+    from django.utils import timezone
+    from datetime import timedelta
+    from experiment.models import ExperimentRequest
+    
+    days_filter = int(request.GET.get('days', 30))
+    status_type = request.GET.get('status', 'completed')  # completed, rejected, in_progress, pending
+    date_filter_start = timezone.now() - timedelta(days=days_filter)
+    
+    all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    
+    # فیلتر بر اساس وضعیت
+    status_map = {
+        'completed': ExperimentRequest.COMPLETED,
+        'rejected': ExperimentRequest.REJECTED,
+        'in_progress': ExperimentRequest.IN_PROGRESS,
+        'pending': ExperimentRequest.PENDING,
+    }
+    
+    filtered_experiments = []
+    for exp in all_experiments:
+        actual_status = exp.get_actual_status()
+        if actual_status == status_map.get(status_type, ExperimentRequest.COMPLETED):
+            filtered_experiments.append(exp)
+    
+    status_names = {
+        'completed': 'تکمیل شده',
+        'rejected': 'رد شده',
+        'in_progress': 'در حال انجام',
+        'pending': 'در انتظار بررسی',
+    }
+    
+    return render(request, 'core/dashboard_experiment_status_detail.html', {
+        'experiments': filtered_experiments,
+        'status_type': status_type,
+        'status_name': status_names.get(status_type, 'نامشخص'),
+        'days_filter': days_filter,
+    })
+
+@login_required
+def dashboard_volume_detail(request):
+    """نمایش جزئیات حجم کار بر اساس نوع لایه"""
+    from django.utils import timezone
+    from datetime import timedelta
+    from experiment.models import ExperimentRequest
+    
+    days_filter = int(request.GET.get('days', 30))
+    volume_type = request.GET.get('type', 'embankment')  # embankment, concrete, asphalt
+    date_filter_start = timezone.now() - timedelta(days=days_filter)
+    
+    filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    
+    # فیلتر بر اساس نوع لایه
+    volume_experiments = []
+    for exp in filtered_experiments:
+        if exp.layer and exp.layer.layer_type:
+            layer_name = exp.layer.layer_type.name.lower()
+            if volume_type == 'embankment' and ('خاک' in layer_name or 'خاکریزی' in layer_name):
+                volume_experiments.append(exp)
+            elif volume_type == 'concrete' and ('بتن' in layer_name or 'concrete' in layer_name):
+                volume_experiments.append(exp)
+            elif volume_type == 'asphalt' and ('آسفالت' in layer_name or 'asphalt' in layer_name):
+                volume_experiments.append(exp)
+    
+    volume_names = {
+        'embankment': 'خاکریزی',
+        'concrete': 'بتن ریزی',
+        'asphalt': 'آسفالت',
+    }
+    
+    # محاسبه حجم کل و حجم هر آزمایش
+    total_volume = 0
+    experiments_with_volume = []
+    for exp in volume_experiments:
+        volume = 0
+        if exp.end_kilometer and exp.start_kilometer:
+            volume = float(exp.end_kilometer - exp.start_kilometer)
+            total_volume += volume
+        experiments_with_volume.append({
+            'experiment': exp,
+            'volume': volume
+        })
+    
+    return render(request, 'core/dashboard_volume_detail.html', {
+        'experiments': experiments_with_volume,
+        'volume_type': volume_type,
+        'volume_name': volume_names.get(volume_type, 'نامشخص'),
+        'days_filter': days_filter,
+        'total_volume': total_volume,
+    })
 
