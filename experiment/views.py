@@ -282,14 +282,20 @@ def experiment_request_list(request):
     # مرتب‌سازی بر اساس تاریخ ایجاد (جدیدترین اول)
     experiment_requests = experiment_requests.order_by('-created_at')
     
+    # صفحه‌بندی
+    paginator = Paginator(experiment_requests, 20)  # 20 مورد در هر صفحه
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     # اضافه کردن نام نمایشی لایه به هر درخواست
-    for exp_request in experiment_requests:
+    for exp_request in page_obj:
         exp_request.layer_display_name = get_layer_display_name(exp_request.layer) if exp_request.layer else '-'
     
     print(f"DEBUG: Final count: {experiment_requests.count()}")
     
     return render(request, 'experiment/experiment_request_list.html', {
-        'experiment_requests': experiment_requests,
+        'experiment_requests': page_obj,
+        'page_obj': page_obj,
         'projects': projects,
         'selected_project': project_id,
         'selected_status': status,
@@ -779,11 +785,8 @@ def payment_coefficient_list(request):
         
         # محاسبه آمار ضرایب (قبل از pagination)
         total_coefficients = coefficients.count()
-        excellent_coefficients = coefficients.filter(coefficient__gte=1.0).count()
-        weak_coefficients = coefficients.filter(coefficient__lt=0.6).count()
-        needs_review_coefficients = coefficients.filter(coefficient__gte=0.6, coefficient__lt=1.0).count()
         
-        logger.info(f"Calculated statistics - Total: {total_coefficients}, Excellent: {excellent_coefficients}, Weak: {weak_coefficients}, Needs Review: {needs_review_coefficients}")
+        logger.info(f"Calculated statistics - Total: {total_coefficients}")
         
         # صفحه‌بندی
         paginator = Paginator(coefficients, 20)  # 20 مورد در هر صفحه
@@ -798,9 +801,6 @@ def payment_coefficient_list(request):
             'selected_project': project_id,
             'selected_layer': layer,
             'total_coefficients': total_coefficients,
-            'excellent_coefficients': excellent_coefficients,
-            'weak_coefficients': weak_coefficients,
-            'needs_review_coefficients': needs_review_coefficients,
         }
         
         logger.info("Rendering payment_coefficient_list.html template with data")

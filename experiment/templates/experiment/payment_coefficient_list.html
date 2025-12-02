@@ -19,7 +19,7 @@
 
     <!-- اطلاعات کلی -->
     <div class="row mb-4">
-      <div class="col-md-3">
+      <div class="col-md-12">
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body text-center">
             <div class="text-primary mb-2">
@@ -27,39 +27,6 @@
             </div>
             <h6 class="fw-bold">کل ضرایب</h6>
             <h4 class="text-primary mb-0">{{ total_coefficients }}</h4>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
-          <div class="card-body text-center">
-            <div class="text-success mb-2">
-              <i class="bi bi-check-circle fs-1"></i>
-            </div>
-            <h6 class="fw-bold">ضرایب عالی</h6>
-            <h4 class="text-success mb-0">{{ excellent_coefficients }}</h4>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
-          <div class="card-body text-center">
-            <div class="text-warning mb-2">
-              <i class="bi bi-exclamation-triangle fs-1"></i>
-            </div>
-            <h6 class="fw-bold">نیاز بررسی</h6>
-            <h4 class="text-warning mb-0">{{ needs_review_coefficients }}</h4>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
-          <div class="card-body text-center">
-            <div class="text-danger mb-2">
-              <i class="bi bi-x-circle fs-1"></i>
-            </div>
-            <h6 class="fw-bold">ضرایب ضعیف</h6>
-            <h4 class="text-danger mb-0">{{ weak_coefficients }}</h4>
           </div>
         </div>
       </div>
@@ -140,7 +107,7 @@
                   <span class="badge bg-outline-secondary">{{ coefficient.get_layer_display }}</span>
                 </td>
                 <td>
-                  <span class="badge {% if coefficient.coefficient >= 1 %}bg-success{% elif coefficient.coefficient >= 0.8 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                  <span class="badge bg-primary fs-6">
                     {{ coefficient.coefficient }}
                   </span>
                 </td>

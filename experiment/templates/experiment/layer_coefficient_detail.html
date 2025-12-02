@@ -30,7 +30,6 @@
                                         <th>کیلومتراژ شروع</th>
                                         <th>کیلومتراژ پایان</th>
                                         <th>تاریخ محاسبه</th>
-                                        <th>وضعیت</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -38,22 +37,13 @@
                                     <tr>
                                         <td>{{ coefficient.project.name }}</td>
                                         <td>
-                                            <span class="badge {% if coefficient.coefficient >= 1 %}bg-success{% elif coefficient.coefficient >= 0.8 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                                            <span class="badge bg-primary fs-6">
                                                 {{ coefficient.coefficient }}
                                             </span>
                                         </td>
                                         <td>{{ coefficient.start_kilometer }}</td>
                                         <td>{{ coefficient.end_kilometer }}</td>
                                         <td>{{ coefficient.calculation_date }}</td>
-                                        <td>
-                                            {% if coefficient.coefficient >= 1 %}
-                                                <span class="badge bg-success">عالی</span>
-                                            {% elif coefficient.coefficient >= 0.8 %}
-                                                <span class="badge bg-warning">خوب</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">ضعیف</span>
-                                            {% endif %}
-                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -62,35 +52,11 @@
                         
                         <!-- آمار کلی -->
                         <div class="row mt-4">
-                            <div class="col-md-3">
+                            <div class="col-md-12">
                                 <div class="card bg-primary text-white">
                                     <div class="card-body text-center">
                                         <h5>تعداد کل</h5>
                                         <h3>{{ coefficients.count }}</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body text-center">
-                                        <h5>عالی</h5>
-                                        <h3>{{ coefficients|length|add:"0" }}</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-warning text-white">
-                                    <div class="card-body text-center">
-                                        <h5>خوب</h5>
-                                        <h3>0</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-danger text-white">
-                                    <div class="card-body text-center">
-                                        <h5>ضعیف</h5>
-                                        <h3>0</h3>
                                     </div>
                                 </div>
                             </div>
