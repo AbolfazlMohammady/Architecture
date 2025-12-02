@@ -551,5 +551,64 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             }
             for n in user_notifications
         ]
+        
+        # --- نمودارهای دایره‌ای برای داشبورد مدیریتی ---
+        # دریافت فیلتر زمانی از GET (پیش‌فرض: 30 روز اخیر)
+        days_filter = int(self.request.GET.get('days', 30))
+        date_filter_start = timezone.now() - timedelta(days=days_filter)
+        
+        # محاسبه وضعیت آزمایشات با فیلتر زمانی (استفاده از get_actual_status)
+        all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        experiment_status_data = {
+            'completed': 0,
+            'rejected': 0,
+            'in_progress': 0,
+            'pending': 0,
+        }
+        for exp in all_experiments:
+            actual_status = exp.get_actual_status()
+            if actual_status == ExperimentRequest.COMPLETED:
+                experiment_status_data['completed'] += 1
+            elif actual_status == ExperimentRequest.REJECTED:
+                experiment_status_data['rejected'] += 1
+            elif actual_status == ExperimentRequest.IN_PROGRESS:
+                experiment_status_data['in_progress'] += 1
+            else:  # PENDING
+                experiment_status_data['pending'] += 1
+        
+        total_experiments = sum(experiment_status_data.values())
+        context['experiment_status_data'] = experiment_status_data
+        context['total_experiments'] = total_experiments
+        
+        # محاسبه حجم کل بر اساس لایه‌ها و کیلومتراژ
+        # حجم = مجموع (end_kilometer - start_kilometer) برای هر لایه
+        volume_data = {
+            'embankment': 0,  # خاکریزی
+            'concrete': 0,    # بتن ریزی
+            'asphalt': 0,     # آسفالت
+        }
+        
+        # فیلتر آزمایشات بر اساس فیلتر زمانی
+        filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        
+        for exp in filtered_experiments:
+            # محاسبه حجم (کیلومتر)
+            volume = float(exp.end_kilometer - exp.start_kilometer) if exp.end_kilometer and exp.start_kilometer else 0
+            
+            # تشخیص نوع لایه
+            if exp.layer and exp.layer.layer_type:
+                layer_name = exp.layer.layer_type.name.lower()
+                if 'خاک' in layer_name or 'خاکریزی' in layer_name:
+                    volume_data['embankment'] += volume
+                elif 'بتن' in layer_name or 'concrete' in layer_name:
+                    volume_data['concrete'] += volume
+                elif 'آسفالت' in layer_name or 'asphalt' in layer_name:
+                    volume_data['asphalt'] += volume
+        
+        total_volume = sum(volume_data.values())
+        context['volume_data'] = volume_data
+        context['total_volume'] = total_volume
+        context['days_filter'] = days_filter
+        
         return context
 

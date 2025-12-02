@@ -9,44 +9,137 @@
       <i class="bi bi-arrow-right me-2"></i>بازگشت
     </button>
   </div>
-  <!-- User Info -->
-  <section class="user-info mb-0">
-    <div class="card dashboard-hero-card shadow-lg border-0 rounded-4 overflow-hidden position-relative">
-      <div class="dashboard-hero bg-gradient text-white py-5 px-4 px-md-5">
-        <div class="dashboard-title-wrapper text-center mb-4">
-          <h1 class="dashboard-title mb-0">داشبورد مدیریتی</h1>
+  <!-- User Info - کوچک شده -->
+  <section class="user-info mb-3">
+    <div class="card dashboard-hero-card shadow-sm border-0 rounded-3 overflow-hidden position-relative">
+      <div class="dashboard-hero bg-gradient text-white py-3 px-3 px-md-4">
+        <div class="dashboard-title-wrapper text-center mb-2">
+          <h3 class="dashboard-title-small mb-0">داشبورد مدیریتی</h3>
         </div>
-        <div class="dashboard-meta d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
-          <div class="d-flex align-items-center gap-3">
-            <div class="avatar bg-white text-primary rounded-circle d-flex justify-content-center align-items-center shadow">
+        <div class="dashboard-meta d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar-small bg-white text-primary rounded-circle d-flex justify-content-center align-items-center shadow">
               <i class="bi bi-person-circle"></i>
             </div>
             <div class="text-white text-center text-md-start">
-              <h4 class="fw-bold mb-1">@{{ user_info.full_name }}</h4>
-              <div class="small">نام کاربری: <span class="fw-semibold">{{ user_info.username }}</span> | کد ملی: <span class="fw-semibold">{{ user_info.national_id }}</span></div>
+              <h6 class="fw-bold mb-0">@{{ user_info.full_name }}</h6>
+              <div class="small">نام کاربری: <span class="fw-semibold">{{ user_info.username }}</span></div>
             </div>
           </div>
           <div class="dashboard-meta-actions d-flex flex-wrap justify-content-center justify-content-md-end gap-2">
-            {% if kpis %}
-              <span class="badge dashboard-stat-chip fw-semibold px-3 py-2 rounded-pill shadow-sm">
-                <i class="bi bi-graph-up-arrow me-1"></i> عملکرد کلی
-              </span>
-            {% endif %}
             {% if user_projects %}
-              <span class="badge dashboard-stat-chip fw-semibold px-3 py-2 rounded-pill shadow-sm">
-                <i class="bi bi-kanban me-1"></i> {{ user_projects|length }} پروژه فعال
+              <span class="badge dashboard-stat-chip-small fw-semibold px-2 py-1 rounded-pill shadow-sm">
+                <i class="bi bi-kanban me-1"></i> {{ user_projects|length }} پروژه
               </span>
             {% endif %}
           </div>
         </div>
       </div>
-      <div class="bg-white px-4 py-3">
-        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
+      <div class="bg-white px-3 py-2">
+        <div class="d-flex flex-wrap gap-1 justify-content-center justify-content-md-start">
           {% for role in roles %}
-            <span class="badge bg-gradient-primary text-white px-3 py-2 rounded-pill shadow-sm d-flex align-items-center gap-1">
+            <span class="badge bg-gradient-primary text-white px-2 py-1 rounded-pill shadow-sm d-flex align-items-center gap-1 small">
               <i class="bi bi-award-fill"></i> {{ role }}
             </span>
           {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- فیلتر زمانی -->
+  <section class="time-filter mb-4">
+    <div class="card shadow-sm border-0 rounded-3">
+      <div class="card-body py-2">
+        <form method="get" class="d-flex align-items-center gap-3 flex-wrap">
+          <label class="mb-0 fw-semibold">فیلتر زمانی:</label>
+          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+            <option value="7" {% if days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
+            <option value="30" {% if days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
+            <option value="90" {% if days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
+            <option value="180" {% if days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
+            <option value="365" {% if days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
+          </select>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- نمودارهای دایره‌ای -->
+  <section class="charts-section mb-5">
+    <div class="row g-4">
+      <!-- نمودارهای وضعیت آزمایشات -->
+      <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-6 col-md-3">
+                <div class="chart-card text-center">
+                  <canvas id="experimentCompletedChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">تکمیل شده</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.completed }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="chart-card text-center">
+                  <canvas id="experimentRejectedChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">رد شده</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.rejected }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="chart-card text-center">
+                  <canvas id="experimentInProgressChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">در حال انجام</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.in_progress }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="chart-card text-center">
+                  <canvas id="experimentPendingChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">در انتظار بررسی</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.pending }} مورد</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- نمودارهای حجم کل -->
+      <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-6 col-md-4">
+                <div class="chart-card text-center">
+                  <canvas id="volumeEmbankmentChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">خاکریزی</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.embankment|floatformat:2 }} کیلومتر</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4">
+                <div class="chart-card text-center">
+                  <canvas id="volumeConcreteChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">بتن ریزی</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.concrete|floatformat:2 }} کیلومتر</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4">
+                <div class="chart-card text-center">
+                  <canvas id="volumeAsphaltChart" width="150" height="150"></canvas>
+                  <h6 class="mt-3 mb-0">آسفالت</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.asphalt|floatformat:2 }} کیلومتر</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -210,6 +303,30 @@
   letter-spacing: -0.02em;
   text-shadow: 0 4px 18px rgba(0,0,0,0.2);
 }
+.dashboard-title-small {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.avatar-small {
+  width: 45px;
+  height: 45px;
+  font-size: 1.5rem;
+}
+.dashboard-stat-chip-small {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+  font-size: 0.85rem;
+}
+.chart-card {
+  padding: 1rem;
+}
+.chart-card canvas {
+  max-width: 100%;
+  height: auto;
+}
 .dashboard-stat-chip {
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
@@ -261,6 +378,7 @@
   transform: rotate(180deg);
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const toggleButtons = document.querySelectorAll('.toggle-sub-projects');
@@ -283,6 +401,90 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+
+  // تابع برای ایجاد نمودار دایره‌ای
+  function createDoughnutChart(canvasId, value, total, color, label) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    
+    // اگر total صفر یا منفی باشد، از 1 استفاده می‌کنیم
+    const safeTotal = Math.max(total, 1);
+    const percentage = safeTotal > 0 ? Math.round((value / safeTotal) * 100) : 0;
+    const remaining = 100 - percentage;
+    
+    // اگر value صفر باشد، نمودار را با رنگ خاکستری نمایش می‌دهیم
+    const chartColor = value > 0 ? color : '#CCCCCC';
+    
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: [label, 'باقیمانده'],
+        datasets: [{
+          data: [percentage, remaining],
+          backgroundColor: [chartColor, '#E0E0E0'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: function(context) {
+                if (context.dataIndex === 0) {
+                  return label + ': ' + value + ' (' + percentage + '%)';
+                }
+                return 'باقیمانده: ' + remaining + '%';
+              }
+            }
+          }
+        }
+      },
+      plugins: [{
+        id: 'centerText',
+        beforeDraw: function(chart) {
+          const ctx = chart.ctx;
+          const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+          const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+          
+          ctx.save();
+          ctx.font = 'bold 20px Arial';
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(percentage + '%', centerX, centerY);
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  // نمودارهای وضعیت آزمایشات
+  const totalExperiments = {{ total_experiments }};
+  createDoughnutChart('experimentCompletedChart', {{ experiment_status_data.completed }}, totalExperiments, '#4CAF50', 'تکمیل شده');
+  createDoughnutChart('experimentRejectedChart', {{ experiment_status_data.rejected }}, totalExperiments, '#F44336', 'رد شده');
+  createDoughnutChart('experimentInProgressChart', {{ experiment_status_data.in_progress }}, totalExperiments, '#2196F3', 'در حال انجام');
+  createDoughnutChart('experimentPendingChart', {{ experiment_status_data.pending }}, totalExperiments, '#FF9800', 'در انتظار بررسی');
+
+  // نمودارهای حجم کل
+  const totalVolume = Math.max({{ total_volume|default:0 }}, 1); // حداقل 1 برای جلوگیری از تقسیم بر صفر
+  const embankmentVolume = {{ volume_data.embankment|default:0 }};
+  const concreteVolume = {{ volume_data.concrete|default:0 }};
+  const asphaltVolume = {{ volume_data.asphalt|default:0 }};
+  
+  // برای حجم، از مجموع حجم‌ها به عنوان total استفاده می‌کنیم
+  const totalVolumeSum = embankmentVolume + concreteVolume + asphaltVolume;
+  const volumeTotal = Math.max(totalVolumeSum, 1);
+  
+  createDoughnutChart('volumeEmbankmentChart', embankmentVolume, volumeTotal, '#9C27B0', 'خاکریزی');
+  createDoughnutChart('volumeConcreteChart', concreteVolume, volumeTotal, '#FF9800', 'بتن ریزی');
+  createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت');
 });
 </script>
 {% endblock %}
