@@ -987,27 +987,29 @@ export class ProjectDashboard {
             const point = roadPoints[i];
             const km = point.x;
             const x = this.transformX(km);
-            const roadY = this.transformY(point.y);
+            // لایه‌ها باید از خط زمین (0) شروع شوند، مثل ابرها
+            const groundLineY = this.transformY(0);
             const landElevation = this.getLandElevationAt(km);
             // محاسبه fallback بر اساس ارتفاع واقعی (متر)
             // با transformY جدید، مقادیر مثبت پایین هستند
-            // پس fallback باید مثبت باشد تا زیر خط جاده نمایش داده شود
+            // پس fallback باید مثبت باشد تا زیر خط زمین نمایش داده شود
             const fallbackElevationM = cumulativeThicknessMeters + 0.4; // 40 سانتیمتر اضافی
             const fallbackLandY = this.transformY(fallbackElevationM);
             // با transformY جدید: مقادیر مثبت پایین هستند
-            // پس اگر landElevation مثبت است (زیر جاده)، باید پایین‌تر از roadY باشد
+            // landElevation برای محاسبه محدودیت لایه‌های متغیر استفاده می‌شود
             const landY = Number.isFinite(landElevation)
-                ? (landElevation > 0 ? Math.max(this.transformY(landElevation), roadY) : Math.min(this.transformY(landElevation), roadY))
+                ? this.transformY(landElevation)
                 : fallbackLandY;
 
-            boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
+            // لایه‌ها از خط زمین (0) شروع می‌شوند
+            boundaries[0].push({ x, y: groundLineY, km, valid: true, index: i });
 
             // برای لایه‌های ثابت، از لایه قبلی استفاده می‌کنیم تا صاف باشند
             // استفاده از ارتفاع واقعی به متر برای دقت بیشتر
-            // لایه‌ها باید از خط جاده (Y=0) به پایین رسم شوند
+            // لایه‌ها باید از خط زمین (Y=0) به پایین رسم شوند، مثل ابرها
             // با transformY جدید: مقادیر مثبت پایین و منفی بالا هستند
             // پس لایه‌ها باید در مقادیر مثبت باشند (مثلاً +0.1, +0.2, +0.3 متر)
-            let currentTopElevation = 0; // ارتفاع واقعی جاده در این نقطه (متر) - شروع از خط جاده
+            let currentTopElevation = 0; // ارتفاع واقعی خط زمین (متر) - شروع از خط زمین
 
             for (let l = 0; l < sortedLayers.length; l++) {
                 const layer = sortedLayers[l];
@@ -1379,14 +1381,9 @@ export class ProjectDashboard {
                         }
                     }
                 }
-                // اگر پیدا نشد، از ارتفاع جاده در نزدیک‌ترین نقطه استفاده کن
-                if (y === null) {
-                    // استفاده از ارتفاع واقعی 0 (خط جاده) که با transformY تبدیل می‌شود
-                    y = this.transformY(0);
-                }
-                // آبرو کمی بالاتر از جاده نمایش داده شود
-                const offsetAboveRoad = 25;
-                y = y - offsetAboveRoad;
+                // دایره‌های آبی باید روی خط زمین (0) قرار بگیرند، زیر خط جاده
+                // استفاده از ارتفاع واقعی 0 (خط زمین) که با transformY تبدیل می‌شود
+                y = this.transformY(0);
                 this.drawStructureSymbol(structure, x, y);
             }
         });
