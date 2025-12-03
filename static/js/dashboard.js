@@ -2319,8 +2319,10 @@ export class ProjectDashboard {
                 ctx.restore();
                 continue;
             }
-            // معکوس کردن رنگ‌ها: خاکبرداری (قرمز) پایین، خاکریزی (آبی) بالا
-            let baseFill = isExcavation ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
+            // جابجا کردن رنگ‌ها: بالا قرمز (خاکبرداری)، پایین آبی (خاکریزی)
+            // isEmbankment = بالا (yLand < yRoad) → قرمز
+            // isExcavation = پایین (yLand > yRoad) → آبی
+            let baseFill = isEmbankment ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
             const minX = Math.min(x1, x2);
             const maxX = Math.max(x1, x2);
             const minY = Math.min(yLand1, yRoad1, yLand2, yRoad2);
