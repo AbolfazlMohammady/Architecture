@@ -68,8 +68,11 @@ export class YAxisCanvas {
       return margin;
     }
 
+    // معکوس کردن: مقادیر مثبت پایین و مقادیر منفی بالا
+    // این با تغییر transformY در dashboard.js هماهنگ است
     const normalized = (value - min) / (max - min);
-    const y = margin + mainCanvasHeight - normalized * mainCanvasHeight;
+    // تغییر: استفاده مستقیم از normalized به جای mainCanvasHeight - normalized
+    const y = margin + normalized * mainCanvasHeight;
     return y;
   }
   fittext(text){

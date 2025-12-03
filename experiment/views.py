@@ -40,12 +40,9 @@ def get_layer_display_name(layer):
 def find_blocking_lower_layers(project, target_layer, ranges):
     """
     ranges: list of (Decimal start, Decimal end)
-    Returns list of lower layers (لایه‌های زیرین) که blocking هستند برای بازه‌های همپوشان.
+    Returns list of lower layers (لایه‌های زیرین) که تایید نشده‌اند برای بازه‌های همپوشان.
     
     لایه‌های زیرین = لایه‌هایی که order_from_top بیشتر دارند (پایین‌تر هستند)
-    
-    محدودیت جدید (مورد 10): اگر لایه پایینی هیچ درخواست آزمایشی ثبت نشده باشد (حتی اگر تایید نشده باشد)،
-    لایه بالایی که همپوشانی دارد نباید اجازه ثبت درخواست داشته باشد.
     
     فقط قسمت‌هایی که همپوشانی کیلومتراژ دارند بررسی می‌شوند، نه کل لایه.
     """
@@ -72,47 +69,36 @@ def find_blocking_lower_layers(project, target_layer, ranges):
                 end_kilometer__gt=start,
             )
             
-            # محاسبه بازه همپوشانی واقعی با لایه پایینی
-            layer_start = float(lower.start_kilometer) if lower.start_kilometer else 0.0
-            layer_end = float(lower.end_kilometer) if lower.end_kilometer else 0.0
+            # اگر هیچ درخواست آزمایشی برای این بازه همپوشان وجود نداشت، blocking نیست
+            if not overlap_requests.exists():
+                continue  # این بازه blocking نیست، به بازه بعدی برو
             
-            # محاسبه بازه همپوشانی
-            overlap_start = max(float(start), layer_start)
-            overlap_end = min(float(end), layer_end)
+            # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده وجود دارد
+            approved_for_this_range = False
             
-            # اگر همپوشانی وجود دارد
-            if overlap_start < overlap_end:
-                # محدودیت جدید: اگر هیچ درخواست آزمایشی برای این بازه همپوشان ثبت نشده باشد، blocking است
-                if not overlap_requests.exists():
-                    layer_blocked = True
-                    break  # این بازه blocking است
+            for req in overlap_requests:
+                # بررسی همپوشانی دقیق
+                req_start = float(req.start_kilometer)
+                req_end = float(req.end_kilometer)
                 
-                # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده وجود دارد
-                approved_for_this_range = False
+                # محاسبه بازه همپوشانی واقعی
+                overlap_start = max(float(start), req_start)
+                overlap_end = min(float(end), req_end)
                 
-                for req in overlap_requests:
-                    # بررسی همپوشانی دقیق
-                    req_start = float(req.start_kilometer)
-                    req_end = float(req.end_kilometer)
-                    
-                    # محاسبه بازه همپوشانی واقعی
-                    req_overlap_start = max(float(start), req_start)
-                    req_overlap_end = min(float(end), req_end)
-                    
-                    # اگر همپوشانی واقعی وجود دارد
-                    if req_overlap_start < req_overlap_end:
-                        # بررسی اینکه آیا این درخواست تایید شده است
-                        for resp in req.experimentresponse_set.all():
-                            if resp.is_fully_approved():
-                                approved_for_this_range = True
-                                break
-                        if approved_for_this_range:
+                # اگر همپوشانی واقعی وجود دارد
+                if overlap_start < overlap_end:
+                    # بررسی اینکه آیا این درخواست تایید شده است
+                    for resp in req.experimentresponse_set.all():
+                        if resp.is_fully_approved():
+                            approved_for_this_range = True
                             break
-                
-                # اگر برای این بازه همپوشان تایید نشده، لایه blocking است
-                if not approved_for_this_range:
-                    layer_blocked = True
-                    break  # نیازی به بررسی بقیه بازه‌ها نیست
+                    if approved_for_this_range:
+                        break
+            
+            # اگر برای این بازه همپوشان تایید نشده، لایه blocking است
+            if not approved_for_this_range:
+                layer_blocked = True
+                break  # نیازی به بررسی بقیه بازه‌ها نیست
         
         # اگر لایه برای حداقل یک بازه blocking بود، به لیست اضافه می‌شود
         if layer_blocked:
@@ -348,7 +334,7 @@ def experiment_request_create(request):
                     names = [get_layer_display_name(blk) for blk in blocking_layers]
                     form.add_error(
                         None,
-                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا لایه‌های زیرین باید درخواست آزمایش ثبت کرده و تایید شده باشند: {"، ".join(names)}'
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
                     )
                 else:
                     # چک کردن دسترسی کاربر به پروژه
@@ -454,7 +440,7 @@ def experiment_request_edit(request, pk):
                     names = [get_layer_display_name(blk) for blk in blocking_layers]
                     form.add_error(
                         None,
-                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا لایه‌های زیرین باید درخواست آزمایش ثبت کرده و تایید شده باشند: {"، ".join(names)}'
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
                     )
                 else:
                     # چک کردن دسترسی کاربر به پروژه جدید (اگر تغییر کرده باشد)
@@ -1282,7 +1268,7 @@ def experiment_request_update(request, pk):
                     names = [get_layer_display_name(blk) for blk in blocking_layers]
                     form.add_error(
                         None,
-                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا لایه‌های زیرین باید درخواست آزمایش ثبت کرده و تایید شده باشند: {"، ".join(names)}'
+                        f'برای ثبت درخواست لایه انتخاب‌شده، ابتدا نتایج لایه‌های زیرین تایید شود: {"، ".join(names)}'
                     )
                 elif not out_of_range:
                     experiment_request = form.save(commit=False)

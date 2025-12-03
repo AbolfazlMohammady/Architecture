@@ -990,17 +990,24 @@ export class ProjectDashboard {
             const roadY = this.transformY(point.y);
             const landElevation = this.getLandElevationAt(km);
             // محاسبه fallback بر اساس ارتفاع واقعی (متر)
+            // با transformY جدید، مقادیر مثبت پایین هستند
+            // پس fallback باید مثبت باشد تا زیر خط جاده نمایش داده شود
             const fallbackElevationM = cumulativeThicknessMeters + 0.4; // 40 سانتیمتر اضافی
             const fallbackLandY = this.transformY(fallbackElevationM);
+            // با transformY جدید: مقادیر مثبت پایین هستند
+            // پس اگر landElevation مثبت است (زیر جاده)، باید پایین‌تر از roadY باشد
             const landY = Number.isFinite(landElevation)
-                ? Math.max(this.transformY(landElevation), roadY)
+                ? (landElevation > 0 ? Math.max(this.transformY(landElevation), roadY) : Math.min(this.transformY(landElevation), roadY))
                 : fallbackLandY;
 
             boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
 
             // برای لایه‌های ثابت، از لایه قبلی استفاده می‌کنیم تا صاف باشند
             // استفاده از ارتفاع واقعی به متر برای دقت بیشتر
-            let currentTopElevation = 0; // ارتفاع واقعی جاده در این نقطه (متر)
+            // لایه‌ها باید از خط جاده (Y=0) به پایین رسم شوند
+            // با transformY جدید: مقادیر مثبت پایین و منفی بالا هستند
+            // پس لایه‌ها باید در مقادیر مثبت باشند (مثلاً +0.1, +0.2, +0.3 متر)
+            let currentTopElevation = 0; // ارتفاع واقعی جاده در این نقطه (متر) - شروع از خط جاده
 
             for (let l = 0; l < sortedLayers.length; l++) {
                 const layer = sortedLayers[l];
@@ -1014,8 +1021,14 @@ export class ProjectDashboard {
                     actualThicknessM = desiredThicknessM;
                 } else {
                     // لایه متغیر: محدود به فضای باقی‌مانده تا خط زمین
+                    // توجه: با transformY جدید، مقادیر مثبت پایین هستند
+                    // لایه‌ها زیر جاده هستند، پس باید در مقادیر مثبت باشند
+                    // landElevation می‌تواند مثبت (زیر جاده) یا منفی (بالای جاده) باشد
                     const landElevationReal = landElevation !== null && Number.isFinite(landElevation) ? landElevation : (currentTopElevation + cumulativeThicknessMeters);
-                    const remainingMeters = Math.max(landElevationReal - currentTopElevation, 0);
+                    // برای لایه‌های زیر جاده، remainingMeters باید فاصله تا خط زمین باشد
+                    // اگر landElevationReal مثبت است (زیر جاده)، remainingMeters = landElevationReal - currentTopElevation
+                    // اگر landElevationReal منفی است (بالای جاده)، لایه‌ها نمی‌توانند ادامه پیدا کنند
+                    const remainingMeters = landElevationReal > currentTopElevation ? Math.max(landElevationReal - currentTopElevation, 0) : 0;
                     actualThicknessM = Math.min(desiredThicknessM, remainingMeters);
                     // اگر ضخامت خیلی کم است، صفر کنیم
                     if (actualThicknessM < 0.006) { // کمتر از 0.6 سانتیمتر
@@ -1027,10 +1040,13 @@ export class ProjectDashboard {
                     actualThicknessM = 0;
                 }
 
-                // محاسبه ارتفاع پایین لایه به متر
+                // محاسبه ارتفاع پایین لایه به متر - باید به پایین برود (مثبت)
+                // لایه‌ها باید زیر خط جاده باشند، پس از 0 به مثبت می‌رویم
+                // با transformY جدید، مقادیر مثبت پایین نمایش داده می‌شوند
                 const bottomElevationM = currentTopElevation + actualThicknessM;
                 
                 // تبدیل به پیکسل با transformY
+                // توجه: transformY مقادیر مثبت را بالا و منفی را پایین نمایش می‌دهد
                 const currentTopY = this.transformY(currentTopElevation);
                 const bottomY = this.transformY(bottomElevationM);
                 const actualThicknessPx = Math.abs(bottomY - currentTopY);
@@ -1046,9 +1062,11 @@ export class ProjectDashboard {
                 };
                 boundaries[l + 1].push(bottomPoint);
 
+                // محاسبه مرکز لایه - باید بین top و bottom باشد
+                // چون لایه‌ها به پایین می‌روند، bottomY > currentTopY است
                 const centerPoint = {
                     x,
-                    y: currentTopY + actualThicknessPx / 2,
+                    y: (currentTopY + bottomY) / 2, // مرکز لایه بین top و bottom
                     km,
                     valid: hasThickness,
                     index: i
@@ -1056,6 +1074,7 @@ export class ProjectDashboard {
                 centers[l].push(centerPoint);
 
                 // برای لایه بعدی، از bottomElevationM استفاده می‌کنیم (لایه قبلی)
+                // این باید مثبت‌تر شود (پایین‌تر در نمایش)
                 currentTopElevation = bottomElevationM;
 
                 if (actualThicknessPx > 0) {
@@ -1807,9 +1826,12 @@ export class ProjectDashboard {
         const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
         const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
         // محاسبه موقعیت بر اساس yScale و dynamicHeight
+        // معکوس کردن: مقادیر مثبت پایین (خاکریزی) و مقادیر منفی بالا (خاکبرداری)
         const yFromMin = y - this.yMin;
         const pixelY = yFromMin * this.yScale;
-        const rawY = this.margin + mainCanvasHeight - pixelY;
+        // تغییر: استفاده از pixelY مستقیم به جای mainCanvasHeight - pixelY
+        // این باعث می‌شود مقادیر مثبت پایین و مقادیر منفی بالا نمایش داده شوند
+        const rawY = this.margin + pixelY;
         return rawY;
     }
 
@@ -1827,9 +1849,9 @@ export class ProjectDashboard {
         const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
         const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
         const distanceFromTop = clampedPixelY - this.margin;
-        // استفاده از yScale برای تبدیل معکوس (بدون scaleRatio چون yScale بر اساس dynamicHeight است)
-        const pixelYFromBottom = mainCanvasHeight - distanceFromTop;
-        const yFromMin = pixelYFromBottom / this.yScale;
+        // تغییر: استفاده مستقیم از distanceFromTop به جای محاسبه از پایین
+        // این با تغییر transformY هماهنگ است (مقادیر مثبت پایین، منفی بالا)
+        const yFromMin = distanceFromTop / this.yScale;
         const value = this.yMin + yFromMin;
         return value;
     }
@@ -2268,8 +2290,13 @@ export class ProjectDashboard {
             const yRoad2 = this.transformY(0);
 
             // تعیین نوع (خاکبرداری یا خاکریزی)
-            const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده
-            const isEmbankment = yLand1 > yRoad1 && yLand2 > yRoad2; // جاده بالاتر از زمین
+            // با transformY جدید: مقادیر مثبت پایین و منفی بالا هستند
+            // land.y مثبت = زمین پایین‌تر از جاده = خاکریزی (embankment) = باید پایین نمایش داده شود
+            // land.y منفی = زمین بالاتر از جاده = خاکبرداری (excavation) = باید بالا نمایش داده شود
+            // در canvas: مقادیر مثبت → pixel Y بزرگتر (پایین) → yLand > yRoad
+            //            مقادیر منفی → pixel Y کوچکتر (بالا) → yLand < yRoad
+            const isEmbankment = yLand1 > yRoad1 && yLand2 > yRoad2; // زمین پایین‌تر از جاده (مقادیر مثبت) = خاکریزی
+            const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده (مقادیر منفی) = خاکبرداری
 
             ctx.save();
             ctx.beginPath();
