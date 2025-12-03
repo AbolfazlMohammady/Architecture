@@ -823,7 +823,7 @@ export class ProjectDashboard {
         if (!profileData.land_points || profileData.land_points.length === 0) return;
         const points = profileData.land_points.map(point => ({
             x: this.transformX(point.x),
-            y: this.transformY(point.y),
+            y: this.transformY(-point.y), // معکوس کردن برای نمایش صحیح: مقادیر مثبت بالا و منفی پایین
             realX: point.x,
             realY: point.y
         }));
@@ -2280,20 +2280,21 @@ export class ProjectDashboard {
             const roadB = profileData.road_points[i + 1];
             const x1 = this.transformX(landA.x);
             const x2 = this.transformX(landB.x);
-            const yLand1 = this.transformY(landA.y);
-            const yLand2 = this.transformY(landB.y);
+            // معکوس کردن برای خط زمین: مقادیر مثبت بالا و منفی پایین
+            const yLand1 = this.transformY(-landA.y);
+            const yLand2 = this.transformY(-landB.y);
             // خط جاده باید روی صفر باشد، نه roadA.y
             const yRoad1 = this.transformY(0);
             const yRoad2 = this.transformY(0);
 
             // تعیین نوع (خاکبرداری یا خاکریزی)
-            // با transformY جدید: مقادیر مثبت پایین و منفی بالا هستند
-            // land.y مثبت = زمین پایین‌تر از جاده = خاکریزی (embankment) = باید پایین نمایش داده شود
-            // land.y منفی = زمین بالاتر از جاده = خاکبرداری (excavation) = باید بالا نمایش داده شود
-            // در canvas: مقادیر مثبت → pixel Y بزرگتر (پایین) → yLand > yRoad
-            //            مقادیر منفی → pixel Y کوچکتر (بالا) → yLand < yRoad
-            const isEmbankment = yLand1 > yRoad1 && yLand2 > yRoad2; // زمین پایین‌تر از جاده (مقادیر مثبت) = خاکریزی
-            const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده (مقادیر منفی) = خاکبرداری
+            // با transformY معکوس شده: مقادیر مثبت بالا و منفی پایین هستند
+            // land.y مثبت = زمین پایین‌تر از جاده = خاکریزی (embankment) = باید بالا نمایش داده شود (yLand < yRoad)
+            // land.y منفی = زمین بالاتر از جاده = خاکبرداری (excavation) = باید پایین نمایش داده شود (yLand > yRoad)
+            // در canvas با معکوس: مقادیر مثبت → pixel Y کوچکتر (بالا) → yLand < yRoad
+            //                      مقادیر منفی → pixel Y بزرگتر (پایین) → yLand > yRoad
+            const isEmbankment = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین پایین‌تر از جاده (مقادیر مثبت) = خاکریزی = بالا
+            const isExcavation = yLand1 > yRoad1 && yLand2 > yRoad2; // زمین بالاتر از جاده (مقادیر منفی) = خاکبرداری = پایین
 
             ctx.save();
             ctx.beginPath();
@@ -2318,6 +2319,7 @@ export class ProjectDashboard {
                 ctx.restore();
                 continue;
             }
+            // معکوس کردن رنگ‌ها: خاکبرداری (قرمز) پایین، خاکریزی (آبی) بالا
             let baseFill = isExcavation ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
             const minX = Math.min(x1, x2);
             const maxX = Math.max(x1, x2);
