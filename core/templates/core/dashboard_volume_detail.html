@@ -20,7 +20,7 @@
         <span class="badge bg-info">فیلتر زمانی: {{ days_filter }} روز اخیر</span>
         <span class="badge bg-primary ms-2">تعداد کل: {{ experiments|length }} مورد</span>
         {% if experiments %}
-        <span class="badge bg-success ms-2">حجم کل: {{ total_volume|floatformat:2 }} کیلومتر</span>
+        <span class="badge bg-success ms-2">حجم کل: {{ total_volume|floatformat:2 }} متر³</span>
         {% endif %}
       </div>
       
@@ -34,7 +34,7 @@
               <th>لایه</th>
               <th>کیلومتراژ شروع</th>
               <th>کیلومتراژ پایان</th>
-              <th>حجم (کیلومتر)</th>
+              <th>حجم (متر³)</th>
               <th>تاریخ درخواست</th>
               <th>عملیات</th>
             </tr>

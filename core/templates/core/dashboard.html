@@ -202,48 +202,89 @@
       </div>
       {% endif %}
       
-      <!-- نمودارهای حجم کل -->
+      <!-- نمودارهای حجم کل به ازای هر پروژه -->
+      {% for project_stat in projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده</h5>
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده - {{ project_stat.project.name }}</h5>
           </div>
           <div class="card-body">
-            <div class="row g-4">
-              <div class="col-6 col-md-4">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_volume_detail' %}?type=embankment&days={{ days_filter }}">
-                  <canvas id="volumeEmbankmentChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">خاکریزی</h6>
-                  <p class="text-muted small mb-0">{{ volume_data.embankment|floatformat:2 }} کیلومتر</p>
-                  <a href="{% url 'dashboard_volume_detail' %}?type=embankment&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+            <div class="row g-3">
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeEmbankmentChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">خاکریزی</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.volume.embankment|floatformat:2 }} متر³</p>
                 </div>
               </div>
-              <div class="col-6 col-md-4">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_volume_detail' %}?type=concrete&days={{ days_filter }}">
-                  <canvas id="volumeConcreteChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">بتن ریزی</h6>
-                  <p class="text-muted small mb-0">{{ volume_data.concrete|floatformat:2 }} کیلومتر</p>
-                  <a href="{% url 'dashboard_volume_detail' %}?type=concrete&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeConcreteChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">بتن ریزی</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.volume.concrete|floatformat:2 }} متر³</p>
                 </div>
               </div>
-              <div class="col-6 col-md-4">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_volume_detail' %}?type=asphalt&days={{ days_filter }}">
-                  <canvas id="volumeAsphaltChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">آسفالت</h6>
-                  <p class="text-muted small mb-0">{{ volume_data.asphalt|floatformat:2 }} کیلومتر</p>
-                  <a href="{% url 'dashboard_volume_detail' %}?type=asphalt&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeAsphaltChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">آسفالت</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.volume.asphalt|floatformat:2 }} متر³</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {% endfor %}
+      
+      <!-- نمودارهای حجم کلی (اگر پروژه‌ای وجود نداشت) -->
+      {% if not projects_stats %}
+      <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده (کلی)</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeEmbankmentChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">خاکریزی</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.embankment|floatformat:2 }} متر³</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeConcreteChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">بتن ریزی</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.concrete|floatformat:2 }} متر³</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="volumeAsphaltChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">آسفالت</h6>
+                  <p class="text-muted small mb-0">{{ volume_data.asphalt|floatformat:2 }} متر³</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </section>
 
@@ -634,19 +675,34 @@ document.addEventListener('DOMContentLoaded', function() {
   createDoughnutChart('experimentPendingChart', {{ experiment_status_data.pending }}, totalExperiments, '#FF9800', 'در انتظار بررسی');
   {% endif %}
 
-  // نمودارهای حجم کل با لینک
-  const totalVolume = Math.max({{ total_volume|default:0 }}, 1); // حداقل 1 برای جلوگیری از تقسیم بر صفر
+  // نمودارهای حجم برای هر پروژه
+  {% for project_stat in projects_stats %}
+  (function() {
+    const projectId = {{ project_stat.project.id }};
+    const embankmentVol = {{ project_stat.volume.embankment|default:0 }};
+    const concreteVol = {{ project_stat.volume.concrete|default:0 }};
+    const asphaltVol = {{ project_stat.volume.asphalt|default:0 }};
+    const volumeTotal = Math.max(embankmentVol + concreteVol + asphaltVol, 1);
+    
+    createDoughnutChart('volumeEmbankmentChart-' + projectId, embankmentVol, volumeTotal, '#9C27B0', 'خاکریزی');
+    createDoughnutChart('volumeConcreteChart-' + projectId, concreteVol, volumeTotal, '#FF9800', 'بتن ریزی');
+    createDoughnutChart('volumeAsphaltChart-' + projectId, asphaltVol, volumeTotal, '#2196F3', 'آسفالت');
+  })();
+  {% endfor %}
+  
+  // نمودارهای حجم کلی (اگر پروژه‌ای وجود نداشت)
+  {% if not projects_stats %}
+  const totalVolume = Math.max({{ total_volume|default:0 }}, 1);
   const embankmentVolume = {{ volume_data.embankment|default:0 }};
   const concreteVolume = {{ volume_data.concrete|default:0 }};
   const asphaltVolume = {{ volume_data.asphalt|default:0 }};
-  
-  // برای حجم، از مجموع حجم‌ها به عنوان total استفاده می‌کنیم
   const totalVolumeSum = embankmentVolume + concreteVolume + asphaltVolume;
   const volumeTotal = Math.max(totalVolumeSum, 1);
   
-  createDoughnutChart('volumeEmbankmentChart', embankmentVolume, volumeTotal, '#9C27B0', 'خاکریزی', '{% url "dashboard_volume_detail" %}?type=embankment&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
-  createDoughnutChart('volumeConcreteChart', concreteVolume, volumeTotal, '#FF9800', 'بتن ریزی', '{% url "dashboard_volume_detail" %}?type=concrete&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
-  createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت', '{% url "dashboard_volume_detail" %}?type=asphalt&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
+  createDoughnutChart('volumeEmbankmentChart', embankmentVolume, volumeTotal, '#9C27B0', 'خاکریزی');
+  createDoughnutChart('volumeConcreteChart', concreteVolume, volumeTotal, '#FF9800', 'بتن ریزی');
+  createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت');
+  {% endif %}
   
   // راه‌اندازی date picker برای فیلتر تقویمی
   if (typeof $ !== 'undefined' && $('#date-from').length) {

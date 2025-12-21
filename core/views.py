@@ -681,30 +681,52 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         context['experiment_status_data'] = experiment_status_data
         context['total_experiments'] = total_experiments
         
-        # محاسبه حجم کل بر اساس لایه‌ها و کیلومتراژ
-        # حجم = مجموع (end_kilometer - start_kilometer) برای هر لایه
+        # محاسبه حجم کل بر اساس لایه‌ها (فقط آزمایشات قابل قبول)
+        # حجم = طول (کیلومتر) × عرض (متر) × ضخامت (سانتی‌متر) → تبدیل به متر مکعب
+        # حجم (متر مکعب) = طول (کیلومتر) × 1000 × عرض (متر) × ضخامت (سانتی‌متر) / 100
+        # = طول × عرض × ضخامت × 10
         volume_data = {
-            'embankment': 0,  # خاکریزی
-            'concrete': 0,    # بتن ریزی
-            'asphalt': 0,     # آسفالت
+            'embankment': 0,  # خاکریزی (متر مکعب)
+            'concrete': 0,    # بتن ریزی (متر مکعب)
+            'asphalt': 0,     # آسفالت (متر مکعب)
         }
         
-        # استفاده از همان فیلتر برای حجم
+        # استفاده از همان فیلتر برای حجم - فقط آزمایشات قابل قبول
         filtered_experiments = all_experiments
         
         for exp in filtered_experiments:
-            # محاسبه حجم (کیلومتر)
-            volume = float(exp.end_kilometer - exp.start_kilometer) if exp.end_kilometer and exp.start_kilometer else 0
+            # فقط آزمایشات قابل قبول را حساب می‌کنیم
+            actual_status = exp.get_actual_status()
+            if actual_status != ExperimentRequest.COMPLETED:
+                continue
+            
+            # محاسبه طول (کیلومتر)
+            length_km = float(exp.end_kilometer - exp.start_kilometer) if exp.end_kilometer and exp.start_kilometer else 0
+            if length_km <= 0:
+                continue
+            
+            # گرفتن عرض پروژه (متر)
+            project_width = float(exp.project.width) if exp.project.width else 0
+            if project_width <= 0:
+                continue
+            
+            # گرفتن ضخامت لایه (سانتی‌متر)
+            layer_thickness = float(exp.layer.thickness_cm) if exp.layer and exp.layer.thickness_cm else 0
+            if layer_thickness <= 0:
+                continue
+            
+            # محاسبه حجم به متر مکعب: طول (کیلومتر) × 1000 × عرض (متر) × ضخامت (سانتی‌متر) / 100
+            volume_m3 = length_km * 1000 * project_width * (layer_thickness / 100)
             
             # تشخیص نوع لایه
             if exp.layer and exp.layer.layer_type:
                 layer_name = exp.layer.layer_type.name.lower()
                 if 'خاک' in layer_name or 'خاکریزی' in layer_name:
-                    volume_data['embankment'] += volume
+                    volume_data['embankment'] += volume_m3
                 elif 'بتن' in layer_name or 'concrete' in layer_name:
-                    volume_data['concrete'] += volume
+                    volume_data['concrete'] += volume_m3
                 elif 'آسفالت' in layer_name or 'asphalt' in layer_name:
-                    volume_data['asphalt'] += volume
+                    volume_data['asphalt'] += volume_m3
         
         total_volume = sum(volume_data.values())
         context['volume_data'] = volume_data
@@ -756,11 +778,56 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
                 project_status_data['recompact']
             ])
             
-            if project_total > 0:
+            # محاسبه حجم برای این پروژه (فقط آزمایشات قابل قبول)
+            project_volume_data = {
+                'embankment': 0,  # خاکریزی (متر مکعب)
+                'concrete': 0,    # بتن ریزی (متر مکعب)
+                'asphalt': 0,     # آسفالت (متر مکعب)
+            }
+            
+            for exp in project_experiments:
+                # فقط آزمایشات قابل قبول
+                actual_status = exp.get_actual_status()
+                if actual_status != ExperimentRequest.COMPLETED:
+                    continue
+                
+                # محاسبه طول (کیلومتر)
+                length_km = float(exp.end_kilometer - exp.start_kilometer) if exp.end_kilometer and exp.start_kilometer else 0
+                if length_km <= 0:
+                    continue
+                
+                # گرفتن عرض پروژه (متر)
+                project_width = float(exp.project.width) if exp.project.width else 0
+                if project_width <= 0:
+                    continue
+                
+                # گرفتن ضخامت لایه (سانتی‌متر)
+                layer_thickness = float(exp.layer.thickness_cm) if exp.layer and exp.layer.thickness_cm else 0
+                if layer_thickness <= 0:
+                    continue
+                
+                # محاسبه حجم به متر مکعب
+                volume_m3 = length_km * 1000 * project_width * (layer_thickness / 100)
+                
+                # تشخیص نوع لایه
+                if exp.layer and exp.layer.layer_type:
+                    layer_name = exp.layer.layer_type.name.lower()
+                    if 'خاک' in layer_name or 'خاکریزی' in layer_name:
+                        project_volume_data['embankment'] += volume_m3
+                    elif 'بتن' in layer_name or 'concrete' in layer_name:
+                        project_volume_data['concrete'] += volume_m3
+                    elif 'آسفالت' in layer_name or 'asphalt' in layer_name:
+                        project_volume_data['asphalt'] += volume_m3
+            
+            project_volume_total = sum(project_volume_data.values())
+            
+            if project_total > 0 or project_volume_total > 0:
                 projects_stats.append({
                     'project': project,
                     'stats': project_status_data,
                     'total': project_total,
+                    'volume': project_volume_data,
+                    'volume_total': project_volume_total,
                 })
         
         context['projects_stats'] = projects_stats
@@ -937,17 +1004,31 @@ def dashboard_volume_detail(request):
         'asphalt': 'آسفالت',
     }
     
-    # محاسبه حجم کل و حجم هر آزمایش
+    # محاسبه حجم کل و حجم هر آزمایش (متر مکعب)
+    # فقط آزمایشات قابل قبول
     total_volume = 0
     experiments_with_volume = []
     for exp in volume_experiments:
-        volume = 0
-        if exp.end_kilometer and exp.start_kilometer:
-            volume = float(exp.end_kilometer - exp.start_kilometer)
-            total_volume += volume
+        actual_status = exp.get_actual_status()
+        if actual_status != ExperimentRequest.COMPLETED:
+            continue
+            
+        volume_m3 = 0
+        if exp.end_kilometer and exp.start_kilometer and exp.project.width and exp.layer and exp.layer.thickness_cm:
+            # محاسبه طول (کیلومتر)
+            length_km = float(exp.end_kilometer - exp.start_kilometer)
+            if length_km > 0:
+                # گرفتن عرض پروژه (متر)
+                project_width = float(exp.project.width)
+                # گرفتن ضخامت لایه (سانتی‌متر)
+                layer_thickness = float(exp.layer.thickness_cm)
+                # محاسبه حجم به متر مکعب
+                volume_m3 = length_km * 1000 * project_width * (layer_thickness / 100)
+                total_volume += volume_m3
+        
         experiments_with_volume.append({
             'experiment': exp,
-            'volume': volume
+            'volume': volume_m3
         })
     
     return render(request, 'core/dashboard_volume_detail.html', {
