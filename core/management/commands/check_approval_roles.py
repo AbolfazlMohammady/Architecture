@@ -8,14 +8,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # نقش‌های مورد نیاز از get_required_approval_roles
-        required_roles = [
-            'نماینده پیمانکار',
-            'نقشه بردار پیمانکار',
-            'نقشه بردار نظارت',
-            'نظارت پروژه',
-            'مسئول آزمایشگاه',
-            'مسئول HSSE پروژه',
-        ]
+        # استفاده از یک نمونه ExperimentResponse برای دریافت لیست نقش‌ها
+        if ExperimentResponse.objects.exists():
+            sample = ExperimentResponse.objects.first()
+            required_roles = sample.get_required_approval_roles()
+        else:
+            # در صورت عدم وجود نمونه، از لیست پیش‌فرض استفاده می‌کنیم
+            required_roles = [
+                'نظارت پروژه',
+                'مسئول آزمایشگاه',
+            ]
         
         # نقش‌های تعریف شده در Role model
         defined_roles = Role.objects.all().values_list('name', flat=True)

@@ -189,14 +189,10 @@ class ExperimentResponse(models.Model):
         return f"{self.experiment_request.project.name} - {self.experiment_request.order}"
 
     def get_required_approval_roles(self):
-        """لیست نقش‌های کلیدی که باید تاییدیه بدهند (مطابق داکیومنت)"""
+        """لیست نقش‌های کلیدی که باید تاییدیه بدهند"""
         return [
-            'نماینده پیمانکار',
-            'نقشه بردار پیمانکار',
-            'نقشه بردار نظارت',
             'نظارت پروژه',
             'مسئول آزمایشگاه',
-            'مسئول HSSE پروژه',
         ]
 
     def get_approvers_for_role(self, role_name):
@@ -229,24 +225,12 @@ class ExperimentResponse(models.Model):
         
         # اگر از UserProjectRole کسی پیدا نشد، از فیلدهای تعریف شده در مدل Project استفاده می‌کنیم (برای سازگاری با کد قدیمی)
         if not approvers:
-            if role_name == 'نماینده پیمانکار':
-                if project.project_manager:
-                    approvers.append(project.project_manager)
-            elif role_name == 'نقشه بردار پیمانکار':
-                if project.technical_manager:
-                    approvers.append(project.technical_manager)
-            elif role_name == 'نقشه بردار نظارت':
-                if project.quality_control_manager:
-                    approvers.append(project.quality_control_manager)
-            elif role_name == 'نظارت پروژه':
+            if role_name == 'نظارت پروژه':
                 if project.quality_control_manager:
                     approvers.append(project.quality_control_manager)
             elif role_name == 'مسئول آزمایشگاه':
                 if project.lab_manager:
                     approvers.append(project.lab_manager)
-            elif role_name == 'مسئول HSSE پروژه':
-                if project.hsse_manager:
-                    approvers.append(project.hsse_manager)
         
         return approvers
 
