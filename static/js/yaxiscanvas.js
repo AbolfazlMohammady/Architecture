@@ -68,11 +68,8 @@ export class YAxisCanvas {
       return margin;
     }
 
-    // معکوس کردن: مقادیر مثبت پایین و مقادیر منفی بالا
-    // این با تغییر transformY در dashboard.js هماهنگ است
     const normalized = (value - min) / (max - min);
-    // تغییر: استفاده مستقیم از normalized به جای mainCanvasHeight - normalized
-    const y = margin + normalized * mainCanvasHeight;
+    const y = margin + mainCanvasHeight - normalized * mainCanvasHeight;
     return y;
   }
   fittext(text){
@@ -127,9 +124,8 @@ export class YAxisCanvas {
       y = Math.round(rawY) + 0.5;
     }
     
-    // اطمینان از اینکه y در محدوده canvas است (با حاشیه بیشتر برای نمایش کامل لیبل‌ها)
-    // حاشیه را بزرگتر می‌کنیم تا لیبل‌های بالا و پایین کامل نمایش داده شوند
-    if (y < paddingTop - 20 || y > paddingTop + usableHeight + 20) return;
+    // اطمینان از اینکه y در محدوده canvas است (با حاشیه بیشتر)
+    if (y < paddingTop - 5 || y > paddingTop + usableHeight + 5) return;
     
     // تبدیل به فارسی و نمایش با فرمت بهتر
     let labelStr = value.toFixed(1).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);

@@ -228,33 +228,20 @@ export class ProjectDashboard {
         }
         this.dynamicWidth = this.drawingWidth + this.margin * 2;
         
-        // محدود کردن dynamicHeight برای امنیت
-        // dynamicHeight برای محاسبه مقیاس‌ها استفاده می‌شه
-        // اما canvas با ارتفاع ثابت رسم میشه تا کش نیاد
+        // محاسبه ارتفاع داینامیک بر اساس زوم Y
         if (this.baseHeight && Number.isFinite(this.zoomLevelY)) {
             this.dynamicHeight = this.baseHeight * this.zoomLevelY;
-            // محدود کردن dynamicHeight به حداکثر 10 برابر baseHeight برای امنیت
-            const maxDynamicHeight = this.baseHeight * 10;
-            this.dynamicHeight = Math.min(this.dynamicHeight, maxDynamicHeight);
         } else {
             this.dynamicHeight = this.height;
         }
         
-        // ارتفاع ثابت canvas برای نمایش (بدون کش)
-        // canvas همیشه با ارتفاع baseHeight رسم میشه
-        const fixedCanvasHeight = this.baseHeight || this.height;
-        
         const padding = Number.isFinite(this.extraScrollPadding) ? this.extraScrollPadding : this.margin;
         const paddingY = Math.max(this.margin, 50); // padding عمودی
 
-        // ارتفاع chartInner بر اساس dynamicHeight محاسبه می‌شه (مثل عرض که بر اساس dynamicWidth است)
-        // این باعث می‌شود که اسکرول عمودی کامل کار کنه وقتی zoomLevelY > 1
         const chartInner = document.getElementById('chart-canvas-inner');
-        const xAxisHeight = 50; // ارتفاع محور X
         if (chartInner) {
             const innerWidth = this.dynamicWidth + padding;
-            // ارتفاع inner باید بر اساس dynamicHeight + ارتفاع محور X باشه تا اسکرول کامل کار کنه
-            const innerHeight = this.dynamicHeight + paddingY + xAxisHeight;
+            const innerHeight = this.dynamicHeight + paddingY;
             chartInner.style.width = innerWidth + 'px';
             chartInner.style.minWidth = innerWidth + 'px';
             chartInner.style.maxWidth = innerWidth + 'px';
@@ -262,43 +249,38 @@ export class ProjectDashboard {
             chartInner.style.minHeight = innerHeight + 'px';
             chartInner.style.paddingRight = padding + 'px';
             chartInner.style.paddingBottom = paddingY + 'px';
-            chartInner.style.display = 'flex';
-            chartInner.style.flexDirection = 'column';
+            chartInner.style.display = 'block';
             chartInner.style.position = 'relative';
         }
 
         const scrollContainer = this.chartScrollContainer || document.getElementById('chart-scroll-x');
         if (scrollContainer) {
             scrollContainer.style.setProperty('overflow-x', 'auto', 'important');
-            // اسکرول عمودی برای محور Y
-            scrollContainer.style.setProperty('overflow-y', 'auto', 'important');
+            // فعال کردن اسکرول عمودی وقتی زوم Y بیشتر از 1 است
+            if (this.zoomLevelY > 1.0) {
+                scrollContainer.style.setProperty('overflow-y', 'auto', 'important');
+            } else {
+                scrollContainer.style.setProperty('overflow-y', 'hidden', 'important');
+            }
             scrollContainer.style.width = '100%';
             scrollContainer.style.height = '100%';
         }
 
-        // canvas باید با ارتفاع dynamicHeight رسم بشه (مثل عرض که dynamicWidth است)
-        // این باعث می‌شود که وقتی زوم می‌کنه، canvas بزرگ بشه و کل محتوا قابل مشاهده باشه
         const mainCanvas = document.getElementById('mainCanvas');
         if (mainCanvas) {
             mainCanvas.style.width = this.dynamicWidth + 'px';
             mainCanvas.style.minWidth = this.dynamicWidth + 'px';
             mainCanvas.style.maxWidth = this.dynamicWidth + 'px';
-            // ارتفاع canvas بر اساس dynamicHeight (مثل عرض که dynamicWidth است)
             mainCanvas.style.height = this.dynamicHeight + 'px';
             mainCanvas.style.minHeight = this.dynamicHeight + 'px';
-            mainCanvas.style.maxHeight = this.dynamicHeight + 'px';
             mainCanvas.style.display = 'block';
             mainCanvas.style.flexShrink = '0';
-            mainCanvas.style.position = 'relative';
         }
 
         if (!skipCanvasResize && this.canvas && typeof this.canvas.resize === 'function') {
-            // canvas با ارتفاع dynamicHeight resize می‌شه (مثل عرض که dynamicWidth است)
             this.canvas.resize(this.dynamicWidth, this.dynamicHeight);
         }
 
-        // chartInner قبلاً به flex تنظیم شده
-        
         const xAxisCanvas = document.getElementById('xAxisCanvas');
         if (xAxisCanvas) {
             xAxisCanvas.style.width = this.dynamicWidth + 'px';
@@ -306,39 +288,19 @@ export class ProjectDashboard {
             xAxisCanvas.style.maxWidth = this.dynamicWidth + 'px';
             xAxisCanvas.style.display = 'block';
             xAxisCanvas.style.flexShrink = '0';
-            // محور X باید sticky باشه و در پایین scroll container ثابت بمونه
-            // sticky باید نسبت به scroll container (chart-scroll-x) باشه
-            xAxisCanvas.style.position = 'sticky';
-            xAxisCanvas.style.bottom = '0';
-            xAxisCanvas.style.zIndex = '10';
-            xAxisCanvas.style.backgroundColor = '#ffffff';
-            // اضافه کردن سایه کوچک برای جدا شدن بهتر از محتوا
-            xAxisCanvas.style.boxShadow = '0 -2px 4px rgba(0,0,0,0.1)';
-            // اطمینان از اینکه sticky کار می‌کنه
-            xAxisCanvas.style.marginTop = 'auto';
         }
         
-        // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
-        // تا با canvas اصلی هماهنگ باشه و اسکرول کامل کار کنه
-        if (this.yAxis) {
+        // به‌روزرسانی محور Y با ارتفاع جدید
+        if (this.yAxis && typeof this.yAxis.update === 'function') {
+            // ارتفاع محور Y را هم به‌روزرسانی کن
             const yAxisCanvas = document.getElementById('yAxisCanvas');
             if (yAxisCanvas) {
-                // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
                 yAxisCanvas.style.height = this.dynamicHeight + 'px';
                 yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
-                yAxisCanvas.style.maxHeight = this.dynamicHeight + 'px';
-                // اطمینان از اینکه محور Y قابل مشاهده هست
-                yAxisCanvas.style.display = 'block';
-                yAxisCanvas.style.visibility = 'visible';
-                yAxisCanvas.style.opacity = '1';
             }
-            // اگر yAxis متد resize دارد، آن را فراخوانی کن با ارتفاع dynamicHeight
+            // اگر yAxis متد resize دارد، آن را فراخوانی کن
             if (typeof this.yAxis.resize === 'function') {
                 this.yAxis.resize(50, this.dynamicHeight);
-            }
-            // اگر داده‌های قبلی وجود دارند، update را دوباره فراخوانی کن تا لیبل‌ها با ارتفاع جدید رسم شوند
-            if (typeof this.yAxis.update === 'function' && this.yAxis.data && this.yAxis.data.length > 0) {
-                this.yAxis.update(this.yAxis.data, this.yAxis.min, this.yAxis.max);
             }
         }
     }
@@ -572,16 +534,12 @@ export class ProjectDashboard {
         
         // محاسبه مقیاس‌ها
         const effectiveDrawingWidth = this.drawingWidth || ((this.dynamicWidth || this.width) - this.margin * 2);
-        // استفاده از dynamicHeight برای محاسبه yScale (نه fixedHeight)
-        // چون canvas الان ارتفاع dynamicHeight داره
         const canvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
         
         this.xScale = effectiveDrawingWidth / xRange;
-        // yScale بر اساس ارتفاع dynamicHeight محاسبه میشه
-        // چون محدوده Y با zoomLevelY تغییر کرده، yScale خودکار بزرگتر میشه
         this.yScale = canvasHeight / yRange;
         
         // لاگ برای دیباگ
@@ -679,10 +637,7 @@ export class ProjectDashboard {
         this.yMax = finalYMax;
         
         // محاسبه مجدد yScale بر اساس finalYMin و finalYMax
-        // yScale بر اساس dynamicHeight محاسبه میشه (برای زوم)
-        // اما transformY از ارتفاع ثابت استفاده می‌کنه و نسبت تبدیل می‌کنه
-        const canvasHeight = this.dynamicHeight || this.height;
-        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         const currentYRange = this.yMax - this.yMin;
         if (currentYRange > 0) {
             this.yScale = mainCanvasHeight / currentYRange;
@@ -704,26 +659,7 @@ export class ProjectDashboard {
         
         // استفاده از finalYMin و finalYMax برای yAxis.update
         // این باعث می‌شود که لیبل‌های Y دقیقاً از داده‌های پروفیل خوانده شوند
-        // محور Y باید با ارتفاع dynamicHeight update بشه (مثل canvas اصلی)
-        if (this.yAxis && typeof this.yAxis.update === 'function') {
-            // ابتدا resize کن تا ارتفاع درست شود
-            if (typeof this.yAxis.resize === 'function') {
-                this.yAxis.resize(50, this.dynamicHeight);
-            }
-            // سپس update کن تا لیبل‌ها با ارتفاع جدید رسم شوند
-            this.yAxis.update(yLabels, finalYMin, finalYMax);
-            // اطمینان از اینکه محور Y canvas درست تنظیم شده
-            const yAxisCanvas = document.getElementById('yAxisCanvas');
-            if (yAxisCanvas) {
-                // محور Y باید با ارتفاع dynamicHeight باشه (مثل canvas اصلی)
-                yAxisCanvas.style.height = this.dynamicHeight + 'px';
-                yAxisCanvas.style.minHeight = this.dynamicHeight + 'px';
-                yAxisCanvas.style.maxHeight = this.dynamicHeight + 'px';
-                yAxisCanvas.style.display = 'block';
-                yAxisCanvas.style.visibility = 'visible';
-                yAxisCanvas.style.opacity = '1';
-            }
-        }
+        this.yAxis.update(yLabels, finalYMin, finalYMax);
 
         const yMain0 = this.transformY(0);
         const debugAxisZero = (typeof this.yAxis.getYPosition === 'function') ? this.yAxis.getYPosition(0) : null;
@@ -823,7 +759,7 @@ export class ProjectDashboard {
         if (!profileData.land_points || profileData.land_points.length === 0) return;
         const points = profileData.land_points.map(point => ({
             x: this.transformX(point.x),
-            y: this.transformY(-point.y), // معکوس کردن برای نمایش صحیح: مقادیر مثبت بالا و منفی پایین
+            y: this.transformY(point.y),
             realX: point.x,
             realY: point.y
         }));
@@ -955,26 +891,18 @@ export class ProjectDashboard {
             return layout;
         }
 
-        // اطمینان از محاسبه مقیاس‌ها قبل از استفاده
-        if (!this._scalesCalculated) {
-            this.calculateScales();
-        }
+                const canvasHeight = this.height - this.margin * 2 - 30;
+        const maxLayerThicknessPx = canvasHeight * 0.14;
+        const minLayerThicknessPx = 1.2;
 
-        // محاسبه ضخامت لایه‌ها بر اساس ارتفاع واقعی (سانتیمتر به متر)
-        // و تبدیل با transformY برای حفظ دقت با زوم Y
-        const desiredThicknessMeters = sortedLayers.map(layer => (layer.thickness_cm || 0) / 100);
-        
-        // برای محدودیت حداکثر ضخامت نمایشی در پیکسل
-        const canvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
-        const maxLayerThicknessMeters = (canvasHeight * 0.14) / (this.yScale || 1);
-        
-        // محاسبه ضخامت به متر (محدود شده)
-        const limitedThicknessMeters = desiredThicknessMeters.map(thickness => 
-            Math.min(thickness, maxLayerThicknessMeters)
+        const desiredThicknessPx = sortedLayers.map(layer =>
+            Math.max(
+                Math.min((layer.thickness_cm || 0) * (this.yScale || 0) / 100, maxLayerThicknessPx),
+                minLayerThicknessPx
+            )
         );
 
-        // محاسبه ارتفاع تجمعی لایه‌ها به متر (برای fallback)
-        const cumulativeThicknessMeters = limitedThicknessMeters.reduce((acc, val) => acc + val, 0);
+        const cumulativeDesiredPx = desiredThicknessPx.reduce((acc, val) => acc + val, 0);
 
         const boundaries = Array.from({ length: sortedLayers.length + 1 }, () => []);
         const centers = Array.from({ length: sortedLayers.length }, () => []);
@@ -987,73 +915,43 @@ export class ProjectDashboard {
             const point = roadPoints[i];
             const km = point.x;
             const x = this.transformX(km);
-            // لایه‌ها باید از خط زمین (0) شروع شوند، مثل ابرها
-            const groundLineY = this.transformY(0);
+            const roadY = this.transformY(point.y);
             const landElevation = this.getLandElevationAt(km);
-            // محاسبه fallback بر اساس ارتفاع واقعی (متر)
-            // با transformY جدید، مقادیر مثبت پایین هستند
-            // پس fallback باید مثبت باشد تا زیر خط زمین نمایش داده شود
-            const fallbackElevationM = cumulativeThicknessMeters + 0.4; // 40 سانتیمتر اضافی
-            const fallbackLandY = this.transformY(fallbackElevationM);
-            // با transformY جدید: مقادیر مثبت پایین هستند
-            // landElevation برای محاسبه محدودیت لایه‌های متغیر استفاده می‌شود
+            const fallbackLandY = roadY + cumulativeDesiredPx + 40;
             const landY = Number.isFinite(landElevation)
-                ? this.transformY(landElevation)
+                ? Math.max(this.transformY(landElevation), roadY)
                 : fallbackLandY;
 
-            // لایه‌ها از خط زمین (0) شروع می‌شوند
-            boundaries[0].push({ x, y: groundLineY, km, valid: true, index: i });
+            boundaries[0].push({ x, y: roadY, km, valid: true, index: i });
 
             // برای لایه‌های ثابت، از لایه قبلی استفاده می‌کنیم تا صاف باشند
-            // استفاده از ارتفاع واقعی به متر برای دقت بیشتر
-            // لایه‌ها باید از خط زمین (Y=0) به پایین رسم شوند، مثل ابرها
-            // با transformY جدید: مقادیر مثبت پایین و منفی بالا هستند
-            // پس لایه‌ها باید در مقادیر مثبت باشند (مثلاً +0.1, +0.2, +0.3 متر)
-            let currentTopElevation = 0; // ارتفاع واقعی خط زمین (متر) - شروع از خط زمین
+            let currentTopY = roadY;
 
             for (let l = 0; l < sortedLayers.length; l++) {
                 const layer = sortedLayers[l];
-                const desiredThicknessM = limitedThicknessMeters[l];
+                const desiredPx = desiredThicknessPx[l];
                 const isFixed = layer.state === 1;
 
-                let actualThicknessM;
+                let effectivePx;
+                let actualThickness;
 
                 if (isFixed) {
-                    // لایه ثابت: همیشه ضخامت ثابت داشته باشد بر اساس ارتفاع واقعی
-                    actualThicknessM = desiredThicknessM;
+                    // لایه ثابت: همیشه ضخامت ثابت داشته باشد، بر اساس لایه قبلی محاسبه شود
+                    effectivePx = desiredPx;
+                    actualThickness = desiredPx;
                 } else {
                     // لایه متغیر: محدود به فضای باقی‌مانده تا خط زمین
-                    // توجه: با transformY جدید، مقادیر مثبت پایین هستند
-                    // لایه‌ها زیر جاده هستند، پس باید در مقادیر مثبت باشند
-                    // landElevation می‌تواند مثبت (زیر جاده) یا منفی (بالای جاده) باشد
-                    const landElevationReal = landElevation !== null && Number.isFinite(landElevation) ? landElevation : (currentTopElevation + cumulativeThicknessMeters);
-                    // برای لایه‌های زیر جاده، remainingMeters باید فاصله تا خط زمین باشد
-                    // اگر landElevationReal مثبت است (زیر جاده)، remainingMeters = landElevationReal - currentTopElevation
-                    // اگر landElevationReal منفی است (بالای جاده)، لایه‌ها نمی‌توانند ادامه پیدا کنند
-                    const remainingMeters = landElevationReal > currentTopElevation ? Math.max(landElevationReal - currentTopElevation, 0) : 0;
-                    actualThicknessM = Math.min(desiredThicknessM, remainingMeters);
-                    // اگر ضخامت خیلی کم است، صفر کنیم
-                    if (actualThicknessM < 0.006) { // کمتر از 0.6 سانتیمتر
-                        actualThicknessM = 0;
-                    }
+                    const remaining = Math.max(landY - currentTopY, 0);
+                    effectivePx = Math.min(desiredPx, remaining);
+                    actualThickness = effectivePx > 0.6 ? effectivePx : 0;
                 }
 
-                if (!Number.isFinite(actualThicknessM) || actualThicknessM < 0) {
-                    actualThicknessM = 0;
+                if (!Number.isFinite(actualThickness) || actualThickness < 0) {
+                    actualThickness = 0;
                 }
 
-                // محاسبه ارتفاع پایین لایه به متر - باید به پایین برود (مثبت)
-                // لایه‌ها باید زیر خط جاده باشند، پس از 0 به مثبت می‌رویم
-                // با transformY جدید، مقادیر مثبت پایین نمایش داده می‌شوند
-                const bottomElevationM = currentTopElevation + actualThicknessM;
-                
-                // تبدیل به پیکسل با transformY
-                // توجه: transformY مقادیر مثبت را بالا و منفی را پایین نمایش می‌دهد
-                const currentTopY = this.transformY(currentTopElevation);
-                const bottomY = this.transformY(bottomElevationM);
-                const actualThicknessPx = Math.abs(bottomY - currentTopY);
-                
-                const hasThickness = isFixed ? desiredThicknessM > 0 : actualThicknessM > 0.006;
+                const bottomY = currentTopY + actualThickness;
+                const hasThickness = isFixed ? desiredPx > 0 : actualThickness > 0.6;
 
                 const bottomPoint = {
                     x,
@@ -1064,28 +962,23 @@ export class ProjectDashboard {
                 };
                 boundaries[l + 1].push(bottomPoint);
 
-                // محاسبه مرکز لایه - باید بین top و bottom باشد
-                // چون لایه‌ها به پایین می‌روند، bottomY > currentTopY است
                 const centerPoint = {
                     x,
-                    y: (currentTopY + bottomY) / 2, // مرکز لایه بین top و bottom
+                    y: currentTopY + actualThickness / 2,
                     km,
                     valid: hasThickness,
                     index: i
                 };
                 centers[l].push(centerPoint);
 
-                // برای لایه بعدی، از bottomElevationM استفاده می‌کنیم (لایه قبلی)
-                // این باید مثبت‌تر شود (پایین‌تر در نمایش)
-                currentTopElevation = bottomElevationM;
+                // برای لایه بعدی، از bottomY استفاده می‌کنیم (لایه قبلی)
+                currentTopY = bottomY;
 
-                if (actualThicknessPx > 0) {
-                    thicknessAccumulator[l] += actualThicknessPx;
+                if (actualThickness > 0) {
+                    thicknessAccumulator[l] += actualThickness;
                     thicknessSamples[l] += 1;
                 } else if (isFixed) {
-                    // حتی اگر پیکسل صفر بود، ضخامت واقعی را ثبت کنیم
-                    const fixedThicknessPx = Math.abs(this.transformY(desiredThicknessM) - this.transformY(0));
-                    thicknessAccumulator[l] += fixedThicknessPx;
+                    thicknessAccumulator[l] += desiredPx;
                     thicknessSamples[l] += 1;
                 }
             }
@@ -1095,9 +988,7 @@ export class ProjectDashboard {
             if (thicknessSamples[idx] > 0) {
                 return thicknessAccumulator[idx] / thicknessSamples[idx];
             }
-            // اگر نمونه‌ای نبود، از ضخامت محدود شده به متر استفاده و به پیکسل تبدیل کن
-            const thicknessM = limitedThicknessMeters[idx];
-            return Math.abs(this.transformY(thicknessM) - this.transformY(0));
+            return desiredThicknessPx[idx];
         });
 
         this.layerIndexMap = new Map(sortedLayers.map((layer, index) => [layer.id, index]));
@@ -1381,9 +1272,14 @@ export class ProjectDashboard {
                         }
                     }
                 }
-                // دایره‌های آبی باید روی خط زمین (0) قرار بگیرند، زیر خط جاده
-                // استفاده از ارتفاع واقعی 0 (خط زمین) که با transformY تبدیل می‌شود
-                y = this.transformY(0);
+                // اگر پیدا نشد، از ارتفاع جاده در نزدیک‌ترین نقطه استفاده کن
+                if (y === null) {
+                    // استفاده از ارتفاع واقعی 0 (خط جاده) که با transformY تبدیل می‌شود
+                    y = this.transformY(0);
+                }
+                // آبرو کمی بالاتر از جاده نمایش داده شود
+                const offsetAboveRoad = 25;
+                y = y - offsetAboveRoad;
                 this.drawStructureSymbol(structure, x, y);
             }
         });
@@ -1810,25 +1706,15 @@ export class ProjectDashboard {
                 yMax: this.yMax,
                 yMin: this.yMin
             });
-            const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
-            return this.margin + canvasHeight / 2;
+            return this.margin + (this.dynamicHeight || this.height) / 2;
         }
         const yRange = this.yMax - this.yMin;
         if (yRange <= 0) {
-            const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
-            return this.margin + canvasHeight / 2;
+            return this.margin + (this.dynamicHeight || this.height) / 2;
         }
-        // استفاده از dynamicHeight برای محاسبه موقعیت Y
-        // این باعث می‌شود که وقتی زوم می‌کنیم، موقعیت‌ها درست محاسبه شوند
-        const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
-        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
-        // محاسبه موقعیت بر اساس yScale و dynamicHeight
-        // معکوس کردن: مقادیر مثبت پایین (خاکریزی) و مقادیر منفی بالا (خاکبرداری)
-        const yFromMin = y - this.yMin;
-        const pixelY = yFromMin * this.yScale;
-        // تغییر: استفاده از pixelY مستقیم به جای mainCanvasHeight - pixelY
-        // این باعث می‌شود مقادیر مثبت پایین و مقادیر منفی بالا نمایش داده شوند
-        const rawY = this.margin + pixelY;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
+        const normalizedY = (y - this.yMin) / yRange;
+        const rawY = this.margin + mainCanvasHeight - (normalizedY * mainCanvasHeight);
         return rawY;
     }
 
@@ -1841,15 +1727,11 @@ export class ProjectDashboard {
             });
             return 0;
         }
-        // استفاده از dynamicHeight برای محاسبه معکوس موقعیت Y
-        const canvasHeight = this.dynamicHeight || this.baseHeight || this.height;
-        const mainCanvasHeight = canvasHeight - this.margin * 2 - 30;
+        const mainCanvasHeight = (this.dynamicHeight || this.height) - this.margin * 2 - 30;
         const clampedPixelY = Math.min(Math.max(pixelY, this.margin), this.margin + mainCanvasHeight);
         const distanceFromTop = clampedPixelY - this.margin;
-        // تغییر: استفاده مستقیم از distanceFromTop به جای محاسبه از پایین
-        // این با تغییر transformY هماهنگ است (مقادیر مثبت پایین، منفی بالا)
-        const yFromMin = distanceFromTop / this.yScale;
-        const value = this.yMin + yFromMin;
+        const normalized = distanceFromTop / mainCanvasHeight;
+        const value = this.yMax - normalized * (this.yMax - this.yMin);
         return value;
     }
 
@@ -2160,11 +2042,9 @@ export class ProjectDashboard {
             this.baseDrawingWidth = this.drawingWidth || (this.dynamicWidth - this.margin * 2);
         }
         const minZoom = 1.0;
-        const maxZoomX = 500.0; // حد زوم برای X
-        // محدود کردن زوم Y به یک مقدار معقول (حداکثر 10) تا محور Y از کادر خارج نشه
-        const maxZoomY = 10.0; // حد زوم برای Y - محدود برای امنیت
-        this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoomX);
-        this.zoomLevelY = Math.min(Math.max(this.zoomLevelY, minZoom), maxZoomY); // اعمال محدودیت امن به زوم Y
+        const maxZoom = 500.0; // افزایش حد زوم به 500
+        this.zoomLevel = Math.min(Math.max(this.zoomLevel, minZoom), maxZoom);
+        this.zoomLevelY = Math.min(Math.max(this.zoomLevelY, minZoom), maxZoom); // اعمال محدودیت به زوم Y
         this.drawingWidth = this.baseDrawingWidth * this.zoomLevel;
         this.updateZoomLayout();
         this._scalesCalculated = false;
@@ -2174,8 +2054,7 @@ export class ProjectDashboard {
     // متدهای زوم
     zoomIn() {
         // افزایش سطح زوم برای محور Y
-        const maxZoomY = 10.0; // حداکثر 10 برابر برای Y (محدوده امن)
-        const nextZoomY = Math.min(this.zoomLevelY * 1.2, maxZoomY);
+        const nextZoomY = Math.min(this.zoomLevelY * 1.2, 500.0); // حداکثر 500 برابر برای Y
         if (Math.abs(nextZoomY - this.zoomLevelY) < 1e-6) {
             return;
         }
@@ -2280,21 +2159,15 @@ export class ProjectDashboard {
             const roadB = profileData.road_points[i + 1];
             const x1 = this.transformX(landA.x);
             const x2 = this.transformX(landB.x);
-            // معکوس کردن برای خط زمین: مقادیر مثبت بالا و منفی پایین
-            const yLand1 = this.transformY(-landA.y);
-            const yLand2 = this.transformY(-landB.y);
+            const yLand1 = this.transformY(landA.y);
+            const yLand2 = this.transformY(landB.y);
             // خط جاده باید روی صفر باشد، نه roadA.y
             const yRoad1 = this.transformY(0);
             const yRoad2 = this.transformY(0);
 
             // تعیین نوع (خاکبرداری یا خاکریزی)
-            // با transformY معکوس شده: مقادیر مثبت بالا و منفی پایین هستند
-            // land.y مثبت = زمین پایین‌تر از جاده = خاکریزی (embankment) = باید بالا نمایش داده شود (yLand < yRoad)
-            // land.y منفی = زمین بالاتر از جاده = خاکبرداری (excavation) = باید پایین نمایش داده شود (yLand > yRoad)
-            // در canvas با معکوس: مقادیر مثبت → pixel Y کوچکتر (بالا) → yLand < yRoad
-            //                      مقادیر منفی → pixel Y بزرگتر (پایین) → yLand > yRoad
-            const isEmbankment = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین پایین‌تر از جاده (مقادیر مثبت) = خاکریزی = بالا
-            const isExcavation = yLand1 > yRoad1 && yLand2 > yRoad2; // زمین بالاتر از جاده (مقادیر منفی) = خاکبرداری = پایین
+            const isExcavation = yLand1 < yRoad1 && yLand2 < yRoad2; // زمین بالاتر از جاده
+            const isEmbankment = yLand1 > yRoad1 && yLand2 > yRoad2; // جاده بالاتر از زمین
 
             ctx.save();
             ctx.beginPath();
@@ -2319,10 +2192,7 @@ export class ProjectDashboard {
                 ctx.restore();
                 continue;
             }
-            // جابجا کردن رنگ‌ها: بالا قرمز (خاکبرداری)، پایین آبی (خاکریزی)
-            // isEmbankment = بالا (yLand < yRoad) → قرمز
-            // isExcavation = پایین (yLand > yRoad) → آبی
-            let baseFill = isEmbankment ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
+            let baseFill = isExcavation ? 'rgba(220, 53, 69, 0.25)' : 'rgba(13, 110, 253, 0.22)';
             const minX = Math.min(x1, x2);
             const maxX = Math.max(x1, x2);
             const minY = Math.min(yLand1, yRoad1, yLand2, yRoad2);
