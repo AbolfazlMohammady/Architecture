@@ -44,11 +44,11 @@ class ExperimentRequestAdmin(MyModelAdminMixin):
 
     def get_experiment_types(self, obj):
         return ", ".join([et.name for et in obj.experiment_type.all()])
-    get_experiment_types.short_description = 'آزمایشات'
+    get_experiment_types.short_description = 'انواع آزمایشات'
 
     def get_experiment_subtypes(self, obj):
         return ", ".join([st.name for st in obj.experiment_subtype.all()])
-    get_experiment_subtypes.short_description = 'زیرنوع‌های آزمایش'
+    get_experiment_subtypes.short_description = 'آزمایشات'
 
 @admin.register(ExperimentRequestApproval)
 class ExperimentRequestApprovalAdmin(MyModelAdminMixin):

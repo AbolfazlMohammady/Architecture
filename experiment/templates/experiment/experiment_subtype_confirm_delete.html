@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}حذف نوع آزمایش{% endblock %}
+{% block title %}حذف آزمایش{% endblock %}
 
 {% block main %}
 <div class="container-fluid">
@@ -9,18 +9,19 @@
         <div class="col-12 col-md-8 col-lg-6">
             <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                 <div class="card-header bg-danger text-white">
-                    <h3 class="card-title mb-0">حذف نوع آزمایش</h3>
+                    <h3 class="card-title mb-0">حذف آزمایش</h3>
                 </div>
                 <div class="card-body">
-                    <p>آیا از حذف نوع آزمایش <b>"{{ object.name }}"</b> اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
+                    <p>آیا از حذف آزمایش <b>"{{ experiment_subtype.name }}"</b> اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
                     <form method="post">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">بله، حذف شود</button>
-                        <a href="{% url 'experiment:experiment_type_list' %}" class="btn btn-secondary">خیر، بازگشت</a>
+                        <a href="{% url 'experiment:experiment_subtype_list' %}" class="btn btn-secondary">خیر، بازگشت</a>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+

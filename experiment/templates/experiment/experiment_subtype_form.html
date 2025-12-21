@@ -4,9 +4,9 @@
 
 {% block title %}
     {% if form.instance.pk %}
-        ویرایش نوع آزمایش
+        ویرایش آزمایش
     {% else %}
-        افزودن نوع آزمایش جدید
+        افزودن آزمایش جدید
     {% endif %}
 {% endblock %}
 
@@ -18,9 +18,9 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         {% if form.instance.pk %}
-                            ویرایش نوع آزمایش
+                            ویرایش آزمایش
                         {% else %}
-                            افزودن نوع آزمایش جدید
+                            افزودن آزمایش جدید
                         {% endif %}
                     </h3>
                 </div>
@@ -28,8 +28,18 @@
                     <form method="post">
                         {% csrf_token %}
                         
-                        <div class="form-group">
-                            <label for="{{ form.name.id_for_label }}">نام</label>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.experiment_type.id_for_label }}">نوع آزمایش</label>
+                            {% render_field form.experiment_type class="form-control" %}
+                            {% if form.experiment_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.experiment_type.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}">نام آزمایش</label>
                             {% render_field form.name class="form-control" %}
                             {% if form.name.errors %}
                                 <div class="invalid-feedback d-block">
@@ -41,7 +51,7 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">ذخیره</button>
-                                <a href="{% url 'experiment:experiment_type_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
+                                <a href="{% url 'experiment:experiment_subtype_list' %}" class="btn btn-secondary">بازگشت به لیست</a>
                             </div>
                         </div>
                     </form>
@@ -50,4 +60,5 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+

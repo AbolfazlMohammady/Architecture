@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}لیست زیرگروه‌های آزمایش{% endblock %}
+{% block title %}لیست آزمایشات{% endblock %}
 
 {% block main %}
 <div class="container-fluid">
@@ -9,15 +9,15 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">لیست زیرگروه‌های آزمایش</h3>
+                    <h3 class="card-title">لیست آزمایشات</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>آزمایش</th>
-                                    <th>نام زیرگروه</th>
+                                    <th>نوع آزمایش</th>
+                                    <th>نام آزمایش</th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>
@@ -37,7 +37,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center">هیچ زیرگروهی ثبت نشده است.</td>
+                                    <td colspan="3" class="text-center">هیچ آزمایشی ثبت نشده است.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

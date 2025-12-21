@@ -12,19 +12,19 @@ class ExperimentType(models.Model):
         return self.name
     
     class Meta:
-        verbose_name = "آزمایش"
-        verbose_name_plural = "آزمایشات"
+        verbose_name = "نوع آزمایش"
+        verbose_name_plural = "انواع آزمایشات"
 
 class ExperimentSubType(models.Model):
-    name = models.CharField(max_length=100, verbose_name="نام زیرنوع")
-    experiment_type = models.ForeignKey(ExperimentType, on_delete=models.CASCADE, verbose_name="آزمایش")
+    name = models.CharField(max_length=100, verbose_name="نام آزمایش")
+    experiment_type = models.ForeignKey(ExperimentType, on_delete=models.CASCADE, verbose_name="نوع آزمایش")
     
     def __str__(self):
         return f"{self.experiment_type.name} - {self.name}"
     
     class Meta:
-        verbose_name = "زیرنوع آزمایش"
-        verbose_name_plural = "زیرنوع‌های آزمایش"
+        verbose_name = "آزمایش"
+        verbose_name_plural = "آزمایشات"
     
 class ConcretePlace(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="محل بتن‌ریزی")
@@ -52,8 +52,8 @@ class ExperimentRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="پروژه")
     layer = models.ForeignKey(ProjectLayer, on_delete=models.CASCADE, verbose_name="لایه")
-    experiment_type = models.ManyToManyField(ExperimentType, verbose_name="آزمایش")
-    experiment_subtype = models.ManyToManyField(ExperimentSubType, verbose_name="زیرنوع آزمایش", blank=True)
+    experiment_type = models.ManyToManyField(ExperimentType, verbose_name="نوع آزمایش")
+    experiment_subtype = models.ManyToManyField(ExperimentSubType, verbose_name="آزمایش", blank=True)
     concrete_place = models.ForeignKey(ConcretePlace, on_delete=models.CASCADE, verbose_name="محل بتن‌ریزی", null=True, blank=True)
     status = models.PositiveSmallIntegerField(choices=EXPERIMENT_STATUS, default=PENDING, verbose_name="وضعیت")
     request_file = models.FileField(upload_to='experiment_requests/', verbose_name="فایل درخواست")

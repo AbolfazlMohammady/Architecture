@@ -1143,18 +1143,18 @@ def experiment_type_delete(request, pk):
 
 @login_required
 def experiment_subtype_list(request):
-    """نمایش لیست زیرگروه‌های آزمایش"""
+    """نمایش لیست آزمایشات"""
     experiment_subtypes = models.ExperimentSubType.objects.all()
     return render(request, 'experiment/experiment_subtype_list.html', {'experiment_subtypes': experiment_subtypes})
 
 @login_required
 def experiment_subtype_create(request):
-    """ایجاد زیرگروه آزمایش جدید"""
+    """ایجاد آزمایش جدید"""
     if request.method == 'POST':
         form = forms.ExperimentSubTypeForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'زیرگروه آزمایش با موفقیت ایجاد شد.')
+            messages.success(request, 'آزمایش با موفقیت ایجاد شد.')
             return redirect('experiment:experiment_subtype_list')
     else:
         form = forms.ExperimentSubTypeForm()
@@ -1162,13 +1162,13 @@ def experiment_subtype_create(request):
 
 @login_required
 def experiment_subtype_update(request, pk):
-    """بروزرسانی زیرگروه آزمایش"""
+    """بروزرسانی آزمایش"""
     experiment_subtype = get_object_or_404(models.ExperimentSubType, pk=pk)
     if request.method == 'POST':
         form = forms.ExperimentSubTypeForm(request.POST, instance=experiment_subtype)
         if form.is_valid():
             form.save()
-            messages.success(request, 'زیرگروه آزمایش با موفقیت بروزرسانی شد.')
+            messages.success(request, 'آزمایش با موفقیت بروزرسانی شد.')
             return redirect('experiment:experiment_subtype_list')
     else:
         form = forms.ExperimentSubTypeForm(instance=experiment_subtype)
@@ -1176,11 +1176,11 @@ def experiment_subtype_update(request, pk):
 
 @login_required
 def experiment_subtype_delete(request, pk):
-    """حذف زیرگروه آزمایش"""
+    """حذف آزمایش"""
     experiment_subtype = get_object_or_404(models.ExperimentSubType, pk=pk)
     if request.method == 'POST':
         experiment_subtype.delete()
-        messages.success(request, 'زیرگروه آزمایش با موفقیت حذف شد.')
+        messages.success(request, 'آزمایش با موفقیت حذف شد.')
         return redirect('experiment:experiment_subtype_list')
     return render(request, 'experiment/experiment_subtype_confirm_delete.html', {'experiment_subtype': experiment_subtype})
 

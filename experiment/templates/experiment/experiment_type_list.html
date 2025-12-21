@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}آزمایشات{% endblock %}
+{% block title %}انواع آزمایشات{% endblock %}
 
 {% block main %}
 <div class="container-fluid py-4">
@@ -11,7 +11,7 @@
         </button>
         <div class="page-toolbar-actions">
             <a href="{% url 'experiment:experiment_type_create' %}" class="btn btn-primary rounded-pill px-4">
-                <i class="fas fa-plus"></i> افزودن نوع جدید
+                                            <i class="fas fa-plus"></i> افزودن نوع آزمایش جدید
             </a>
         </div>
     </div>
@@ -19,7 +19,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header text-center">
-                    <h3 class="card-title mb-0">لیست آزمایشات</h3>
+                    <h3 class="card-title mb-0">لیست انواع آزمایشات</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -27,7 +27,7 @@
                             <thead>
                                 <tr>
                                     <th>نام</th>
-                                    <th>زیرنوع‌ها</th>
+                                    <th>آزمایشات</th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>
@@ -44,14 +44,14 @@
                                         <a href="{% url 'experiment:experiment_type_update' type.id %}" class="btn btn-warning btn-sm">
                                             <i class="fas fa-edit"></i> ویرایش
                                         </a>
-                                        <a href="{% url 'experiment:experiment_type_delete' type.id %}" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این آزمایش اطمینان دارید؟')">
+                                        <a href="{% url 'experiment:experiment_type_delete' type.id %}" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این نوع آزمایش اطمینان دارید؟')">
                                             <i class="fas fa-trash"></i> حذف
                                         </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center">هیچ آزمایشی ثبت نشده است.</td>
+                                    <td colspan="3" class="text-center">هیچ نوع آزمایشی ثبت نشده است.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

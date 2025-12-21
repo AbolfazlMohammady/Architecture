@@ -39,7 +39,7 @@
                                     <td>{% if experiment_request.layer %}{{ experiment_request.layer.layer_type.name }} ({{ experiment_request.layer.thickness_cm }} سانتی‌متر، ترتیب: {{ experiment_request.layer.order_from_top }}){% else %}-{% endif %}</td>
                                 </tr>
                                 <tr>
-                                    <th>آزمایش</th>
+                                    <th>نوع آزمایش</th>
                                     <td>
                                         {% for t in experiment_request.experiment_type.all %}
                                             <span class="badge bg-primary">{{ t.name }}</span>{% if not forloop.last %}، {% endif %}
@@ -47,7 +47,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>زیرگروه آزمایش</th>
+                                    <th>آزمایش</th>
                                     <td>
                                         {% for st in experiment_request.experiment_subtype.all %}
                                             <span class="badge bg-info">{{ st.name }}</span>{% if not forloop.last %}، {% endif %}
