@@ -119,23 +119,41 @@ class HomeView(LoginRequiredMixin,generic.ListView):
         from experiment.models import PaymentCoefficient
         from project.models import Project
         
+        def get_user_accessible_projects(user):
+            """دریافت لیست پروژه‌های قابل دسترسی کاربر"""
+            if user.is_superuser:
+                # برای superuser همه پروژه‌ها
+                return Project.objects.all()
+            else:
+                # برای سایر کاربران، فقط پروژه‌های قابل دسترسی
+                projects = set()
+                projects.update(user.managed_projects.all())
+                projects.update(user.technical_projects.all())
+                projects.update(user.qc_projects.all())
+                projects.update(user.project_experts.all())
+                projects.update(user.accessible_projects.all())
+                return list(projects)
+        
         def calculate_weighted_average(layer_type):
             """
             محاسبه میانگین وزنی برای یک لایه
             فرمول: (مجموع (contract_amount × coefficient)) / مجموع contract_amount
             """
-            # فقط پروژه‌های اصلی (بدون parent) را در نظر می‌گیریم
-            main_projects = Project.objects.filter(parent_project__isnull=True, contract_amount__isnull=False)
+            # دریافت پروژه‌های قابل دسترسی کاربر
+            user_projects = get_user_accessible_projects(self.request.user)
+            
+            # فقط پروژه‌های اصلی (بدون parent) با مبلغ قرارداد را در نظر می‌گیریم
+            main_projects = [p for p in user_projects if p.parent_project is None and p.contract_amount is not None]
             
             total_weighted_sum = 0
             total_contract_amount = 0
             
             for project in main_projects:
-                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه
+                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه بر اساس تاریخ محاسبه
                 latest_coefficient = PaymentCoefficient.objects.filter(
                     project=project,
                     layer=layer_type
-                ).order_by('-created_at').first()
+                ).order_by('-calculation_date').first()
                 
                 if latest_coefficient and project.contract_amount:
                     contract_amount = float(project.contract_amount)

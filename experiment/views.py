@@ -921,24 +921,42 @@ def dashboard_charts(request):
     try:
         from project.models import Project
         
+        def get_user_accessible_projects(user):
+            """دریافت لیست پروژه‌های قابل دسترسی کاربر"""
+            if user.is_superuser:
+                # برای superuser همه پروژه‌ها
+                return Project.objects.all()
+            else:
+                # برای سایر کاربران، فقط پروژه‌های قابل دسترسی
+                projects = set()
+                projects.update(user.managed_projects.all())
+                projects.update(user.technical_projects.all())
+                projects.update(user.qc_projects.all())
+                projects.update(user.project_experts.all())
+                projects.update(user.accessible_projects.all())
+                return list(projects)
+        
         # تابع محاسبه میانگین وزنی برای یک لایه
         def calculate_weighted_average(layer_type):
             """
             محاسبه میانگین وزنی برای یک لایه
             فرمول: (مجموع (contract_amount × coefficient)) / مجموع contract_amount
             """
-            # فقط پروژه‌های اصلی (بدون parent) را در نظر می‌گیریم
-            main_projects = Project.objects.filter(parent_project__isnull=True, contract_amount__isnull=False)
+            # دریافت پروژه‌های قابل دسترسی کاربر
+            user_projects = get_user_accessible_projects(request.user)
+            
+            # فقط پروژه‌های اصلی (بدون parent) با مبلغ قرارداد را در نظر می‌گیریم
+            main_projects = [p for p in user_projects if p.parent_project is None and p.contract_amount is not None]
             
             total_weighted_sum = 0
             total_contract_amount = 0
             
             for project in main_projects:
-                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه
+                # دریافت آخرین ضریب پرداخت برای این پروژه و این لایه بر اساس تاریخ محاسبه
                 latest_coefficient = models.PaymentCoefficient.objects.filter(
                     project=project,
                     layer=layer_type
-                ).order_by('-created_at').first()
+                ).order_by('-calculation_date').first()
                 
                 if latest_coefficient and project.contract_amount:
                     contract_amount = float(project.contract_amount)
@@ -960,8 +978,10 @@ def dashboard_charts(request):
         subbase_avg = calculate_weighted_average('SUBBASE')
         embankment_avg = calculate_weighted_average('EMBANKMENT')
         
-        # داده‌های نمودار توزیع
-        coefficients = models.PaymentCoefficient.objects.all()
+        # داده‌های نمودار توزیع (فقط ضرایب پرداخت پروژه‌های قابل دسترسی کاربر)
+        user_projects = get_user_accessible_projects(request.user)
+        user_project_ids = [p.id for p in user_projects]
+        coefficients = models.PaymentCoefficient.objects.filter(project_id__in=user_project_ids)
         distribution_labels = ['0.0-0.2', '0.2-0.4', '0.4-0.6', '0.6-0.8', '0.8-1.0', '1.0-1.2']
         distribution_data = []
         for i in range(6):
@@ -970,11 +990,12 @@ def dashboard_charts(request):
             count = coefficients.filter(coefficient__gte=start, coefficient__lt=end).count()
             distribution_data.append(count)
         
-        # داده‌های نمودار پروژه‌ها برای هر لایه
-        projects = Project.objects.filter(parent_project__isnull=True).order_by('name')
+        # داده‌های نمودار پروژه‌ها برای هر لایه (فقط پروژه‌های قابل دسترسی)
+        user_projects_main = [p for p in user_projects if p.parent_project is None]
+        projects = sorted(user_projects_main, key=lambda x: x.name)
         project_labels = [project.name for project in projects]
         
-        # محاسبه آخرین ضریب پرداخت برای هر پروژه و هر لایه
+        # محاسبه آخرین ضریب پرداخت برای هر پروژه و هر لایه بر اساس تاریخ محاسبه
         project_data_by_layer = {
             'ASPHALT': [],
             'BASE': [],
@@ -983,23 +1004,23 @@ def dashboard_charts(request):
         }
         
         for project in projects:
-            # آسفالت گرم - آخرین ضریب پرداخت
-            latest_asphalt = project.paymentcoefficient_set.filter(layer='ASPHALT').order_by('-created_at').first()
+            # آسفالت گرم - آخرین ضریب پرداخت بر اساس تاریخ محاسبه
+            latest_asphalt = project.paymentcoefficient_set.filter(layer='ASPHALT').order_by('-calculation_date').first()
             asphalt_coeff = float(latest_asphalt.coefficient) if latest_asphalt else 0
             project_data_by_layer['ASPHALT'].append(round(asphalt_coeff, 2))
             
-            # اساس - آخرین ضریب پرداخت
-            latest_base = project.paymentcoefficient_set.filter(layer='BASE').order_by('-created_at').first()
+            # اساس - آخرین ضریب پرداخت بر اساس تاریخ محاسبه
+            latest_base = project.paymentcoefficient_set.filter(layer='BASE').order_by('-calculation_date').first()
             base_coeff = float(latest_base.coefficient) if latest_base else 0
             project_data_by_layer['BASE'].append(round(base_coeff, 2))
             
-            # زیراساس - آخرین ضریب پرداخت
-            latest_subbase = project.paymentcoefficient_set.filter(layer='SUBBASE').order_by('-created_at').first()
+            # زیراساس - آخرین ضریب پرداخت بر اساس تاریخ محاسبه
+            latest_subbase = project.paymentcoefficient_set.filter(layer='SUBBASE').order_by('-calculation_date').first()
             subbase_coeff = float(latest_subbase.coefficient) if latest_subbase else 0
             project_data_by_layer['SUBBASE'].append(round(subbase_coeff, 2))
             
-            # خاکریزی - آخرین ضریب پرداخت
-            latest_embankment = project.paymentcoefficient_set.filter(layer='EMBANKMENT').order_by('-created_at').first()
+            # خاکریزی - آخرین ضریب پرداخت بر اساس تاریخ محاسبه
+            latest_embankment = project.paymentcoefficient_set.filter(layer='EMBANKMENT').order_by('-calculation_date').first()
             embankment_coeff = float(latest_embankment.coefficient) if latest_embankment else 0
             project_data_by_layer['EMBANKMENT'].append(round(embankment_coeff, 2))
         
