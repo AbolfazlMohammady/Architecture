@@ -51,27 +51,39 @@
     </div>
   </section>
 
-  <!-- فیلتر زمانی -->
+  <!-- فیلتر زمانی و پروژه -->
   <section class="time-filter mb-4">
     <div class="card shadow-sm border-0 rounded-3">
       <div class="card-body py-2">
         <form method="get" id="filter-form" class="d-flex align-items-center gap-3 flex-wrap">
-          <label class="mb-0 fw-semibold">فیلتر زمانی:</label>
-          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;">
-            <option value="">انتخاب کنید...</option>
-            <option value="7" {% if filter_type == 'days' and days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
-            <option value="30" {% if filter_type == 'days' and days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
-            <option value="90" {% if filter_type == 'days' and days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
-            <option value="180" {% if filter_type == 'days' and days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
-            <option value="365" {% if filter_type == 'days' and days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
-          </select>
-          <span class="mx-2">یا</span>
-          <label class="mb-0 fw-semibold">از تاریخ:</label>
-          <input type="text" name="date_from" id="date-from" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/01/01" value="{% if filter_type == 'calendar' %}{{ date_from }}{% endif %}">
-          <label class="mb-0 fw-semibold">تا تاریخ:</label>
-          <input type="text" name="date_to" id="date-to" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/12/29" value="{% if filter_type == 'calendar' %}{{ date_to }}{% endif %}">
+          <div class="d-flex align-items-center gap-2">
+            <label class="mb-0 fw-semibold">فیلتر پروژه:</label>
+            <select name="project" id="project-filter" class="form-select form-select-sm" style="width: 200px;">
+              <option value="">همه پروژه‌ها</option>
+              {% for project in all_projects %}
+              <option value="{{ project.id }}" {% if selected_project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="vr" style="height: 30px;"></div>
+          <div class="d-flex align-items-center gap-2">
+            <label class="mb-0 fw-semibold">فیلتر زمانی:</label>
+            <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;">
+              <option value="">انتخاب کنید...</option>
+              <option value="7" {% if filter_type == 'days' and days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
+              <option value="30" {% if filter_type == 'days' and days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
+              <option value="90" {% if filter_type == 'days' and days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
+              <option value="180" {% if filter_type == 'days' and days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
+              <option value="365" {% if filter_type == 'days' and days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
+            </select>
+            <span class="mx-2">یا</span>
+            <label class="mb-0 fw-semibold">از تاریخ:</label>
+            <input type="text" name="date_from" id="date-from" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/01/01" value="{% if filter_type == 'calendar' %}{{ date_from }}{% endif %}">
+            <label class="mb-0 fw-semibold">تا تاریخ:</label>
+            <input type="text" name="date_to" id="date-to" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/12/29" value="{% if filter_type == 'calendar' %}{{ date_to }}{% endif %}">
+          </div>
           <button type="submit" class="btn btn-sm btn-primary">اعمال فیلتر</button>
-          {% if filter_type %}
+          {% if filter_type or selected_project_id %}
           <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">پاک کردن</a>
           {% endif %}
         </form>
@@ -79,6 +91,22 @@
     </div>
   </section>
 
+  <!-- نمایش پروژه انتخاب شده -->
+  {% if selected_project_id %}
+  <div class="alert alert-primary mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <i class="bi bi-funnel-fill me-2"></i>
+      <strong>پروژه انتخاب شده:</strong> 
+      {% for project in all_projects %}
+        {% if project.id == selected_project_id %}{{ project.name }}{% endif %}
+      {% endfor %}
+    </div>
+    <a href="{% url 'dashboard' %}{% if filter_type == 'days' and days_filter %}?days={{ days_filter }}{% elif filter_type == 'calendar' and date_from and date_to %}?date_from={{ date_from }}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-x-circle me-1"></i>حذف فیلتر پروژه
+    </a>
+  </div>
+  {% endif %}
+  
   <!-- نمودارهای دایره‌ای به ازای هر پروژه -->
   <section class="charts-section mb-5">
     <div class="row g-4">
@@ -86,8 +114,15 @@
       {% for project_stat in projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
-          <div class="card-header bg-light">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات - {{ project_stat.project.name }}</h5>
+            <div class="d-flex gap-2 flex-wrap">
+              {% if filter_type == 'days' and days_filter %}
+              <span class="badge bg-info">زمان: {{ days_filter }} روز اخیر</span>
+              {% elif filter_type == 'calendar' and date_from and date_to %}
+              <span class="badge bg-info">زمان: از {{ date_from }} تا {{ date_to }}</span>
+              {% endif %}
+            </div>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -142,8 +177,8 @@
       </div>
       {% endfor %}
       
-      <!-- نمودارهای کلی (اگر پروژه‌ای وجود نداشت) -->
-      {% if not projects_stats %}
+      <!-- نمودارهای کلی (اگر پروژه‌ای انتخاب نشده باشد) -->
+      {% if not selected_project_id and not projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light">
@@ -206,8 +241,15 @@
       {% for project_stat in projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
-          <div class="card-header bg-light">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده - {{ project_stat.project.name }}</h5>
+            <div class="d-flex gap-2 flex-wrap">
+              {% if filter_type == 'days' and days_filter %}
+              <span class="badge bg-info">زمان: {{ days_filter }} روز اخیر</span>
+              {% elif filter_type == 'calendar' and date_from and date_to %}
+              <span class="badge bg-info">زمان: از {{ date_from }} تا {{ date_to }}</span>
+              {% endif %}
+            </div>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -244,8 +286,8 @@
       </div>
       {% endfor %}
       
-      <!-- نمودارهای حجم کلی (اگر پروژه‌ای وجود نداشت) -->
-      {% if not projects_stats %}
+      <!-- نمودارهای حجم کلی (اگر پروژه‌ای انتخاب نشده باشد) -->
+      {% if not selected_project_id and not projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light">
@@ -665,8 +707,8 @@ document.addEventListener('DOMContentLoaded', function() {
   })();
   {% endfor %}
   
-  // نمودارهای کلی (اگر پروژه‌ای وجود نداشت)
-  {% if not projects_stats %}
+  // نمودارهای کلی (اگر پروژه‌ای انتخاب نشده باشد)
+  {% if not selected_project_id and not projects_stats %}
   const totalExperiments = {{ total_experiments }};
   createDoughnutChart('experimentCompletedChart', {{ experiment_status_data.acceptable }}, totalExperiments, '#4CAF50', 'قابل قبول');
   createDoughnutChart('experimentRecompactChart', {{ experiment_status_data.recompact }}, totalExperiments, '#9C27B0', 'ری‌کامپکت'); // بنفش

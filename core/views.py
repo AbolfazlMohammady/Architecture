@@ -572,10 +572,11 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         ]
         
         # --- نمودارهای دایره‌ای برای داشبورد مدیریتی ---
-        # دریافت فیلتر زمانی از GET
+        # دریافت فیلتر زمانی و پروژه از GET
         days_filter = self.request.GET.get('days', None)
         date_from = self.request.GET.get('date_from', None)
         date_to = self.request.GET.get('date_to', None)
+        project_filter = self.request.GET.get('project', None)  # فیلتر پروژه
         
         # فیلتر بر اساس تاریخ آزمایش (request_date) نه تاریخ ثبت (created_at)
         all_experiments = ExperimentRequest.objects.all()
@@ -735,7 +736,22 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         # محاسبه آمار به ازای هر پروژه
         from project.models import Project
         projects_stats = []
-        all_projects = Project.objects.all()
+        
+        # فیلتر پروژه‌ها
+        if project_filter:
+            try:
+                project_id = int(project_filter)
+                all_projects = Project.objects.filter(id=project_id)
+                context['selected_project_id'] = project_id
+            except (ValueError, TypeError):
+                all_projects = Project.objects.all()
+                context['selected_project_id'] = None
+        else:
+            all_projects = Project.objects.all()
+            context['selected_project_id'] = None
+        
+        # لیست همه پروژه‌ها برای dropdown
+        context['all_projects'] = Project.objects.all().order_by('name')
         
         for project in all_projects:
             project_experiments = all_experiments.filter(project=project)
@@ -821,7 +837,9 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             
             project_volume_total = sum(project_volume_data.values())
             
-            if project_total > 0 or project_volume_total > 0:
+            # اگر پروژه انتخاب شده است، همیشه نمایش بده (حتی اگر داده‌ای نداشته باشد)
+            # در غیر این صورت فقط پروژه‌هایی که داده دارند را نمایش بده
+            if project_filter or project_total > 0 or project_volume_total > 0:
                 projects_stats.append({
                     'project': project,
                     'stats': project_status_data,
