@@ -235,15 +235,33 @@
                                         {{ field.errors|striptags }}
                                     </div>
                                 {% endif %}
-                </div>
-                {% endif %}
+                            </div>
+                        {% elif field.name == 'is_parent_only' %}
+                            <div class="col-md-4">
+                                <div class="form-check mt-4">
+                                    {% render_field field class="form-check-input" %}
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                                        {{ field.label }}
+                                    </label>
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block mt-1">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-circle me-1"></i>
+                                            {{ field.errors|striptags }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
         </div>
 
         <!-- اطلاعات فنی -->
-        <div class="col-12">
+        <div class="col-12" id="technical-info-section">
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-cogs me-2"></i>
@@ -279,7 +297,7 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-            {% endfor %}
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -350,6 +368,28 @@
                     locale: 'fa'
                 }
             }
+        });
+        
+        // کنترل نمایش/مخفی کردن بخش اطلاعات فنی بر اساس وضعیت پروژه اصلی
+        function toggleTechnicalInfo() {
+            const isParentOnly = $('#id_is_parent_only').is(':checked');
+            const technicalSection = $('#technical-info-section');
+            
+            if (isParentOnly) {
+                technicalSection.slideUp(300);
+                // غیرفعال کردن فیلدهای فنی (اختیاری)
+                $('#technical-info-section input, #technical-info-section select').prop('required', false);
+            } else {
+                technicalSection.slideDown(300);
+            }
+        }
+        
+        // اجرای تابع در بارگذاری صفحه
+        toggleTechnicalInfo();
+        
+        // اجرای تابع هنگام تغییر وضعیت checkbox
+        $('#id_is_parent_only').on('change', function() {
+            toggleTechnicalInfo();
         });
     });
 

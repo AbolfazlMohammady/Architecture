@@ -17,6 +17,11 @@ class Project(models.Model):
     start_date = jmodels.jDateField(verbose_name="تاریخ شروع",null=True,blank=True)
     end_date = jmodels.jDateField(verbose_name="تاریخ پایان",null=True,blank=True)
     contract_amount = models.DecimalField(max_digits=50, decimal_places=0, blank=True, null=True, verbose_name="رقم قرارداد")
+    is_parent_only = models.BooleanField(
+        default=False,
+        verbose_name="پروژه اصلی",
+        help_text="اگر این پروژه فقط یک پروژه اصلی است (بدون اطلاعات فنی)، این گزینه را فعال کنید"
+    )
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ به‌روزرسانی")
     
@@ -61,10 +66,10 @@ class Project(models.Model):
         help_text="کارشناسان پروژه را انتخاب کنید"
     )
     
-    masafat = models.DecimalField(verbose_name="مسافت (کیلومتر)", help_text="مسافت پروژه به کیلومتر",max_digits=20,decimal_places=3, null=True)
-    width = models.DecimalField(verbose_name="عرض (متر)", help_text="عرض پروژه به متر",max_digits=20,decimal_places=3)
-    start_kilometer = models.DecimalField(verbose_name="کیلومتر شروع", help_text="کیلومتر شروع پروژه",max_digits=20,decimal_places=3)
-    end_kilometer = models.DecimalField(verbose_name="کیلومتر پایان", help_text="کیلومتر پایان پروژه",max_digits=20,decimal_places=3)
+    masafat = models.DecimalField(verbose_name="مسافت (کیلومتر)", help_text="مسافت پروژه به کیلومتر",max_digits=20,decimal_places=3, null=True, blank=True)
+    width = models.DecimalField(verbose_name="عرض (متر)", help_text="عرض پروژه به متر",max_digits=20,decimal_places=3, null=True, blank=True)
+    start_kilometer = models.DecimalField(verbose_name="کیلومتر شروع", help_text="کیلومتر شروع پروژه",max_digits=20,decimal_places=3, null=True, blank=True)
+    end_kilometer = models.DecimalField(verbose_name="کیلومتر پایان", help_text="کیلومتر پایان پروژه",max_digits=20,decimal_places=3, null=True, blank=True)
     profile_file = models.FileField(verbose_name="پروفیل",
                                     upload_to='project_profiles/',
                                     null=True, blank=True,

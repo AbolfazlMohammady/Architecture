@@ -141,12 +141,28 @@ class CreateProjectView(generic.CreateView):
     # success_url = reverse_lazy("create-project-layer", kwargs={'pk': object.pk})
     
     def get_success_url(self):
+        # اگر پروژه اصلی است (is_parent_only=True)، به صفحه جزئیات پروژه هدایت می‌شود
+        # در غیر این صورت به صفحه ایجاد لایه هدایت می‌شود
+        if self.object.is_parent_only:
+            return reverse("project-detail", kwargs={'pk': self.object.pk})
         return reverse("create-project-layer", kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
         response = super().form_valid(form)
         project = self.object
         user = self.request.user
+        
+        # تنظیم is_parent_only
+        is_parent_only = form.cleaned_data.get('is_parent_only', False)
+        try:
+            project.is_parent_only = is_parent_only
+            project.save(update_fields=['is_parent_only'])
+        except Exception as e:
+            # اگر فیلد is_parent_only وجود ندارد، migration اجرا نشده است
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error saving is_parent_only: {e}")
+            messages.error(self.request, "خطا در ذخیره اطلاعات. لطفاً migration را اجرا کنید: python manage.py migrate project")
         
         # اگر project_manager تنظیم نشده باشد، کاربر فعلی را به عنوان project_manager تنظیم کن
         if not project.project_manager:
@@ -588,6 +604,17 @@ class ProjectUpdateView(generic.UpdateView):
     form_class = project_forms.ProjectForm
     template_name = 'project/project-update.html'
     context_object_name = 'project'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        project = self.object
+        
+        # تنظیم is_parent_only
+        is_parent_only = form.cleaned_data.get('is_parent_only', False)
+        project.is_parent_only = is_parent_only
+        project.save(update_fields=['is_parent_only'])
+        
+        return response
 
     def get_success_url(self):
         return reverse('project-detail', kwargs={'pk': self.object.pk})

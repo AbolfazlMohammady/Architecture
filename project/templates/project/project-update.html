@@ -208,6 +208,24 @@
                                     </div>
                                 {% endif %}
                             </div>
+                        {% elif field.name == 'is_parent_only' %}
+                            <div class="col-md-4">
+                                <div class="form-check mt-4">
+                                    {% render_field field class="form-check-input" %}
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                                        {{ field.label }}
+                                    </label>
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block mt-1">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-circle me-1"></i>
+                                            {{ field.errors|striptags }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -215,7 +233,7 @@
         </div>
 
         <!-- اطلاعات فنی -->
-        <div class="col-12">
+        <div class="col-12" id="technical-info-section">
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-cogs me-2"></i>
@@ -223,7 +241,7 @@
                 </h3>
                 <div class="row g-3">
                     {% for field in form %}
-                        {% if forloop.counter > 6 %}
+                        {% if field.name == 'masafat' or field.name == 'width' or field.name == 'start_kilometer' or field.name == 'end_kilometer' or field.name == 'profile_file' or field.name == 'start_date' or field.name == 'end_date' %}
                             <div class="col-md-4">
                                 <label class="form-label">{{ field.label }}</label>
                                 {% if field.field.widget.input_type == 'file' %}
@@ -232,6 +250,11 @@
                                         <label class="form-control custom-file-label" for="{{ field.id_for_label }}">
                                             انتخاب فایل
                                         </label>
+                                    </div>
+                                {% elif 'date' in field.name %}
+                                    <div class="date-input-group">
+                                        {% render_field field class="form-control jalali_date-input" placeholder="تاریخ را انتخاب کنید" %}
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
                                 {% elif field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select-multiple' %}
                                     {% render_field field class="form-control select2" data-placeholder="انتخاب کنید..." %}
@@ -323,6 +346,28 @@
                     locale: 'fa'
                 }
             }
+        });
+        
+        // کنترل نمایش/مخفی کردن بخش اطلاعات فنی بر اساس وضعیت پروژه اصلی
+        function toggleTechnicalInfo() {
+            const isParentOnly = $('#id_is_parent_only').is(':checked');
+            const technicalSection = $('#technical-info-section');
+            
+            if (isParentOnly) {
+                technicalSection.slideUp(300);
+                // غیرفعال کردن فیلدهای فنی (اختیاری)
+                $('#technical-info-section input, #technical-info-section select').prop('required', false);
+            } else {
+                technicalSection.slideDown(300);
+            }
+        }
+        
+        // اجرای تابع در بارگذاری صفحه
+        toggleTechnicalInfo();
+        
+        // اجرای تابع هنگام تغییر وضعیت checkbox
+        $('#id_is_parent_only').on('change', function() {
+            toggleTechnicalInfo();
         });
     });
 

@@ -31,10 +31,49 @@ class ProjectForm(forms.ModelForm):
         widget=Select2Widget(attrs={'class': 'form-select'})
     )
     
+    is_parent_only = forms.BooleanField(
+        required=False,
+        label='پروژه اصلی',
+        help_text='اگر این پروژه فقط یک پروژه اصلی است (بدون اطلاعات فنی)، این گزینه را فعال کنید',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
         
         self.fields['name'].widget.attrs["class"] = "form-control form-control-sm"
+        
+        # تنظیم مقدار اولیه برای is_parent_only
+        if self.instance and self.instance.pk:
+            self.fields['is_parent_only'].initial = self.instance.is_parent_only
+        
+        # اگر is_parent_only فعال است، فیلدهای فنی را اختیاری می‌کنیم
+        # بررسی می‌کنیم که آیا در داده‌های POST یا initial، is_parent_only فعال است
+        is_parent_only = False
+        if self.data and 'is_parent_only' in self.data:
+            # بررسی checkbox - اگر 'on' باشد یعنی فعال است
+            checkbox_value = self.data.get('is_parent_only')
+            is_parent_only = checkbox_value == 'on' or checkbox_value == 'True' or checkbox_value == 'true'
+            print(f"[FORM DEBUG] is_parent_only from POST: {checkbox_value} -> {is_parent_only}")
+        elif self.instance and self.instance.pk:
+            is_parent_only = getattr(self.instance, 'is_parent_only', False)
+            print(f"[FORM DEBUG] is_parent_only from instance: {is_parent_only}")
+        
+        if is_parent_only:
+            print(f"[FORM DEBUG] Setting technical fields as optional")
+            # فیلدهای فنی را اختیاری می‌کنیم
+            if 'start_date' in self.fields:
+                self.fields['start_date'].required = False
+            if 'masafat' in self.fields:
+                self.fields['masafat'].required = False
+            if 'width' in self.fields:
+                self.fields['width'].required = False
+            if 'start_kilometer' in self.fields:
+                self.fields['start_kilometer'].required = False
+            if 'end_kilometer' in self.fields:
+                self.fields['end_kilometer'].required = False
+            if 'profile_file' in self.fields:
+                self.fields['profile_file'].required = False
         
         # فیلد پروژه اصلی - فقط پروژه‌های اصلی (بدون parent) را نشان می‌دهد
         # تنظیم queryset برای parent_project
@@ -136,6 +175,7 @@ class ProjectForm(forms.ModelForm):
         # self.fields["end_date"].widget.attrs["class"] = "form-control"
         
         self.fields["contract_amount"].widget.attrs["class"] = "form-control form-control-sm"
+        self.fields["is_parent_only"].widget.attrs["class"] = "form-check-input"
         self.fields["masafat"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["width"].widget.attrs["class"] = "form-control form-control-sm"
         self.fields["start_kilometer"].widget.attrs["class"] = "form-control form-control-sm"
@@ -155,12 +195,36 @@ class ProjectForm(forms.ModelForm):
         technical_manager = cleaned_data.get('technical_manager')
         quality_control_manager = cleaned_data.get('quality_control_manager')
         contract_amount = cleaned_data.get('contract_amount')
+        is_parent_only = cleaned_data.get('is_parent_only', False)
         masafat = cleaned_data.get('masafat')
         width = cleaned_data.get('width')
         start_kilometer = cleaned_data.get('start_kilometer')
         end_kilometer = cleaned_data.get('end_kilometer')
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
+        
+        # اگر پروژه اصلی است (is_parent_only=True)، فیلدهای فنی اختیاری هستند
+        if is_parent_only:
+            # اگر پروژه اصلی است، نباید parent_project داشته باشد
+            if parent_project:
+                raise forms.ValidationError(
+                    "پروژه اصلی نمی‌تواند زیرپروژه باشد. لطفاً فیلد 'پروژه اصلی' را غیرفعال کنید یا پروژه اصلی را حذف کنید."
+                )
+            # فیلدهای فنی را اختیاری می‌کنیم (نیازی به validation ندارند)
+            # اگر start_date خالی است، آن را None می‌کنیم تا validation خطا ندهد
+            # همچنین باید required را False کنیم
+            if 'start_date' in self.fields:
+                self.fields['start_date'].required = False
+            if not start_date:
+                cleaned_data['start_date'] = None
+        else:
+            # اگر پروژه اصلی نیست، فیلدهای فنی باید پر شوند (مگر اینکه زیرپروژه باشد)
+            if not parent_project:
+                # پروژه اصلی باید اطلاعات فنی داشته باشد
+                if not masafat or not width or not start_kilometer or not end_kilometer or not start_date:
+                    raise forms.ValidationError(
+                        "برای پروژه‌های اصلی (غیر از پروژه‌های فقط اصلی)، اطلاعات فنی (مسافت، عرض، کیلومتر شروع و پایان، تاریخ شروع) الزامی است."
+                    )
         
         # بررسی اینکه parent_project باید یک پروژه اصلی باشد (نه زیرپروژه)
         if parent_project:
@@ -191,7 +255,8 @@ class ProjectForm(forms.ModelForm):
                         f"پروژه اصلی‌ای با نام '{name}' قبلاً وجود دارد."
                     )
         
-        if name and project_manager and technical_manager and quality_control_manager and contract_amount and masafat and width and start_kilometer and end_kilometer and start_date:
+        # بررسی وجود پروژه مشابه فقط برای پروژه‌هایی که اطلاعات فنی دارند
+        if not is_parent_only and name and project_manager and technical_manager and quality_control_manager and contract_amount and masafat and width and start_kilometer and end_kilometer and start_date:
             # بررسی وجود پروژه مشابه با همان مشخصات (اختیاری - برای جلوگیری از تکرار کامل)
             existing_project = project_models.Project.objects.filter(
                 name=name,
@@ -225,6 +290,7 @@ class ProjectForm(forms.ModelForm):
                   "hsse_manager",
                   "project_experts",
                   "contract_amount",
+                  "is_parent_only",
                   "masafat",
                   "width", 
                   "start_kilometer",
