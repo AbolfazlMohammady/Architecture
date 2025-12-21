@@ -4,6 +4,7 @@
 {% block title %}داشبورد مدیریتی{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 {% endblock %}
 {% block main %}
 <div class="dashboard-overlay"></div>
@@ -78,9 +79,15 @@
             </select>
             <span class="mx-2">یا</span>
             <label class="mb-0 fw-semibold">از تاریخ:</label>
-            <input type="text" name="date_from" id="date-from" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/01/01" value="{% if filter_type == 'calendar' %}{{ date_from }}{% endif %}">
+            <div class="date-input-group" style="position: relative; display: inline-block; width: 120px;">
+              <input type="text" name="date_from" id="date-from" class="form-control form-control-sm jalali_date-input" placeholder="1403/01/01" value="{% if filter_type == 'calendar' %}{{ date_from }}{% endif %}" style="width: 100%; padding-right: 35px;">
+              <i class="fas fa-calendar-alt" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6c757d; pointer-events: none;"></i>
+            </div>
             <label class="mb-0 fw-semibold">تا تاریخ:</label>
-            <input type="text" name="date_to" id="date-to" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/12/29" value="{% if filter_type == 'calendar' %}{{ date_to }}{% endif %}">
+            <div class="date-input-group" style="position: relative; display: inline-block; width: 120px;">
+              <input type="text" name="date_to" id="date-to" class="form-control form-control-sm jalali_date-input" placeholder="1403/12/29" value="{% if filter_type == 'calendar' %}{{ date_to }}{% endif %}" style="width: 100%; padding-right: 35px;">
+              <i class="fas fa-calendar-alt" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6c757d; pointer-events: none;"></i>
+            </div>
           </div>
           <button type="submit" class="btn btn-sm btn-primary">اعمال فیلتر</button>
           {% if filter_type or selected_project_id %}
@@ -115,7 +122,7 @@
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات - {{ project_stat.project.name }}</h5>
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات{% if selected_project_id %} - {{ project_stat.project.name }}{% endif %}</h5>
             <div class="d-flex gap-2 flex-wrap">
               {% if filter_type == 'days' and days_filter %}
               <span class="badge bg-info">زمان: {{ days_filter }} روز اخیر</span>
@@ -242,7 +249,7 @@
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده - {{ project_stat.project.name }}</h5>
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>حجم کل کار انجام شده{% if selected_project_id %} - {{ project_stat.project.name }}{% endif %}</h5>
             <div class="d-flex gap-2 flex-wrap">
               {% if filter_type == 'days' and days_filter %}
               <span class="badge bg-info">زمان: {{ days_filter }} روز اخیر</span>
@@ -746,21 +753,47 @@ document.addEventListener('DOMContentLoaded', function() {
   createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت');
   {% endif %}
   
-  // راه‌اندازی date picker برای فیلتر تقویمی
-  if (typeof $ !== 'undefined' && $('#date-from').length) {
-    $('#date-from').persianDatepicker({
-      format: 'YYYY/MM/DD',
-      observer: true
-    });
-  }
-  if (typeof $ !== 'undefined' && $('#date-to').length) {
-    $('#date-to').persianDatepicker({
-      format: 'YYYY/MM/DD',
-      observer: true
-    });
-  }
 });
 </script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+  // راه‌اندازی date picker برای فیلتر تقویمی
+  function initDatePickers() {
+    $('.jalali_date-input').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false,
+      autoClose: true,
+      position: 'auto',
+      calendar: {
+        persian: {
+          locale: 'fa'
+        }
+      }
+    });
+  }
+  
+  // راه‌اندازی اولیه
+  initDatePickers();
+  
+  // در صورت اضافه شدن inputهای جدید، دوباره راه‌اندازی شود
+  $(document).on('focus', '.jalali_date-input', function() {
+    if (!$(this).data('persianDatepicker')) {
+      $(this).persianDatepicker({
+        format: 'YYYY/MM/DD',
+        initialValue: false,
+        autoClose: true,
+        position: 'auto',
+        calendar: {
+          persian: {
+            locale: 'fa'
+          }
+        }
+      });
+    }
+  });
+});
+</script>
 {% endblock %}

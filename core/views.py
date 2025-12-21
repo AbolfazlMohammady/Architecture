@@ -744,10 +744,12 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
                 all_projects = Project.objects.filter(id=project_id)
                 context['selected_project_id'] = project_id
             except (ValueError, TypeError):
-                all_projects = Project.objects.all()
+                # اگر فیلتر پروژه نامعتبر باشد، همه پروژه‌های اصلی را نشان بده
+                all_projects = Project.objects.filter(parent_project__isnull=True)
                 context['selected_project_id'] = None
         else:
-            all_projects = Project.objects.all()
+            # اگر فیلتر پروژه انتخاب نشده، فقط پروژه‌های اصلی را نشان بده
+            all_projects = Project.objects.filter(parent_project__isnull=True)
             context['selected_project_id'] = None
         
         # لیست همه پروژه‌ها برای dropdown
@@ -838,8 +840,8 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             project_volume_total = sum(project_volume_data.values())
             
             # اگر پروژه انتخاب شده است، همیشه نمایش بده (حتی اگر داده‌ای نداشته باشد)
-            # در غیر این صورت فقط پروژه‌هایی که داده دارند را نمایش بده
-            if project_filter or project_total > 0 or project_volume_total > 0:
+            # در غیر این صورت فقط پروژه‌هایی که آزمایش دارند را نمایش بده
+            if project_filter or project_total > 0:
                 projects_stats.append({
                     'project': project,
                     'stats': project_status_data,
