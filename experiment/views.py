@@ -47,9 +47,11 @@ def find_blocking_lower_layers(project, target_layer, ranges):
     فقط قسمت‌هایی که همپوشانی کیلومتراژ دارند بررسی می‌شوند، نه کل لایه.
     
     منطق:
-    - اگر برای بازه همپوشان هیچ درخواست آزمایشی وجود نداشت -> blocking است
-    - اگر درخواست‌ها وجود دارند اما هیچ کدام تایید نشده (قابل قبول نیست) -> blocking است
-    - فقط وقتی که حداقل یک درخواست برای آن بازه تایید شده (قابل قبول) باشد -> blocking نیست
+    - برای هر بازه کیلومتراژ که می‌خواهیم درخواست ثبت کنیم:
+      * باید بررسی کنیم که آیا در لایه پایینی، برای کل بازه همپوشانی، درخواست‌هایی وجود دارد که همه تایید شده باشند (قابل قبول)
+      * اگر هیچ درخواستی وجود ندارد -> blocking است
+      * اگر درخواست‌ها وجود دارند اما همه تایید نشده‌اند (قابل قبول نیستند) -> blocking است
+      * فقط وقتی که کل بازه همپوشانی پوشش داده شده و همه قابل قبول باشند -> blocking نیست
     """
     if not ranges:
         return []
@@ -57,7 +59,7 @@ def find_blocking_lower_layers(project, target_layer, ranges):
     # لایه‌های زیرین: order_from_top بیشتر = پایین‌تر
     lower_layers = ProjectLayer.objects.filter(
         project=project,
-        order_from_top__gt=target_layer.order_from_top  # تغییر از __lt به __gt
+        order_from_top__gt=target_layer.order_from_top
     )
     
     blocking = []
@@ -66,44 +68,74 @@ def find_blocking_lower_layers(project, target_layer, ranges):
         layer_blocked = False
         
         for start, end in ranges:
+            start_float = float(start)
+            end_float = float(end)
+            
             # پیدا کردن درخواست‌های آزمایش این لایه که با این بازه همپوشانی دارند
             overlap_requests = models.ExperimentRequest.objects.filter(
                 project=project,
                 layer=lower,
-                start_kilometer__lt=end,
-                end_kilometer__gt=start,
-            )
+                start_kilometer__lt=end_float,
+                end_kilometer__gt=start_float,
+            ).order_by('start_kilometer')
             
             # اگر هیچ درخواست آزمایشی برای این بازه همپوشان وجود نداشت، blocking است
             if not overlap_requests.exists():
                 layer_blocked = True
                 break  # این بازه blocking است، نیازی به بررسی بیشتر نیست
             
-            # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده (قابل قبول) وجود دارد
-            approved_for_this_range = False
-            
+            # بررسی اینکه آیا کل بازه همپوشانی پوشش داده شده و همه قابل قبول هستند
+            # باید تمام قسمت‌های بازه همپوشانی را بررسی کنیم
+            covered_ranges = []
             for req in overlap_requests:
-                # بررسی همپوشانی دقیق
                 req_start = float(req.start_kilometer)
                 req_end = float(req.end_kilometer)
                 
                 # محاسبه بازه همپوشانی واقعی
-                overlap_start = max(float(start), req_start)
-                overlap_end = min(float(end), req_end)
+                overlap_start = max(start_float, req_start)
+                overlap_end = min(end_float, req_end)
                 
                 # اگر همپوشانی واقعی وجود دارد
                 if overlap_start < overlap_end:
                     # بررسی اینکه آیا این درخواست تایید شده است (قابل قبول است)
-                    # فقط وقتی که همه تاییدیه‌ها انجام شده و قابل قبول است
+                    is_approved = False
                     for resp in req.experimentresponse_set.all():
                         if resp.is_fully_approved():
-                            approved_for_this_range = True
+                            is_approved = True
                             break
-                    if approved_for_this_range:
-                        break
+                    
+                    if is_approved:
+                        # این قسمت قابل قبول است، به لیست اضافه می‌کنیم
+                        covered_ranges.append((overlap_start, overlap_end))
             
-            # اگر برای این بازه همپوشان تایید نشده (قابل قبول نیست)، لایه blocking است
-            if not approved_for_this_range:
+            # بررسی اینکه آیا کل بازه همپوشانی پوشش داده شده است
+            if not covered_ranges:
+                # هیچ قسمت قابل قبولی وجود ندارد
+                layer_blocked = True
+                break
+            
+            # مرتب‌سازی بازه‌های پوشش داده شده
+            covered_ranges.sort(key=lambda x: x[0])
+            
+            # بررسی اینکه آیا کل بازه همپوشانی پوشش داده شده است
+            # باید تمام قسمت‌های بازه از start_float تا end_float پوشش داده شده باشند
+            current_covered_end = start_float
+            all_covered = True
+            
+            for covered_start, covered_end in covered_ranges:
+                # اگر بین بازه قبلی و این بازه فاصله وجود دارد
+                if covered_start > current_covered_end + 0.001:  # 0.001 برای خطای محاسباتی
+                    all_covered = False
+                    break
+                # به‌روزرسانی انتهای بازه پوشش داده شده
+                current_covered_end = max(current_covered_end, covered_end)
+            
+            # بررسی اینکه آیا کل بازه پوشش داده شده است
+            if current_covered_end < end_float - 0.001:  # 0.001 برای خطای محاسباتی
+                all_covered = False
+            
+            # اگر کل بازه پوشش داده نشده یا همه قابل قبول نیستند، blocking است
+            if not all_covered:
                 layer_blocked = True
                 break  # نیازی به بررسی بقیه بازه‌ها نیست
         
