@@ -96,9 +96,9 @@ class ExperimentRequest(models.Model):
                 # اگر هر کدام از تاییدیه‌ها رد شده باشد
                 if approvals.filter(status=ExperimentApproval.REJECTED).exists():
                     return self.REJECTED
-                # اگر همه تایید شده باشند
+                # اگر همه تایید شده باشند (تایید شده یا ریکامپکت)
                 approval_status = latest_response.get_approval_status_by_role()
-                if all(v == 'تایید شده' for v in approval_status.values() if v != 'تعریف نشده'):
+                if all(v in ('تایید شده', 'ریکامپکت') for v in approval_status.values() if v != 'تعریف نشده'):
                     return self.COMPLETED
                 # در غیر این صورت در حال بررسی است
                 return self.IN_PROGRESS
@@ -251,6 +251,8 @@ class ExperimentResponse(models.Model):
                 status[role] = 'در انتظار'
             elif approvals.filter(status=ExperimentApproval.REJECTED).exists():
                 status[role] = 'رد شده'
+            elif approvals.filter(status=ExperimentApproval.COMPACT).exists():
+                status[role] = 'ریکامپکت'
             elif approvals.filter(status=ExperimentApproval.APPROVED).count() == len(approvers):
                 status[role] = 'تایید شده'
             else:
@@ -258,16 +260,18 @@ class ExperimentResponse(models.Model):
         return status
 
     def is_fully_approved(self):
-        """آیا همه نقش‌های کلیدی تایید کرده‌اند؟"""
+        """آیا همه نقش‌های کلیدی تایید کرده‌اند؟ (تایید شده یا ریکامپکت)"""
         status = self.get_approval_status_by_role()
-        return all(v == 'تایید شده' for v in status.values() if v != 'تعریف نشده')
+        return all(v in ('تایید شده', 'ریکامپکت') for v in status.values() if v != 'تعریف نشده')
 
 class ExperimentApproval(models.Model):
     APPROVED = 1
     REJECTED = 2
+    COMPACT = 3
     STATUS_CHOICES = (
         (APPROVED, 'تایید شده'),
         (REJECTED, 'رد شده'),
+        (COMPACT, 'ریکامپکت'),
     )
     
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")

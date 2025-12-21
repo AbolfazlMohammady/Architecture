@@ -576,13 +576,12 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         days_filter = int(self.request.GET.get('days', 30))
         date_filter_start = timezone.now() - timedelta(days=days_filter)
         
-        # محاسبه وضعیت آزمایشات با فیلتر زمانی (استفاده از get_actual_status)
-        all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        # محاسبه وضعیت آزمایشات با فیلتر زمانی (استفاده از request_date به جای created_at)
+        all_experiments = ExperimentRequest.objects.filter(request_date__gte=date_filter_start)
         experiment_status_data = {
             'completed': 0,
             'rejected': 0,
             'in_progress': 0,
-            'pending': 0,
         }
         for exp in all_experiments:
             actual_status = exp.get_actual_status()
@@ -590,10 +589,9 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
                 experiment_status_data['completed'] += 1
             elif actual_status == ExperimentRequest.REJECTED:
                 experiment_status_data['rejected'] += 1
-            elif actual_status == ExperimentRequest.IN_PROGRESS:
+            elif actual_status == ExperimentRequest.IN_PROGRESS or actual_status == ExperimentRequest.PENDING:
+                # ترکیب کردن در حال انجام و در انتظار بررسی به "در حال انجام"
                 experiment_status_data['in_progress'] += 1
-            else:  # PENDING
-                experiment_status_data['pending'] += 1
         
         total_experiments = sum(experiment_status_data.values())
         context['experiment_status_data'] = experiment_status_data
@@ -607,8 +605,8 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             'asphalt': 0,     # آسفالت
         }
         
-        # فیلتر آزمایشات بر اساس فیلتر زمانی
-        filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        # فیلتر آزمایشات بر اساس فیلتر زمانی (استفاده از request_date)
+        filtered_experiments = ExperimentRequest.objects.filter(request_date__gte=date_filter_start)
         
         for exp in filtered_experiments:
             # محاسبه حجم (کیلومتر)
@@ -628,6 +626,8 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         context['volume_data'] = volume_data
         context['total_volume'] = total_volume
         context['days_filter'] = days_filter
+        context['date_from'] = self.request.GET.get('date_from')
+        context['date_to'] = self.request.GET.get('date_to')
         
         return context
 
@@ -642,27 +642,28 @@ def dashboard_experiment_status_detail(request):
     status_type = request.GET.get('status', 'completed')  # completed, rejected, in_progress, pending
     date_filter_start = timezone.now() - timedelta(days=days_filter)
     
-    all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    all_experiments = ExperimentRequest.objects.filter(request_date__gte=date_filter_start)
     
-    # فیلتر بر اساس وضعیت
+    # فیلتر بر اساس وضعیت (pending دیگر استفاده نمی‌شود، همه به in_progress می‌روند)
     status_map = {
         'completed': ExperimentRequest.COMPLETED,
         'rejected': ExperimentRequest.REJECTED,
-        'in_progress': ExperimentRequest.IN_PROGRESS,
-        'pending': ExperimentRequest.PENDING,
+        'in_progress': [ExperimentRequest.IN_PROGRESS, ExperimentRequest.PENDING],  # هر دو به in_progress می‌روند
     }
     
     filtered_experiments = []
     for exp in all_experiments:
         actual_status = exp.get_actual_status()
-        if actual_status == status_map.get(status_type, ExperimentRequest.COMPLETED):
+        if status_type == 'in_progress':
+            if actual_status in status_map.get(status_type, []):
+                filtered_experiments.append(exp)
+        elif actual_status == status_map.get(status_type, ExperimentRequest.COMPLETED):
             filtered_experiments.append(exp)
     
     status_names = {
-        'completed': 'تکمیل شده',
+        'completed': 'قابل قبول',
         'rejected': 'رد شده',
         'in_progress': 'در حال انجام',
-        'pending': 'در انتظار بررسی',
     }
     
     return render(request, 'core/dashboard_experiment_status_detail.html', {
@@ -683,7 +684,7 @@ def dashboard_volume_detail(request):
     volume_type = request.GET.get('type', 'embankment')  # embankment, concrete, asphalt
     date_filter_start = timezone.now() - timedelta(days=days_filter)
     
-    filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    filtered_experiments = ExperimentRequest.objects.filter(request_date__gte=date_filter_start)
     
     # فیلتر بر اساس نوع لایه
     volume_experiments = []

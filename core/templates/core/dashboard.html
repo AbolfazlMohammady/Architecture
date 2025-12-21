@@ -53,14 +53,37 @@
       <div class="card-body py-2">
         <form method="get" class="d-flex align-items-center gap-3 flex-wrap">
           <label class="mb-0 fw-semibold">فیلتر زمانی:</label>
-          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
-            <option value="7" {% if days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
-            <option value="30" {% if days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
-            <option value="90" {% if days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
-            <option value="180" {% if days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
-            <option value="365" {% if days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
+          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;" onchange="toggleDateFilter()">
+            <option value="7" {% if days_filter == 7 and not date_from %}selected{% endif %}>۷ روز اخیر</option>
+            <option value="30" {% if days_filter == 30 and not date_from %}selected{% endif %}>۳۰ روز اخیر</option>
+            <option value="90" {% if days_filter == 90 and not date_from %}selected{% endif %}>۹۰ روز اخیر</option>
+            <option value="180" {% if days_filter == 180 and not date_from %}selected{% endif %}>۶ ماه اخیر</option>
+            <option value="365" {% if days_filter == 365 and not date_from %}selected{% endif %}>یک سال اخیر</option>
+            <option value="custom" {% if date_from %}selected{% endif %}>انتخاب بازه تاریخ</option>
           </select>
+          <div id="date-range-filter" style="display: {% if date_from %}flex{% else %}none{% endif %}; align-items: center; gap: 10px;">
+            <label class="mb-0 small">از تاریخ:</label>
+            <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control form-control-sm" style="width: auto;">
+            <label class="mb-0 small">تا تاریخ:</label>
+            <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm" style="width: auto;">
+            <button type="submit" class="btn btn-sm btn-primary">اعمال</button>
+          </div>
+          {% if not date_from %}
+          <input type="hidden" name="days" value="{{ days_filter }}">
+          {% endif %}
         </form>
+        <script>
+        function toggleDateFilter() {
+          var select = document.getElementById('days-filter');
+          var dateRange = document.getElementById('date-range-filter');
+          if (select.value === 'custom') {
+            dateRange.style.display = 'flex';
+          } else {
+            dateRange.style.display = 'none';
+            document.querySelector('form').submit();
+          }
+        }
+        </script>
       </div>
     </div>
   </section>
@@ -79,7 +102,7 @@
               <div class="col-6 col-md-3">
                 <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=completed&days={{ days_filter }}">
                   <canvas id="experimentCompletedChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">تکمیل شده</h6>
+                  <h6 class="mt-3 mb-0">قابل قبول</h6>
                   <p class="text-muted small mb-0">{{ experiment_status_data.completed }} مورد</p>
                   <a href="{% url 'dashboard_experiment_status_detail' %}?status=completed&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
                     <i class="bi bi-eye"></i> مشاهده جزئیات
@@ -102,16 +125,6 @@
                   <h6 class="mt-3 mb-0">در حال انجام</h6>
                   <p class="text-muted small mb-0">{{ experiment_status_data.in_progress }} مورد</p>
                   <a href="{% url 'dashboard_experiment_status_detail' %}?status=in_progress&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
-                </div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=pending&days={{ days_filter }}">
-                  <canvas id="experimentPendingChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">در انتظار بررسی</h6>
-                  <p class="text-muted small mb-0">{{ experiment_status_data.pending }} مورد</p>
-                  <a href="{% url 'dashboard_experiment_status_detail' %}?status=pending&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
                     <i class="bi bi-eye"></i> مشاهده جزئیات
                   </a>
                 </div>
