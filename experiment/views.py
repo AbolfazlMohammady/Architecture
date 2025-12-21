@@ -45,6 +45,11 @@ def find_blocking_lower_layers(project, target_layer, ranges):
     لایه‌های زیرین = لایه‌هایی که order_from_top بیشتر دارند (پایین‌تر هستند)
     
     فقط قسمت‌هایی که همپوشانی کیلومتراژ دارند بررسی می‌شوند، نه کل لایه.
+    
+    منطق:
+    - اگر برای بازه همپوشان هیچ درخواست آزمایشی وجود نداشت -> blocking است
+    - اگر درخواست‌ها وجود دارند اما هیچ کدام تایید نشده (قابل قبول نیست) -> blocking است
+    - فقط وقتی که حداقل یک درخواست برای آن بازه تایید شده (قابل قبول) باشد -> blocking نیست
     """
     if not ranges:
         return []
@@ -69,11 +74,12 @@ def find_blocking_lower_layers(project, target_layer, ranges):
                 end_kilometer__gt=start,
             )
             
-            # اگر هیچ درخواست آزمایشی برای این بازه همپوشان وجود نداشت، blocking نیست
+            # اگر هیچ درخواست آزمایشی برای این بازه همپوشان وجود نداشت، blocking است
             if not overlap_requests.exists():
-                continue  # این بازه blocking نیست، به بازه بعدی برو
+                layer_blocked = True
+                break  # این بازه blocking است، نیازی به بررسی بیشتر نیست
             
-            # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده وجود دارد
+            # بررسی اینکه آیا برای این بازه همپوشان، حداقل یک آزمایش تایید شده (قابل قبول) وجود دارد
             approved_for_this_range = False
             
             for req in overlap_requests:
@@ -87,7 +93,8 @@ def find_blocking_lower_layers(project, target_layer, ranges):
                 
                 # اگر همپوشانی واقعی وجود دارد
                 if overlap_start < overlap_end:
-                    # بررسی اینکه آیا این درخواست تایید شده است
+                    # بررسی اینکه آیا این درخواست تایید شده است (قابل قبول است)
+                    # فقط وقتی که همه تاییدیه‌ها انجام شده و قابل قبول است
                     for resp in req.experimentresponse_set.all():
                         if resp.is_fully_approved():
                             approved_for_this_range = True
@@ -95,7 +102,7 @@ def find_blocking_lower_layers(project, target_layer, ranges):
                     if approved_for_this_range:
                         break
             
-            # اگر برای این بازه همپوشان تایید نشده، لایه blocking است
+            # اگر برای این بازه همپوشان تایید نشده (قابل قبول نیست)، لایه blocking است
             if not approved_for_this_range:
                 layer_blocked = True
                 break  # نیازی به بررسی بقیه بازه‌ها نیست
