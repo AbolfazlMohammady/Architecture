@@ -572,22 +572,95 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         ]
         
         # --- نمودارهای دایره‌ای برای داشبورد مدیریتی ---
-        # دریافت فیلتر زمانی از GET (پیش‌فرض: 30 روز اخیر)
-        days_filter = int(self.request.GET.get('days', 30))
-        date_filter_start = timezone.now() - timedelta(days=days_filter)
+        # دریافت فیلتر زمانی از GET
+        days_filter = self.request.GET.get('days', None)
+        date_from = self.request.GET.get('date_from', None)
+        date_to = self.request.GET.get('date_to', None)
+        
+        # فیلتر بر اساس تاریخ آزمایش (request_date) نه تاریخ ثبت (created_at)
+        all_experiments = ExperimentRequest.objects.all()
+        
+        # فیلتر بر اساس تاریخ آزمایش (request_date)
+        # jDateField می‌تواند مستقیماً با date object مقایسه شود
+        if date_from and date_to:
+            # استفاده از فیلتر تقویمی
+            try:
+                import jdatetime
+                from datetime import datetime as dt
+                # تبدیل فرمت تاریخ
+                date_from_clean = date_from.replace('/', '-')
+                date_to_clean = date_to.replace('/', '-')
+                date_from_parts = date_from_clean.split('-')
+                date_to_parts = date_to_clean.split('-')
+                if len(date_from_parts) == 3 and len(date_to_parts) == 3:
+                    jy, jm, jd = int(date_from_parts[0]), int(date_from_parts[1]), int(date_from_parts[2])
+                    # تبدیل شمسی به میلادی با jdatetime
+                    jalali_date_from = jdatetime.date(jy, jm, jd)
+                    date_from_obj = jalali_date_from.togregorian()
+                    
+                    jy, jm, jd = int(date_to_parts[0]), int(date_to_parts[1]), int(date_to_parts[2])
+                    jalali_date_to = jdatetime.date(jy, jm, jd)
+                    date_to_obj = jalali_date_to.togregorian() + timedelta(days=1)
+                    
+                    all_experiments = all_experiments.filter(
+                        request_date__gte=date_from_obj,
+                        request_date__lt=date_to_obj
+                    )
+                    context['date_from'] = date_from_clean.replace('-', '/')
+                    context['date_to'] = date_to_clean.replace('-', '/')
+                    context['filter_type'] = 'calendar'
+                else:
+                    raise ValueError("Invalid date format")
+            except Exception as e:
+                # در صورت خطا، بدون فیلتر
+                context['filter_type'] = None
+        elif days_filter:
+            # استفاده از فیلتر روز
+            days_filter = int(days_filter)
+            # تبدیل تاریخ میلادی به شمسی برای فیلتر
+            import jdatetime
+            today = timezone.now().date()
+            date_filter_start = today - timedelta(days=days_filter)
+            # تبدیل به تاریخ شمسی
+            jalali_date = jdatetime.date.fromgregorian(date=date_filter_start)
+            # فیلتر بر اساس سال و ماه شمسی
+            all_experiments = all_experiments.filter(request_date__year__gte=jalali_date.year)
+            if jalali_date.year == jdatetime.date.today().year:
+                all_experiments = all_experiments.filter(request_date__month__gte=jalali_date.month)
+            context['days_filter'] = days_filter
+            context['filter_type'] = 'days'
+        else:
+            # بدون فیلتر - نمایش همه
+            context['days_filter'] = None
+            context['filter_type'] = None
         
         # محاسبه وضعیت آزمایشات با فیلتر زمانی (استفاده از get_actual_status)
-        all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        # همچنین بررسی RECOMPACT برای نمایش جداگانه
         experiment_status_data = {
-            'completed': 0,
+            'completed': 0,  # قابل قبول (شامل تایید شده و ری‌کامپکت)
             'rejected': 0,
             'in_progress': 0,
             'pending': 0,
+            'recompact': 0,  # ری‌کامپکت (برای نمایش جداگانه با رنگ بنفش)
         }
+        
         for exp in all_experiments:
             actual_status = exp.get_actual_status()
+            # بررسی اینکه آیا ری‌کامپکت است یا نه
+            is_recompact = False
             if actual_status == ExperimentRequest.COMPLETED:
-                experiment_status_data['completed'] += 1
+                # بررسی تاییدیه‌ها برای تشخیص ری‌کامپکت
+                responses = exp.experimentresponse_set.all()
+                if responses.exists():
+                    latest_response = responses.order_by('-created_at').first()
+                    approvals = latest_response.experimentapproval_set.all()
+                    if approvals.filter(status=ExperimentApproval.RECOMPACT).exists():
+                        is_recompact = True
+                        experiment_status_data['recompact'] += 1
+                    else:
+                        experiment_status_data['completed'] += 1
+                else:
+                    experiment_status_data['completed'] += 1
             elif actual_status == ExperimentRequest.REJECTED:
                 experiment_status_data['rejected'] += 1
             elif actual_status == ExperimentRequest.IN_PROGRESS:
@@ -595,7 +668,16 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             else:  # PENDING
                 experiment_status_data['pending'] += 1
         
-        total_experiments = sum(experiment_status_data.values())
+        # قابل قبول = تایید شده + ری‌کامپکت
+        experiment_status_data['acceptable'] = experiment_status_data['completed'] + experiment_status_data['recompact']
+        
+        total_experiments = sum([
+            experiment_status_data['completed'],
+            experiment_status_data['rejected'],
+            experiment_status_data['in_progress'],
+            experiment_status_data['pending'],
+            experiment_status_data['recompact']
+        ])
         context['experiment_status_data'] = experiment_status_data
         context['total_experiments'] = total_experiments
         
@@ -607,8 +689,8 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
             'asphalt': 0,     # آسفالت
         }
         
-        # فیلتر آزمایشات بر اساس فیلتر زمانی
-        filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+        # استفاده از همان فیلتر برای حجم
+        filtered_experiments = all_experiments
         
         for exp in filtered_experiments:
             # محاسبه حجم (کیلومتر)
@@ -627,7 +709,61 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         total_volume = sum(volume_data.values())
         context['volume_data'] = volume_data
         context['total_volume'] = total_volume
-        context['days_filter'] = days_filter
+        
+        # محاسبه آمار به ازای هر پروژه
+        from project.models import Project
+        projects_stats = []
+        all_projects = Project.objects.all()
+        
+        for project in all_projects:
+            project_experiments = all_experiments.filter(project=project)
+            project_status_data = {
+                'completed': 0,
+                'rejected': 0,
+                'in_progress': 0,
+                'pending': 0,
+                'recompact': 0,
+            }
+            
+            for exp in project_experiments:
+                actual_status = exp.get_actual_status()
+                is_recompact = False
+                if actual_status == ExperimentRequest.COMPLETED:
+                    responses = exp.experimentresponse_set.all()
+                    if responses.exists():
+                        latest_response = responses.order_by('-created_at').first()
+                        approvals = latest_response.experimentapproval_set.all()
+                        if approvals.filter(status=ExperimentApproval.RECOMPACT).exists():
+                            is_recompact = True
+                            project_status_data['recompact'] += 1
+                        else:
+                            project_status_data['completed'] += 1
+                    else:
+                        project_status_data['completed'] += 1
+                elif actual_status == ExperimentRequest.REJECTED:
+                    project_status_data['rejected'] += 1
+                elif actual_status == ExperimentRequest.IN_PROGRESS:
+                    project_status_data['in_progress'] += 1
+                else:
+                    project_status_data['pending'] += 1
+            
+            project_status_data['acceptable'] = project_status_data['completed'] + project_status_data['recompact']
+            project_total = sum([
+                project_status_data['completed'],
+                project_status_data['rejected'],
+                project_status_data['in_progress'],
+                project_status_data['pending'],
+                project_status_data['recompact']
+            ])
+            
+            if project_total > 0:
+                projects_stats.append({
+                    'project': project,
+                    'stats': project_status_data,
+                    'total': project_total,
+                })
+        
+        context['projects_stats'] = projects_stats
         
         return context
 
@@ -638,28 +774,88 @@ def dashboard_experiment_status_detail(request):
     from datetime import timedelta
     from experiment.models import ExperimentRequest
     
-    days_filter = int(request.GET.get('days', 30))
-    status_type = request.GET.get('status', 'completed')  # completed, rejected, in_progress, pending
-    date_filter_start = timezone.now() - timedelta(days=days_filter)
+    days_filter = request.GET.get('days', None)
+    date_from = request.GET.get('date_from', None)
+    date_to = request.GET.get('date_to', None)
+    status_type = request.GET.get('status', 'completed')  # completed, rejected, in_progress, pending, recompact
     
-    all_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    all_experiments = ExperimentRequest.objects.all()
+    
+    # استفاده از همان منطق فیلتر داشبورد
+    if date_from and date_to:
+        try:
+            import jdatetime
+            date_from_parts = date_from.split('-')
+            date_to_parts = date_to.split('-')
+            if len(date_from_parts) == 3 and len(date_to_parts) == 3:
+                jy, jm, jd = int(date_from_parts[0]), int(date_from_parts[1]), int(date_from_parts[2])
+                jalali_date_from = jdatetime.date(jy, jm, jd)
+                date_from_obj = jalali_date_from.togregorian()
+                
+                jy, jm, jd = int(date_to_parts[0]), int(date_to_parts[1]), int(date_to_parts[2])
+                jalali_date_to = jdatetime.date(jy, jm, jd)
+                date_to_obj = jalali_date_to.togregorian() + timedelta(days=1)
+                
+                all_experiments = all_experiments.filter(
+                    request_date__gte=date_from_obj,
+                    request_date__lt=date_to_obj
+                )
+        except:
+            days_filter = 30
+            today = timezone.now().date()
+            date_filter_start = today - timedelta(days=days_filter)
+            all_experiments = all_experiments.filter(request_date__gte=date_filter_start)
+    elif days_filter:
+        days_filter = int(days_filter)
+        today = timezone.now().date()
+        date_filter_start = today - timedelta(days=days_filter)
+        all_experiments = all_experiments.filter(request_date__gte=date_filter_start)
+    else:
+        days_filter = 30
+        today = timezone.now().date()
+        date_filter_start = today - timedelta(days=days_filter)
+        all_experiments = all_experiments.filter(request_date__gte=date_filter_start)
     
     # فیلتر بر اساس وضعیت
-    status_map = {
-        'completed': ExperimentRequest.COMPLETED,
-        'rejected': ExperimentRequest.REJECTED,
-        'in_progress': ExperimentRequest.IN_PROGRESS,
-        'pending': ExperimentRequest.PENDING,
-    }
-    
+    from experiment.models import ExperimentApproval
     filtered_experiments = []
+    
     for exp in all_experiments:
         actual_status = exp.get_actual_status()
-        if actual_status == status_map.get(status_type, ExperimentRequest.COMPLETED):
-            filtered_experiments.append(exp)
+        if status_type == 'completed' or status_type == 'acceptable':
+            # قابل قبول = تایید شده (بدون ری‌کامپکت)
+            if actual_status == ExperimentRequest.COMPLETED:
+                responses = exp.experimentresponse_set.all()
+                if responses.exists():
+                    latest_response = responses.order_by('-created_at').first()
+                    approvals = latest_response.experimentapproval_set.all()
+                    if not approvals.filter(status=ExperimentApproval.RECOMPACT).exists():
+                        filtered_experiments.append(exp)
+                else:
+                    filtered_experiments.append(exp)
+        elif status_type == 'recompact':
+            # ری‌کامپکت
+            if actual_status == ExperimentRequest.COMPLETED:
+                responses = exp.experimentresponse_set.all()
+                if responses.exists():
+                    latest_response = responses.order_by('-created_at').first()
+                    approvals = latest_response.experimentapproval_set.all()
+                    if approvals.filter(status=ExperimentApproval.RECOMPACT).exists():
+                        filtered_experiments.append(exp)
+        elif status_type == 'rejected':
+            if actual_status == ExperimentRequest.REJECTED:
+                filtered_experiments.append(exp)
+        elif status_type == 'in_progress':
+            if actual_status == ExperimentRequest.IN_PROGRESS:
+                filtered_experiments.append(exp)
+        elif status_type == 'pending':
+            if actual_status == ExperimentRequest.PENDING:
+                filtered_experiments.append(exp)
     
     status_names = {
-        'completed': 'تکمیل شده',
+        'completed': 'قابل قبول',
+        'acceptable': 'قابل قبول',
+        'recompact': 'ری‌کامپکت',
         'rejected': 'رد شده',
         'in_progress': 'در حال انجام',
         'pending': 'در انتظار بررسی',
@@ -669,7 +865,9 @@ def dashboard_experiment_status_detail(request):
         'experiments': filtered_experiments,
         'status_type': status_type,
         'status_name': status_names.get(status_type, 'نامشخص'),
-        'days_filter': days_filter,
+        'days_filter': days_filter if days_filter else None,
+        'date_from': date_from if date_from else None,
+        'date_to': date_to if date_to else None,
     })
 
 @login_required
@@ -679,11 +877,47 @@ def dashboard_volume_detail(request):
     from datetime import timedelta
     from experiment.models import ExperimentRequest
     
-    days_filter = int(request.GET.get('days', 30))
+    days_filter = request.GET.get('days', None)
+    date_from = request.GET.get('date_from', None)
+    date_to = request.GET.get('date_to', None)
     volume_type = request.GET.get('type', 'embankment')  # embankment, concrete, asphalt
-    date_filter_start = timezone.now() - timedelta(days=days_filter)
     
-    filtered_experiments = ExperimentRequest.objects.filter(created_at__gte=date_filter_start)
+    filtered_experiments = ExperimentRequest.objects.all()
+    
+    # استفاده از همان منطق فیلتر داشبورد
+    if date_from and date_to:
+        try:
+            import jdatetime
+            date_from_parts = date_from.split('-')
+            date_to_parts = date_to.split('-')
+            if len(date_from_parts) == 3 and len(date_to_parts) == 3:
+                jy, jm, jd = int(date_from_parts[0]), int(date_from_parts[1]), int(date_from_parts[2])
+                jalali_date_from = jdatetime.date(jy, jm, jd)
+                date_from_obj = jalali_date_from.togregorian()
+                
+                jy, jm, jd = int(date_to_parts[0]), int(date_to_parts[1]), int(date_to_parts[2])
+                jalali_date_to = jdatetime.date(jy, jm, jd)
+                date_to_obj = jalali_date_to.togregorian() + timedelta(days=1)
+                
+                filtered_experiments = filtered_experiments.filter(
+                    request_date__gte=date_from_obj,
+                    request_date__lt=date_to_obj
+                )
+        except:
+            days_filter = 30
+            today = timezone.now().date()
+            date_filter_start = today - timedelta(days=days_filter)
+            filtered_experiments = filtered_experiments.filter(request_date__gte=date_filter_start)
+    elif days_filter:
+        days_filter = int(days_filter)
+        today = timezone.now().date()
+        date_filter_start = today - timedelta(days=days_filter)
+        filtered_experiments = filtered_experiments.filter(request_date__gte=date_filter_start)
+    else:
+        days_filter = 30
+        today = timezone.now().date()
+        date_filter_start = today - timedelta(days=days_filter)
+        filtered_experiments = filtered_experiments.filter(request_date__gte=date_filter_start)
     
     # فیلتر بر اساس نوع لایه
     volume_experiments = []
@@ -720,7 +954,9 @@ def dashboard_volume_detail(request):
         'experiments': experiments_with_volume,
         'volume_type': volume_type,
         'volume_name': volume_names.get(volume_type, 'نامشخص'),
-        'days_filter': days_filter,
+        'days_filter': days_filter if days_filter else None,
+        'date_from': date_from if date_from else None,
+        'date_to': date_to if date_to else None,
         'total_volume': total_volume,
     })
 

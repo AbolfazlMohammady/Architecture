@@ -96,9 +96,14 @@ class ExperimentRequest(models.Model):
                 # اگر هر کدام از تاییدیه‌ها رد شده باشد
                 if approvals.filter(status=ExperimentApproval.REJECTED).exists():
                     return self.REJECTED
-                # اگر همه تایید شده باشند
+                # اگر همه تایید شده یا ری‌کامپکت باشند (هر دو حکم قابل قبول دارند)
                 approval_status = latest_response.get_approval_status_by_role()
-                if all(v == 'تایید شده' for v in approval_status.values() if v != 'تعریف نشده'):
+                approved_or_recompact = all(
+                    v in ['تایید شده', 'ری‌کامپکت'] 
+                    for v in approval_status.values() 
+                    if v != 'تعریف نشده'
+                )
+                if approved_or_recompact:
                     return self.COMPLETED
                 # در غیر این صورت در حال بررسی است
                 return self.IN_PROGRESS
@@ -251,6 +256,8 @@ class ExperimentResponse(models.Model):
                 status[role] = 'در انتظار'
             elif approvals.filter(status=ExperimentApproval.REJECTED).exists():
                 status[role] = 'رد شده'
+            elif approvals.filter(status=ExperimentApproval.RECOMPACT).exists():
+                status[role] = 'ری‌کامپکت'
             elif approvals.filter(status=ExperimentApproval.APPROVED).count() == len(approvers):
                 status[role] = 'تایید شده'
             else:
@@ -265,9 +272,11 @@ class ExperimentResponse(models.Model):
 class ExperimentApproval(models.Model):
     APPROVED = 1
     REJECTED = 2
+    RECOMPACT = 3
     STATUS_CHOICES = (
         (APPROVED, 'تایید شده'),
         (REJECTED, 'رد شده'),
+        (RECOMPACT, 'ری‌کامپکت'),
     )
     
     experiment_response = models.ForeignKey(ExperimentResponse, on_delete=models.CASCADE, verbose_name="پاسخ آزمایش")

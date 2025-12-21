@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 {% block title %}داشبورد مدیریتی{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" />
+{% endblock %}
 {% block main %}
 <div class="dashboard-overlay"></div>
 <div class="container py-5">
@@ -51,75 +55,152 @@
   <section class="time-filter mb-4">
     <div class="card shadow-sm border-0 rounded-3">
       <div class="card-body py-2">
-        <form method="get" class="d-flex align-items-center gap-3 flex-wrap">
+        <form method="get" id="filter-form" class="d-flex align-items-center gap-3 flex-wrap">
           <label class="mb-0 fw-semibold">فیلتر زمانی:</label>
-          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
-            <option value="7" {% if days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
-            <option value="30" {% if days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
-            <option value="90" {% if days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
-            <option value="180" {% if days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
-            <option value="365" {% if days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
+          <select name="days" id="days-filter" class="form-select form-select-sm" style="width: auto;">
+            <option value="">انتخاب کنید...</option>
+            <option value="7" {% if filter_type == 'days' and days_filter == 7 %}selected{% endif %}>۷ روز اخیر</option>
+            <option value="30" {% if filter_type == 'days' and days_filter == 30 %}selected{% endif %}>۳۰ روز اخیر</option>
+            <option value="90" {% if filter_type == 'days' and days_filter == 90 %}selected{% endif %}>۹۰ روز اخیر</option>
+            <option value="180" {% if filter_type == 'days' and days_filter == 180 %}selected{% endif %}>۶ ماه اخیر</option>
+            <option value="365" {% if filter_type == 'days' and days_filter == 365 %}selected{% endif %}>یک سال اخیر</option>
           </select>
+          <span class="mx-2">یا</span>
+          <label class="mb-0 fw-semibold">از تاریخ:</label>
+          <input type="text" name="date_from" id="date-from" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/01/01" value="{% if filter_type == 'calendar' %}{{ date_from }}{% endif %}">
+          <label class="mb-0 fw-semibold">تا تاریخ:</label>
+          <input type="text" name="date_to" id="date-to" class="form-control form-control-sm" style="width: 120px;" placeholder="1403/12/29" value="{% if filter_type == 'calendar' %}{{ date_to }}{% endif %}">
+          <button type="submit" class="btn btn-sm btn-primary">اعمال فیلتر</button>
+          {% if filter_type %}
+          <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">پاک کردن</a>
+          {% endif %}
         </form>
       </div>
     </div>
   </section>
 
-  <!-- نمودارهای دایره‌ای -->
+  <!-- نمودارهای دایره‌ای به ازای هر پروژه -->
   <section class="charts-section mb-5">
     <div class="row g-4">
-      <!-- نمودارهای وضعیت آزمایشات -->
+      <!-- نمودارهای وضعیت آزمایشات برای هر پروژه -->
+      {% for project_stat in projects_stats %}
       <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات</h5>
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات - {{ project_stat.project.name }}</h5>
           </div>
           <div class="card-body">
-            <div class="row g-4">
-              <div class="col-6 col-md-3">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=completed&days={{ days_filter }}">
-                  <canvas id="experimentCompletedChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">تکمیل شده</h6>
-                  <p class="text-muted small mb-0">{{ experiment_status_data.completed }} مورد</p>
-                  <a href="{% url 'dashboard_experiment_status_detail' %}?status=completed&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+            <div class="row g-3">
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentCompletedChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">قابل قبول</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.stats.acceptable }} مورد</p>
                 </div>
               </div>
-              <div class="col-6 col-md-3">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=rejected&days={{ days_filter }}">
-                  <canvas id="experimentRejectedChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">رد شده</h6>
-                  <p class="text-muted small mb-0">{{ experiment_status_data.rejected }} مورد</p>
-                  <a href="{% url 'dashboard_experiment_status_detail' %}?status=rejected&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentRecompactChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">ری‌کامپکت</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.stats.recompact }} مورد</p>
                 </div>
               </div>
-              <div class="col-6 col-md-3">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=in_progress&days={{ days_filter }}">
-                  <canvas id="experimentInProgressChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">در حال انجام</h6>
-                  <p class="text-muted small mb-0">{{ experiment_status_data.in_progress }} مورد</p>
-                  <a href="{% url 'dashboard_experiment_status_detail' %}?status=in_progress&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentRejectedChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">رد شده</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.stats.rejected }} مورد</p>
                 </div>
               </div>
-              <div class="col-6 col-md-3">
-                <div class="chart-card text-center chart-clickable" data-url="{% url 'dashboard_experiment_status_detail' %}?status=pending&days={{ days_filter }}">
-                  <canvas id="experimentPendingChart" width="150" height="150"></canvas>
-                  <h6 class="mt-3 mb-0">در انتظار بررسی</h6>
-                  <p class="text-muted small mb-0">{{ experiment_status_data.pending }} مورد</p>
-                  <a href="{% url 'dashboard_experiment_status_detail' %}?status=pending&days={{ days_filter }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="bi bi-eye"></i> مشاهده جزئیات
-                  </a>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentInProgressChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">در حال انجام</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.stats.in_progress }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentPendingChart-{{ project_stat.project.id }}" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">در انتظار بررسی</h6>
+                  <p class="text-muted small mb-0">{{ project_stat.stats.pending }} مورد</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {% endfor %}
+      
+      <!-- نمودارهای کلی (اگر پروژه‌ای وجود نداشت) -->
+      {% if not projects_stats %}
+      <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>وضعیت آزمایشات (کلی)</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentCompletedChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">قابل قبول</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.acceptable }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentRecompactChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">ری‌کامپکت</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.recompact }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentRejectedChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">رد شده</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.rejected }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentInProgressChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">در حال انجام</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.in_progress }} مورد</p>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="chart-card text-center">
+                  <div style="max-width: 100px; margin: 0 auto;">
+                    <canvas id="experimentPendingChart" width="100" height="100"></canvas>
+                  </div>
+                  <h6 class="mt-2 mb-0 small">در انتظار بررسی</h6>
+                  <p class="text-muted small mb-0">{{ experiment_status_data.pending }} مورد</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
       
       <!-- نمودارهای حجم کل -->
       <div class="col-12">
@@ -342,7 +423,7 @@
   font-size: 0.85rem;
 }
 .chart-card {
-  padding: 1rem;
+  padding: 0.5rem;
   transition: all 0.3s ease;
   border-radius: 8px;
 }
@@ -352,8 +433,10 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 .chart-card canvas {
-  max-width: 100%;
-  height: auto;
+  max-width: 100px;
+  max-height: 100px;
+  width: 100px !important;
+  height: 100px !important;
   cursor: pointer;
 }
 .chart-clickable {
@@ -509,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
           
           ctx.save();
-          ctx.font = 'bold 20px Arial';
+          ctx.font = 'bold 14px Arial';
           ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -522,13 +605,34 @@ document.addEventListener('DOMContentLoaded', function() {
     return chart;
   }
 
-  // نمودارهای وضعیت آزمایشات با لینک
+  // نمودارهای وضعیت آزمایشات برای هر پروژه
+  {% for project_stat in projects_stats %}
+  (function() {
+    const projectId = {{ project_stat.project.id }};
+    const acceptable = {{ project_stat.stats.acceptable }};
+    const recompact = {{ project_stat.stats.recompact }};
+    const rejected = {{ project_stat.stats.rejected }};
+    const inProgress = {{ project_stat.stats.in_progress }};
+    const pending = {{ project_stat.stats.pending }};
+    const total = {{ project_stat.total }};
+    
+    createDoughnutChart('experimentCompletedChart-' + projectId, acceptable, total, '#4CAF50', 'قابل قبول');
+    createDoughnutChart('experimentRecompactChart-' + projectId, recompact, total, '#9C27B0', 'ری‌کامپکت'); // بنفش
+    createDoughnutChart('experimentRejectedChart-' + projectId, rejected, total, '#F44336', 'رد شده');
+    createDoughnutChart('experimentInProgressChart-' + projectId, inProgress, total, '#2196F3', 'در حال انجام');
+    createDoughnutChart('experimentPendingChart-' + projectId, pending, total, '#FF9800', 'در انتظار بررسی');
+  })();
+  {% endfor %}
+  
+  // نمودارهای کلی (اگر پروژه‌ای وجود نداشت)
+  {% if not projects_stats %}
   const totalExperiments = {{ total_experiments }};
-  const daysFilter = {{ days_filter }};
-  createDoughnutChart('experimentCompletedChart', {{ experiment_status_data.completed }}, totalExperiments, '#4CAF50', 'تکمیل شده', '{% url "dashboard_experiment_status_detail" %}?status=completed&days=' + daysFilter);
-  createDoughnutChart('experimentRejectedChart', {{ experiment_status_data.rejected }}, totalExperiments, '#F44336', 'رد شده', '{% url "dashboard_experiment_status_detail" %}?status=rejected&days=' + daysFilter);
-  createDoughnutChart('experimentInProgressChart', {{ experiment_status_data.in_progress }}, totalExperiments, '#2196F3', 'در حال انجام', '{% url "dashboard_experiment_status_detail" %}?status=in_progress&days=' + daysFilter);
-  createDoughnutChart('experimentPendingChart', {{ experiment_status_data.pending }}, totalExperiments, '#FF9800', 'در انتظار بررسی', '{% url "dashboard_experiment_status_detail" %}?status=pending&days=' + daysFilter);
+  createDoughnutChart('experimentCompletedChart', {{ experiment_status_data.acceptable }}, totalExperiments, '#4CAF50', 'قابل قبول');
+  createDoughnutChart('experimentRecompactChart', {{ experiment_status_data.recompact }}, totalExperiments, '#9C27B0', 'ری‌کامپکت'); // بنفش
+  createDoughnutChart('experimentRejectedChart', {{ experiment_status_data.rejected }}, totalExperiments, '#F44336', 'رد شده');
+  createDoughnutChart('experimentInProgressChart', {{ experiment_status_data.in_progress }}, totalExperiments, '#2196F3', 'در حال انجام');
+  createDoughnutChart('experimentPendingChart', {{ experiment_status_data.pending }}, totalExperiments, '#FF9800', 'در انتظار بررسی');
+  {% endif %}
 
   // نمودارهای حجم کل با لینک
   const totalVolume = Math.max({{ total_volume|default:0 }}, 1); // حداقل 1 برای جلوگیری از تقسیم بر صفر
@@ -540,9 +644,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const totalVolumeSum = embankmentVolume + concreteVolume + asphaltVolume;
   const volumeTotal = Math.max(totalVolumeSum, 1);
   
-  createDoughnutChart('volumeEmbankmentChart', embankmentVolume, volumeTotal, '#9C27B0', 'خاکریزی', '{% url "dashboard_volume_detail" %}?type=embankment&days=' + daysFilter);
-  createDoughnutChart('volumeConcreteChart', concreteVolume, volumeTotal, '#FF9800', 'بتن ریزی', '{% url "dashboard_volume_detail" %}?type=concrete&days=' + daysFilter);
-  createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت', '{% url "dashboard_volume_detail" %}?type=asphalt&days=' + daysFilter);
+  createDoughnutChart('volumeEmbankmentChart', embankmentVolume, volumeTotal, '#9C27B0', 'خاکریزی', '{% url "dashboard_volume_detail" %}?type=embankment&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
+  createDoughnutChart('volumeConcreteChart', concreteVolume, volumeTotal, '#FF9800', 'بتن ریزی', '{% url "dashboard_volume_detail" %}?type=concrete&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
+  createDoughnutChart('volumeAsphaltChart', asphaltVolume, volumeTotal, '#2196F3', 'آسفالت', '{% url "dashboard_volume_detail" %}?type=asphalt&days=' + (typeof daysFilter !== 'undefined' ? daysFilter : ''));
+  
+  // راه‌اندازی date picker برای فیلتر تقویمی
+  if (typeof $ !== 'undefined' && $('#date-from').length) {
+    $('#date-from').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      observer: true
+    });
+  }
+  if (typeof $ !== 'undefined' && $('#date-to').length) {
+    $('#date-to').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      observer: true
+    });
+  }
 });
 </script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
 {% endblock %}
