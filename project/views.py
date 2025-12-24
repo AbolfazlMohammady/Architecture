@@ -98,11 +98,15 @@ class ProjectListView(generic.ListView):
         main_projects = []
         sub_projects_dict = {}  # {parent_id: [sub_projects]}
         main_project_ids = set()  # برای ردیابی پروژه‌های اصلی که باید نمایش داده شوند
+        main_projects_dict = {}  # {project_id: project} برای جلوگیری از تکرار
         
         for project in projects:
             if project.is_main_project():
-                main_projects.append(project)
-                main_project_ids.add(project.id)
+                # اگر قبلاً اضافه نشده باشد
+                if project.id not in main_project_ids:
+                    main_projects.append(project)
+                    main_project_ids.add(project.id)
+                    main_projects_dict[project.id] = project
             else:
                 parent_id = project.parent_project.id
                 if parent_id not in sub_projects_dict:
@@ -112,9 +116,9 @@ class ProjectListView(generic.ListView):
                 # پروژه اصلی را هم به لیست اضافه کن (فقط برای نمایش)
                 if parent_id not in main_project_ids:
                     parent_project = project.parent_project
-                    if parent_project not in main_projects:
-                        main_projects.append(parent_project)
-                        main_project_ids.add(parent_id)
+                    main_projects.append(parent_project)
+                    main_project_ids.add(parent_id)
+                    main_projects_dict[parent_id] = parent_project
 
         project_progress_dict = {}
 

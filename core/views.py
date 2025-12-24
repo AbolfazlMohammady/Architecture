@@ -421,25 +421,51 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
         # --- User Projects & Roles ---
         projects = set()
         project_roles = {}
-        for p in user.managed_projects.all():
-            projects.add(p)
-            project_roles.setdefault(p.id, []).append('مدیر پروژه')
-        for p in user.technical_projects.all():
-            projects.add(p)
-            project_roles.setdefault(p.id, []).append('مدیر فنی')
-        for p in user.qc_projects.all():
-            projects.add(p)
-            project_roles.setdefault(p.id, []).append('مدیر کنترل کیفیت')
-        for p in user.project_experts.all():
-            projects.add(p)
-            project_roles.setdefault(p.id, []).append('کارشناس پروژه')
-        for p in user.accessible_projects.all():
-            projects.add(p)
-            project_roles.setdefault(p.id, []).append('دسترسی دستی')
+        
+        # بررسی اینکه آیا کاربر نقش کلیدی دارد (مثل ادمین)
+        user_roles_set = set(roles)
+        global_roles = set(['ادمین', 'مدیر عامل موسسه', 'مدیر فنی موسسه', 'مدیر کنترل کیفی موسسه', 'کارشناس موسسه'])
+        
+        if user_roles_set & global_roles:
+            # اگر کاربر نقش کلیدی دارد، همه پروژه‌ها را نمایش بده
+            all_projects_qs = Project.objects.all()
+            for p in all_projects_qs:
+                projects.add(p)
+                # اگر کاربر به پروژه دسترسی مستقیم دارد، نقش‌ها را اضافه کن
+                if p.project_manager == user:
+                    project_roles.setdefault(p.id, []).append('مدیر پروژه')
+                if p.technical_manager == user:
+                    project_roles.setdefault(p.id, []).append('مدیر فنی')
+                if p.quality_control_manager == user:
+                    project_roles.setdefault(p.id, []).append('مدیر کنترل کیفیت')
+                if user in p.project_experts.all():
+                    project_roles.setdefault(p.id, []).append('کارشناس پروژه')
+                if user in p.accessible_projects.all():
+                    project_roles.setdefault(p.id, []).append('دسترسی دستی')
+        else:
+            # فقط پروژه‌های مرتبط با کاربر
+            for p in user.managed_projects.all():
+                projects.add(p)
+                project_roles.setdefault(p.id, []).append('مدیر پروژه')
+            for p in user.technical_projects.all():
+                projects.add(p)
+                project_roles.setdefault(p.id, []).append('مدیر فنی')
+            for p in user.qc_projects.all():
+                projects.add(p)
+                project_roles.setdefault(p.id, []).append('مدیر کنترل کیفیت')
+            for p in user.project_experts.all():
+                projects.add(p)
+                project_roles.setdefault(p.id, []).append('کارشناس پروژه')
+            for p in user.accessible_projects.all():
+                projects.add(p)
+                project_roles.setdefault(p.id, []).append('دسترسی دستی')
         # جدا کردن پروژه‌های اصلی و زیرپروژه‌ها
         main_projects_list = []
         sub_projects_dict = {}
+        main_project_ids = set()  # برای ردیابی پروژه‌های اصلی که اضافه شده‌اند
+        project_data_cache = {}  # کش برای project_data ها
         
+        # اول همه پروژه‌ها را پردازش کن و project_data آن‌ها را بساز
         for p in projects:
             roles_in_project = project_roles.get(p.id, [])
             accesses = []
@@ -472,16 +498,128 @@ class DashboardView(LoginRequiredMixin, generic.TemplateView):
                 'status': 'active' if not p.end_date else 'completed',
                 'progress': progress,
             }
+            project_data_cache[p.id] = project_data
+        
+        # حالا پروژه‌ها را به main_projects_list و sub_projects_dict اضافه کن
+        for p in projects:
+            project_data = project_data_cache[p.id]
             
             # اگر پروژه اصلی است
             if p.is_main_project():
-                main_projects_list.append(project_data)
+                if p.id not in main_project_ids:
+                    main_projects_list.append(project_data)
+                    main_project_ids.add(p.id)
             else:
                 # زیرپروژه است
                 parent_id = p.parent_project.id
                 if parent_id not in sub_projects_dict:
                     sub_projects_dict[parent_id] = []
                 sub_projects_dict[parent_id].append(project_data)
+                
+                # اگر کاربر به زیرپروژه دسترسی دارد اما به پروژه اصلی دسترسی ندارد،
+                # پروژه اصلی را هم به لیست اضافه کن (فقط برای نمایش)
+                if parent_id not in main_project_ids:
+                    parent_project = p.parent_project
+                    # بررسی اینکه آیا پروژه اصلی در projects set وجود دارد
+                    parent_in_projects = parent_project in projects
+                    
+                    if parent_in_projects:
+                        # اگر پروژه اصلی در projects است، از کش استفاده کن
+                        parent_project_data = project_data_cache.get(parent_id)
+                        if parent_project_data:
+                            main_projects_list.append(parent_project_data)
+                            main_project_ids.add(parent_id)
+                        else:
+                            # اگر در کش نیست، باید آن را بسازیم
+                            parent_roles = project_roles.get(parent_id, [])
+                            parent_accesses = []
+                            
+                            if parent_roles:
+                                for role in parent_roles:
+                                    for item in self.PROJECT_ROLE_ACCESS.get(role, []):
+                                        try:
+                                            url = reverse(item['url_name'], kwargs={'pk': parent_id})
+                                        except Exception:
+                                            try:
+                                                url = reverse(item['url_name'])
+                                            except Exception:
+                                                url = "#"
+                                            parent_accesses.append({'name': item['name'], 'url': url})
+                                seen = set()
+                                unique_parent_accesses = []
+                                for a in parent_accesses:
+                                    if a['name'] not in seen:
+                                        unique_parent_accesses.append(a)
+                                        seen.add(a['name'])
+                                parent_accesses = unique_parent_accesses
+                            else:
+                                try:
+                                    dashboard_url = reverse('dashboard', kwargs={'pk': parent_id})
+                                    parent_accesses.append({'name': 'داشبورد پروژه', 'url': dashboard_url})
+                                except Exception:
+                                    pass
+                            
+                            parent_total_layers = ProjectLayer.objects.filter(project=parent_project).count()
+                            parent_completed_layers = ProjectLayer.objects.filter(project=parent_project, status=ProjectLayer.COMPLETED).count()
+                            parent_progress = round((parent_completed_layers / parent_total_layers) * 100) if parent_total_layers > 0 else 0
+                            
+                            parent_project_data = {
+                                'id': parent_project.id,
+                                'name': parent_project.name,
+                                'roles': parent_roles,
+                                'accesses': parent_accesses,
+                                'status': 'active' if not parent_project.end_date else 'completed',
+                                'progress': parent_progress,
+                            }
+                            main_projects_list.append(parent_project_data)
+                            main_project_ids.add(parent_id)
+                    else:
+                        # اگر پروژه اصلی در projects نیست، باید آن را اضافه کنیم
+                        parent_roles = project_roles.get(parent_id, [])
+                        parent_accesses = []
+                        
+                        # اگر کاربر به پروژه اصلی دسترسی دارد، دسترسی‌ها را محاسبه کن
+                        if parent_roles:
+                            for role in parent_roles:
+                                for item in self.PROJECT_ROLE_ACCESS.get(role, []):
+                                    try:
+                                        url = reverse(item['url_name'], kwargs={'pk': parent_id})
+                                    except Exception:
+                                        try:
+                                            url = reverse(item['url_name'])
+                                        except Exception:
+                                            url = "#"
+                                        parent_accesses.append({'name': item['name'], 'url': url})
+                            seen = set()
+                            unique_parent_accesses = []
+                            for a in parent_accesses:
+                                if a['name'] not in seen:
+                                    unique_parent_accesses.append(a)
+                                    seen.add(a['name'])
+                            parent_accesses = unique_parent_accesses
+                        else:
+                            # اگر دسترسی مستقیم ندارد، حداقل دسترسی داشبورد را اضافه کن
+                            try:
+                                dashboard_url = reverse('dashboard', kwargs={'pk': parent_id})
+                                parent_accesses.append({'name': 'داشبورد پروژه', 'url': dashboard_url})
+                            except Exception:
+                                pass
+                        
+                        # محاسبه پیشرفت برای پروژه اصلی
+                        parent_total_layers = ProjectLayer.objects.filter(project=parent_project).count()
+                        parent_completed_layers = ProjectLayer.objects.filter(project=parent_project, status=ProjectLayer.COMPLETED).count()
+                        parent_progress = round((parent_completed_layers / parent_total_layers) * 100) if parent_total_layers > 0 else 0
+                        
+                        parent_project_data = {
+                            'id': parent_project.id,
+                            'name': parent_project.name,
+                            'roles': parent_roles,
+                            'accesses': parent_accesses,
+                            'status': 'active' if not parent_project.end_date else 'completed',
+                            'progress': parent_progress,
+                        }
+                        main_projects_list.append(parent_project_data)
+                        main_project_ids.add(parent_id)
         
         context['user_projects'] = main_projects_list
         context['sub_projects_dict'] = sub_projects_dict
