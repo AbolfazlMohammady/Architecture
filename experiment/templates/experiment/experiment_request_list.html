@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+<link href="{% static 'css/select2.min.css' %}" rel="stylesheet" />
+<link href="{% static 'css/select2-bootstrap4.min.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block title %}لیست درخواست‌های آزمایش{% endblock %}
@@ -200,7 +200,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'js/select2.min.js' %}"></script>
 <script>
 $(document).ready(function() {
     // Initialize Select2 on all select elements

@@ -4,7 +4,7 @@
 {% block title %}صفحه اصلی{% endblock %}
 
 {% block head %}
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+{% comment %} Font Vazirmatn removed - using system fonts instead {% endcomment %}
 <style>
 body, html {
     font-family: 'Vazirmatn', 'IRANSans', sans-serif !important;
@@ -171,7 +171,7 @@ body, html {
       </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/chart.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // نمودارهای ضرایب پرداخت - استفاده از نمودار Gauge برای نمایش بهتر

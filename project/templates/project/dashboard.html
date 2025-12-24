@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/css/persian-datepicker.min.css" />
+<link rel="stylesheet" href="{% static 'css/persian-datepicker.min.css' %}" />
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
 {{ project_data|json_script:"project-data" }}
 {% endblock %}
@@ -406,8 +406,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/persian-date@latest/dist/persian-date.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script src="{% static 'js/persian-date.min.js' %}"></script>
+<script src="{% static 'js/persian-datepicker.min.js' %}"></script>
 <script>
   $(function() {
     $('#startDate').persianDatepicker({
